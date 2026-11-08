@@ -6,14 +6,24 @@ namespace LastTide.Game
     /// The castaway's body, built from simple parts on pivots and animated in code: walking, chopping, mining,
     /// gathering, hammering, drinking, resting and swinging a weapon.
     /// </summary>
-    public sealed class SurvivorRig
+    public sealed class SurvivorRig : IRig
     {
         public Transform Root, Hips, Torso, Head, ArmL, ArmR, LegL, LegR, Hand;
         GameObject _held;
         string _heldId;
 
-        public static SurvivorRig Build(Transform parent)
+        /// <summary>Clothes and colouring: the castaway, the survivors on the radio, Red Jack's raiders.</summary>
+        public sealed class Look
         {
+            public Color Shirt = Tropic.Shirt, Pants = Tropic.Pants, Hair = Tropic.Hair, Skin = Tropic.Skin, Band = Palette.Hex(0xA8322A), Boots = Palette.Hex(0x3A2A1C);
+            public bool Pack = true, Hat, Coat, Beard = true;
+        }
+
+        public static readonly Look Raider = new Look { Shirt = Palette.Hex(0x8C1F1F), Pants = Palette.Hex(0x2A2A30), Band = Palette.Hex(0x1A1A1A), Pack = false, Hat = true, Coat = true, Skin = Palette.Hex(0xB07A55) };
+
+        public static SurvivorRig Build(Transform parent, Look look = null)
+        {
+            look = look ?? new Look();
             var r = new SurvivorRig();
             r.Root = new GameObject("Survivor").transform;
             r.Root.SetParent(parent, false);
@@ -21,26 +31,41 @@ namespace LastTide.Game
             r.Torso = Pivot("Torso", r.Hips, new Vector3(0, 0.05f, 0));
             var torso = new MeshBuilder();
             // Shirt with the sleeves rolled up, belt, backpack with a bedroll.
-            torso.Box(new Vector3(0, 0.33f, 0), new Vector3(0.5f, 0.6f, 0.28f), Tropic.Shirt);
+            torso.Box(new Vector3(0, 0.33f, 0), new Vector3(0.5f, 0.6f, 0.28f), look.Shirt);
             torso.Box(new Vector3(0, 0.02f, 0), new Vector3(0.48f, 0.1f, 0.27f), Palette.Hex(0x4A3424));
-            torso.Box(new Vector3(0, 0.36f, -0.25f), new Vector3(0.42f, 0.5f, 0.22f), Tropic.Pack);
-            torso.Box(new Vector3(0, 0.66f, -0.25f), new Vector3(0.46f, 0.12f, 0.2f), MeshBuilder.Darken(Tropic.Pack, 0.8f));
-            torso.Cylinder(new Vector3(-0.26f, 0.12f, -0.27f), new Vector3(0.26f, 0.12f, -0.27f), 0.1f, 8, Palette.Hex(0x8C5A3A));
-            foreach (float x in new[] { -0.16f, 0.16f })
-                torso.Box(new Vector3(x, 0.4f, 0.15f), new Vector3(0.05f, 0.5f, 0.02f), Palette.Hex(0x4A3A24));
+            if (look.Coat)
+            {
+                // Long coat tails and a gold-buttoned front.
+                torso.Box(new Vector3(0, -0.2f, -0.05f), new Vector3(0.52f, 0.4f, 0.22f), MeshBuilder.Darken(look.Shirt, 0.8f));
+                for (int i = 0; i < 4; i++) torso.Box(new Vector3(0.07f, 0.12f + i * 0.13f, 0.145f), new Vector3(0.04f, 0.04f, 0.02f), Palette.Brass);
+            }
+            if (look.Pack)
+            {
+                torso.Box(new Vector3(0, 0.36f, -0.25f), new Vector3(0.42f, 0.5f, 0.22f), Tropic.Pack);
+                torso.Box(new Vector3(0, 0.66f, -0.25f), new Vector3(0.46f, 0.12f, 0.2f), MeshBuilder.Darken(Tropic.Pack, 0.8f));
+                torso.Cylinder(new Vector3(-0.26f, 0.12f, -0.27f), new Vector3(0.26f, 0.12f, -0.27f), 0.1f, 8, Palette.Hex(0x8C5A3A));
+                foreach (float x in new[] { -0.16f, 0.16f })
+                    torso.Box(new Vector3(x, 0.4f, 0.15f), new Vector3(0.05f, 0.5f, 0.02f), Palette.Hex(0x4A3A24));
+            }
             torso.ToObject("Torso", r.Torso);
             r.Head = Pivot("Head", r.Torso, new Vector3(0, 0.66f, 0));
             var head = new MeshBuilder();
-            head.Cylinder(new Vector3(0, 0, 0), new Vector3(0, 0.1f, 0), 0.08f, 6, Tropic.Skin);
-            head.Sphere(new Vector3(0, 0.22f, 0.01f), new Vector3(0.15f, 0.17f, 0.16f), 8, Tropic.Skin);
-            head.Sphere(new Vector3(0, 0.29f, -0.02f), new Vector3(0.16f, 0.12f, 0.16f), 8, Tropic.Hair);
-            head.Box(new Vector3(0, 0.12f, 0.08f), new Vector3(0.2f, 0.1f, 0.12f), Tropic.Hair); // beard
-            head.Box(new Vector3(0, 0.33f, 0.0f), new Vector3(0.34f, 0.05f, 0.34f), Palette.Hex(0xA8322A)); // bandana knot band
+            head.Cylinder(new Vector3(0, 0, 0), new Vector3(0, 0.1f, 0), 0.08f, 6, look.Skin);
+            head.Sphere(new Vector3(0, 0.22f, 0.01f), new Vector3(0.15f, 0.17f, 0.16f), 8, look.Skin);
+            head.Sphere(new Vector3(0, 0.29f, -0.02f), new Vector3(0.16f, 0.12f, 0.16f), 8, look.Hair);
+            if (look.Beard) head.Box(new Vector3(0, 0.12f, 0.08f), new Vector3(0.2f, 0.1f, 0.12f), look.Hair);
+            if (look.Hat)
+            {
+                // A black tricorn.
+                head.Cylinder(new Vector3(0, 0.33f, 0), new Vector3(0, 0.36f, 0), 0.32f, 3, look.Band);
+                head.Cylinder(new Vector3(0, 0.34f, 0), new Vector3(0, 0.5f, 0), 0.17f, 0.14f, 8, look.Band);
+            }
+            else head.Box(new Vector3(0, 0.33f, 0.0f), new Vector3(0.34f, 0.05f, 0.34f), look.Band); // bandana band
             head.ToObject("Head", r.Head);
-            r.ArmL = Limb("ArmL", r.Torso, new Vector3(-0.31f, 0.56f, 0), 0.62f, Tropic.Shirt, Tropic.Skin, 0.075f, out _);
-            r.ArmR = Limb("ArmR", r.Torso, new Vector3(0.31f, 0.56f, 0), 0.62f, Tropic.Shirt, Tropic.Skin, 0.075f, out r.Hand);
-            r.LegL = Limb("LegL", r.Hips, new Vector3(-0.13f, 0, 0), 0.9f, Tropic.Pants, Palette.Hex(0x3A2A1C), 0.1f, out _);
-            r.LegR = Limb("LegR", r.Hips, new Vector3(0.13f, 0, 0), 0.9f, Tropic.Pants, Palette.Hex(0x3A2A1C), 0.1f, out _);
+            r.ArmL = Limb("ArmL", r.Torso, new Vector3(-0.31f, 0.56f, 0), 0.62f, look.Shirt, look.Skin, 0.075f, out _);
+            r.ArmR = Limb("ArmR", r.Torso, new Vector3(0.31f, 0.56f, 0), 0.62f, look.Shirt, look.Skin, 0.075f, out r.Hand);
+            r.LegL = Limb("LegL", r.Hips, new Vector3(-0.13f, 0, 0), 0.9f, look.Pants, look.Boots, 0.1f, out _);
+            r.LegR = Limb("LegR", r.Hips, new Vector3(0.13f, 0, 0), 0.9f, look.Pants, look.Boots, 0.1f, out _);
             return r;
         }
 
@@ -60,7 +85,7 @@ namespace LastTide.Game
             mb.Cylinder(Vector3.zero, new Vector3(0, -len * 0.55f, 0), r, r * 0.9f, 7, upper);
             mb.Cylinder(new Vector3(0, -len * 0.55f, 0), new Vector3(0, -len, 0), r * 0.85f, r * 0.75f, 7, lower);
             if (name.StartsWith("Leg")) mb.Box(new Vector3(0, -len + 0.04f, 0.06f), new Vector3(r * 2f, 0.09f, 0.26f), lower);
-            else mb.Sphere(new Vector3(0, -len - 0.03f, 0), Vector3.one * r * 0.95f, 6, Tropic.Skin);
+            else mb.Sphere(new Vector3(0, -len - 0.03f, 0), Vector3.one * r * 0.95f, 6, lower);
             mb.ToObject("Mesh", t);
             end = Pivot("End", t, new Vector3(0, -len - 0.02f, 0));
             return t;

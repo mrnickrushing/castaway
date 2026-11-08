@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LastTide.Core;
 using UnityEngine;
 
 namespace LastTide.Game
@@ -22,7 +23,11 @@ namespace LastTide.Game
             ("workbench",   new Vector3(9, 0, 4),      200, 2.6f, 1.3f, "scrap"),
             ("raincatcher", new Vector3(-12, 0, -5),   0,   2.6f, 1.4f, "rain"),
             ("chest",       new Vector3(11, 0, -5),    210, 2.2f, 0.9f, "chest"),
+            ("radio",       new Vector3(-2, 0, 11),    180, 2.4f, 1.0f, "radio"),
         };
+
+        /// <summary>Harvest keys on this island start with this (empty at home, "grove:" at Palm Grove...).</summary>
+        static string _prefix = "";
 
         public static Vector3 SitePosition(string id)
         {
@@ -36,8 +41,16 @@ namespace LastTide.Game
         {
             _rng = new System.Random(Seed);
             _taken.Clear();
+            _prefix = Session.ZonePrefix(Island.Location.Id);
             var nodes = new GameObject("Island things").transform;
             nodes.SetParent(world, false);
+            BagSpot.Create(nodes);
+            if (!Island.Location.Home) { PopulateZone(world, nodes); return; }
+
+            // The raft on the beach that takes the castaway out to the rest of the archipelago.
+            var raftAt = Island.Start + new Vector3(-12, 0, -4);
+            ExitSpot.Create(nodes, Island.Ground(raftAt), 200);
+            Take(raftAt, 4f);
 
             // Camp blueprints.
             foreach (var s in Sites)
@@ -87,6 +100,7 @@ namespace LastTide.Game
             // Palms: a band along the beach, groves inland.
             var decor = new MeshBuilder();
             int palms = 0;
+            bool palmArt = ModelRegistry.Has("Trees", "palm");
             for (int i = 0; i < 1500 && palms < 180; i++)
             {
                 var p = RandomOnIsland();
@@ -95,7 +109,8 @@ namespace LastTide.Game
                 float grove = Mathf.PerlinNoise(p.x * 0.03f + 7, p.z * 0.03f + 3);
                 if (!beach && grove < 0.55f) continue;
                 if (Island.Slope(p.x, p.z) > 0.35f || !Free(p, 3.2f)) continue;
-                NodeSpot.Create(nodes, "palm", "palm#" + palms, Island.Ground(p), Models.Palm(palms, 6.5f + R() * 3f), 1.9f, 0.45f);
+                float tall = 6.5f + R() * 3f;
+                NodeSpot.Create(nodes, "palm", "palm#" + palms, Island.Ground(p), palmArt ? new MeshBuilder() : Models.Palm(palms, tall), 1.9f, 0.45f);
                 Take(p, 3.2f);
                 palms++;
             }
@@ -144,13 +159,13 @@ namespace LastTide.Game
             }
             decor.ToObject("Undergrowth", world, false);
 
-            // Boar dens in the jungle north of camp.
-            var dens = new GameObject("Boars").AddComponent<BoarDens>();
+            // Enemy dens in the jungle north of camp.
+            var dens = new GameObject("Boars").AddComponent<Dens>();
             dens.transform.SetParent(world, false);
             for (int i = 0; i < 6; i++)
             {
                 var p = Find(q => Island.Distance01(q.x, q.z) < 0.62f && q.z > -25 && Vector3.Distance(q, Island.Camp) > 40, 14f, new Vector3(-30 + i * 12, 0, 10));
-                dens.Add(p);
+                dens.Add("boar", p);
                 Take(p, 14f);
             }
         }
@@ -162,10 +177,203 @@ namespace LastTide.Game
             {
                 var p = RandomOnIsland();
                 if (!ok(p) || !Free(p, space) || !Island.Walkable(p.x, p.z)) continue;
-                NodeSpot.Create(parent, kind, kind + "#" + made, Island.Ground(p), model(kind, made), ring, obstacle);
+                NodeSpot.Create(parent, kind, _prefix + kind + "#" + made, Island.Ground(p), model(kind, made), ring, obstacle);
                 Take(p, space);
                 made++;
             }
+        }
+
+        /// <summary>
+        /// A location island: the landing beach with the raft, its landmark (lighthouse, smugglers' cave, pirate camp,
+        /// fishing pier), the things to harvest the location lists, jungle and undergrowth, the survivor waiting for
+        /// rescue if the radio sent the castaway here, and the dens of whatever lives there.
+        /// </summary>
+        static void PopulateZone(Transform world, Transform nodes)
+        {
+            var loc = Island.Location;
+            ExitSpot.Create(nodes, Island.Ground(Island.Start + new Vector3(5f, 0, -3.5f)), 160);
+            Take(Island.Camp, 9f);
+            Take(Island.Start, 5f);
+            Landmark(world, nodes, loc);
+
+            // The rescue (if the radio sent the castaway here).
+            foreach (var sig in World.Signals)
+                if (sig.Location == loc.Id)
+                {
+                    var at = Find(q => Vector3.Distance(q, Island.Camp) > 10 && Vector3.Distance(q, Island.Camp) < 22, 4f, Island.Camp + new Vector3(8, 0, 8));
+                    NpcSpot.Create(nodes, sig, Island.Ground(at));
+                    Take(at, 4f);
+                }
+
+            foreach (var (kind, n) in loc.Nodes) Place(nodes, kind, n);
+            Jungle(world, loc.Biome == Biome.Grove ? 50 : loc.Biome == Biome.Shore || loc.Biome == Biome.Pier ? 14 : 28, 0.45f);
+            Undergrowth(world, 600);
+
+            var dens = new GameObject("Dens").AddComponent<Dens>();
+            dens.transform.SetParent(world, false);
+            foreach (var (kind, n) in loc.Enemies)
+                for (int i = 0; i < n; i++)
+                {
+                    var p = Find(q => Vector3.Distance(q, Island.Camp) > 22 && (kind != "crab" || Island.Distance01(q.x, q.z) > 0.7f), 10f, new Vector3(i * 9 - 10, 0, 12));
+                    dens.Add(kind, p);
+                    Take(p, 8f);
+                }
+        }
+
+        /// <summary>Places <paramref name="n"/> harvestable things of a kind where that kind belongs.</summary>
+        static void Place(Transform nodes, string kind, int n)
+        {
+            switch (kind)
+            {
+                case "palm":
+                    bool art = ModelRegistry.Has("Trees", "palm");
+                    Count("palm", n, nodes, p => Island.Slope(p.x, p.z) < 0.35f && Island.Distance01(p.x, p.z) < 0.92f, 3.2f, (k, i) => art ? new MeshBuilder() : Models.Palm(i, 6.5f + R() * 3), 1.9f, 0.45f);
+                    break;
+                case "boulder":
+                    Count("boulder", n, nodes, p => Island.Distance01(p.x, p.z) < 0.8f, 4.5f,
+                        (k, i) => Models.Boulder(i * 1.3f, new Vector3(2.2f + R(), 1.6f + R() * 0.8f, 2f + R()), Color.Lerp(Tropic.Rock, Tropic.RockDark, R() * 0.6f)), 2.2f, 1.1f);
+                    break;
+                case "ironvein":
+                    Count("ironvein", n, nodes, p => Island.Distance01(p.x, p.z) < 0.8f, 4.5f, (k, i) => Models.IronVein(i), 2.2f, 1.0f);
+                    break;
+                case "stones": Count("stones", n, nodes, p => Island.Distance01(p.x, p.z) < 0.85f, 3f, (k, i) => Models.Stones(i), 1.6f, 0); break;
+                case "bush": Count("bush", n, nodes, p => Island.Distance01(p.x, p.z) < 0.8f, 2.6f, (k, i) => Models.Fern(i, false), 1.6f, 0); break;
+                case "berrybush": Count("berrybush", n, nodes, p => Island.Distance01(p.x, p.z) < 0.75f, 2.6f, (k, i) => Models.Fern(i + 50, true), 1.6f, 0); break;
+                case "driftwood": Count("driftwood", n, nodes, p => { float d = Island.Distance01(p.x, p.z); return d > 0.78f && d < 0.96f; }, 3f, (k, i) => Models.Driftwood(i), 1.7f, 0); break;
+                case "tidepool": Count("tidepool", n, nodes, p => { float d = Island.Distance01(p.x, p.z); return d > 0.88f && d < 0.98f; }, 5f, (k, i) => Models.TidePool(i), 2.2f, 0); break;
+                case "crate": Count("crate", n, nodes, p => Island.Distance01(p.x, p.z) < 0.9f, 3f, (k, i) => Models.Crate(i + 1), 1.7f, 0.7f); break;
+                case "barrel": Count("barrel", n, nodes, p => Island.Distance01(p.x, p.z) < 0.9f, 3f, (k, i) => Models.Barrel(i + 3), 1.6f, 0.5f); break;
+                case "treasure": Count("treasure", n, nodes, p => Island.Distance01(p.x, p.z) < 0.6f && Vector3.Distance(p, Island.Camp) > 20, 6f, (k, i) => Models.Treasure(i), 1.8f, 0.8f); break;
+                case "fishspot":
+                    // Off the end and sides of the pier, else along the water's edge.
+                    int made = 0;
+                    if (Island.Biome == Biome.Pier)
+                        foreach (var p in PierSpots())
+                        {
+                            if (made >= n) break;
+                            NodeSpot.Create(nodes, "fishspot", _prefix + "fishspot#" + made, new Vector3(p.x, 0.9f, p.z), Models.FishSpot(), 1.6f, 0);
+                            made++;
+                        }
+                    for (int i = 0; i < 3000 && made < n; i++)
+                    {
+                        var p = RandomOnIsland();
+                        float d = Island.Distance01(p.x, p.z);
+                        if (d < 0.97f || d > 1.03f || !Free(p, 6f, true)) continue;
+                        NodeSpot.Create(nodes, "fishspot", _prefix + "fishspot#" + made, Island.Ground(p), Models.FishSpot(), 1.8f, 0);
+                        Take(p, 6f);
+                        made++;
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>The landmark that makes each location what it is.</summary>
+        static void Landmark(Transform world, Transform nodes, LocationDef loc)
+        {
+            var at = Island.Ground(Island.Landmark);
+            switch (loc.Biome)
+            {
+                case Biome.Lighthouse:
+                {
+                    var go = Models.Lighthouse().ToObject("Lighthouse", world);
+                    go.transform.position = at;
+                    Obstacles.Add(at, 3.4f);
+                    Take(at, 9f);
+                    var light = new GameObject("Beam").AddComponent<Light>();
+                    light.type = LightType.Point; light.range = 18; light.intensity = 3; light.color = new Color(1, 0.9f, 0.6f);
+                    light.transform.SetParent(go.transform, false); light.transform.localPosition = new Vector3(0, 15.5f, 0);
+                    break;
+                }
+                case Biome.Cave:
+                {
+                    var go = Models.CaveMouth().ToObject("Cave", world);
+                    go.transform.position = at;
+                    foreach (float x in new[] { -6f, -3.5f, 3.5f, 6f }) Obstacles.Add(at + new Vector3(x, 0, 1.5f), 1.8f);
+                    Take(at, 10f);
+                    break;
+                }
+                case Biome.PirateCamp:
+                {
+                    var go = Models.PirateCamp().ToObject("Pirate camp", world);
+                    go.transform.position = at;
+                    foreach (var t in Models.PirateTents) { Obstacles.Add(at + t, 2.0f); }
+                    Take(at, 14f);
+                    var fire = Flames.Create(go.transform, new Vector3(0, 0.1f, 0));
+                    var l = new GameObject("Fire").AddComponent<Light>(); l.type = LightType.Point; l.range = 10; l.intensity = 2.5f; l.color = new Color(1f, 0.6f, 0.25f);
+                    l.transform.SetParent(go.transform, false); l.transform.localPosition = Vector3.up * 1.2f;
+                    Obstacles.Add(at, 1.2f);
+                    break;
+                }
+                case Biome.Pier:
+                {
+                    var go = Models.Pier(PierLength).ToObject("Pier", world);
+                    go.transform.position = new Vector3(at.x, 0, at.z);
+                    go.transform.rotation = Quaternion.Euler(0, PierYaw, 0);
+                    Take(at, 8f);
+                    break;
+                }
+            }
+        }
+
+        const float PierLength = 26f, PierYaw = 125f;
+
+        /// <summary>Fishing spots along the pier (world positions on the deck).</summary>
+        static IEnumerable<Vector3> PierSpots()
+        {
+            var at = Island.Landmark;
+            var rot = Quaternion.Euler(0, PierYaw, 0);
+            yield return at + rot * new Vector3(0, 0, PierLength - 1.5f);
+            yield return at + rot * new Vector3(1.6f, 0, PierLength - 7f);
+            yield return at + rot * new Vector3(-1.6f, 0, PierLength - 12f);
+        }
+
+        /// <summary>True on the pier deck (it can be walked on over the water).</summary>
+        public static bool OnPier(float x, float z)
+        {
+            if (Island.Biome != Biome.Pier) return false;
+            var local = Quaternion.Euler(0, -PierYaw, 0) * (new Vector3(x, 0, z) - Island.Landmark);
+            return Mathf.Abs(local.x) < 1.6f && local.z > -4f && local.z < PierLength;
+        }
+
+        static void Jungle(Transform world, int count, float maxD)
+        {
+            var canopy = new MeshBuilder();
+            int trees = 0;
+            for (int i = 0; i < count * 15 && trees < count; i++)
+            {
+                var p = RandomOnIsland();
+                float d = Island.Distance01(p.x, p.z);
+                if (d > maxD + 0.2f || Island.Slope(p.x, p.z) > 0.45f || !Free(p, 4.5f)) continue;
+                if (Vector3.Distance(p, Island.Camp) < Island.CampRadius + 6) continue;
+                var g = Island.Ground(p);
+                canopy.Push().Translate(g + Vector3.down * 0.2f).RotateY(R() * 360);
+                canopy.Append(Models.Jungle(trees + 300, 6f + R() * 4f));
+                canopy.Pop();
+                Obstacles.Add(g, 0.5f);
+                Take(p, 4.5f);
+                trees++;
+            }
+            canopy.ToObject("Jungle", world);
+        }
+
+        static void Undergrowth(Transform world, int count)
+        {
+            var decor = new MeshBuilder();
+            for (int i = 0; i < count; i++)
+            {
+                var p = RandomOnIsland();
+                float d = Island.Distance01(p.x, p.z);
+                if (Island.Slope(p.x, p.z) > 0.5f || Island.Height(p.x, p.z) < 0.3f || Near(p, 1.0f)) continue;
+                if (Vector3.Distance(p, Island.Camp) < Island.CampRadius * 0.8f) continue;
+                var g = Island.Ground(p);
+                decor.Push().Translate(g).RotateY(R() * 360).Scale(0.6f + R() * 0.7f);
+                float pick = R();
+                if (d < 0.74f) decor.Append(pick < 0.45f ? Models.Fern(i + 100, false) : Models.Tuft(i, pick > 0.85f));
+                else if (d < 0.8f) decor.Append(Models.Tuft(i, false));
+                else if (pick < 0.3f) Models.Rock(decor, new Vector3(0, 0.05f, 0), new Vector3(0.3f, 0.18f, 0.25f), i, Tropic.Rock);
+                decor.Pop();
+            }
+            decor.ToObject("Undergrowth", world, false);
         }
 
         static Vector3 RandomOnIsland()
@@ -186,9 +394,9 @@ namespace LastTide.Game
 
         static void Take(Vector3 p, float r) { _taken.Add(new Vector3(p.x, r, p.z)); }
 
-        static bool Free(Vector3 p, float r)
+        static bool Free(Vector3 p, float r, bool wet = false)
         {
-            if (!Island.Walkable(p.x, p.z) || Island.Height(p.x, p.z) < 0.15f) return false;
+            if (!wet && (!Island.Walkable(p.x, p.z) || Island.Height(p.x, p.z) < 0.15f)) return false;
             foreach (var t in _taken)
             {
                 float dx = t.x - p.x, dz = t.z - p.z, m = Mathf.Max(t.y, r) * 0.8f + Mathf.Min(t.y, r) * 0.2f;
@@ -258,7 +466,7 @@ namespace LastTide.Game
             var q = G.Session.CurrentQuest;
             if (q.PointNode == "boar")
             {
-                var b = Boar.Nearest(from, 400f);
+                var b = Enemy.Nearest(from, 400f);
                 return b != null ? b.transform.position : (Vector3?)null;
             }
             string kind = q.PointBuild ?? q.PointNode;

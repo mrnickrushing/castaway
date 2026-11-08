@@ -188,7 +188,7 @@ namespace LastTide.Tests
             foreach (var b in Content.Builds.Values)
                 foreach (var c in b.Cost) Assert.IsNotNull(Content.Item(c.id), b.Id + " needs " + c.id);
             foreach (var n in Content.Nodes.Values)
-                foreach (var y in n.Yield) Assert.IsNotNull(Content.Item(y.id), n.Id);
+                foreach (var y in n.Yield) Assert.IsTrue(y.id == "doubloon" || Content.Item(y.id) != null, n.Id);
         }
     }
 }

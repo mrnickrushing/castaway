@@ -38,7 +38,14 @@ namespace LastTide.Core
             Q("cook", "Roast meat on the campfire", s => s.Flag("cooked"), build: "campfire"),
             Q("rain", "Build a rain catcher", s => s.Built("raincatcher"), build: "raincatcher", reward: new[] { Content.I("water", 2) }),
             Q("chest", "Build a sea chest for your supplies", s => s.Built("chest"), build: "chest"),
-            Q("free", "Your camp stands. Explore the island and survive!", s => false),
+            Q("map", "Open the map and run to Palm Grove", s => s.Flag("visited_grove"), node: "exit", reward: new[] { Content.I("doubloon", 10) }),
+            Q("level3", "Gather, build and hunt to reach level 3", s => s.State.level >= 3),
+            Q("radio", "Rebuild the ship's radio at camp", s => s.Built("radio"), build: "radio", reward: new[] { Content.I("doubloon", 10) }),
+            Q("tune", "Tune the radio to the distress signal", s => s.Flag("heard_keeper"), build: "radio"),
+            Q("keeper", "Bring 2 bandages to Old Tomas at Palm Grove", s => s.Flag("done_keeper"), node: "npc"),
+            Q("pier", "Reach level 6 and answer the next call", s => s.Flag("done_fisher")),
+            Q("captive", "Free the captive in Smuggler's Cave", s => s.Flag("done_captive")),
+            Q("free", "Survive. Red Jack's raiders still rule the Pirate Camp...", s => false),
         };
 
         static Quest Q(string id, string text, Func<Session, bool> done, string node = null, string build = null, ItemCount[] reward = null)

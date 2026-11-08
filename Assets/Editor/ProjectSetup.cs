@@ -84,6 +84,15 @@ namespace LastTide.EditorTools
             PlayerSettings.SplashScreen.showUnityLogo = false;
             PlayerSettings.SplashScreen.show = false;
             PlayerSettings.SplashScreen.backgroundColor = new Color(0.05f, 0.3f, 0.38f);
+            // iOS launch screen: the key art, so launch flows into the in-game title splash.
+            var launch = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Resources/UI/LoadingArt.jpg");
+            if (launch != null)
+            {
+                PlayerSettings.iOS.SetiPhoneLaunchScreenType(iOSLaunchScreenType.ImageAndBackgroundRelative);
+                PlayerSettings.iOS.SetiPadLaunchScreenType(iOSLaunchScreenType.ImageAndBackgroundRelative);
+                PlayerSettings.iOS.SetLaunchScreenImage(launch, iOSLaunchScreenImageType.iPhoneLandscapeImage);
+                PlayerSettings.iOS.SetLaunchScreenImage(launch, iOSLaunchScreenImageType.iPadImage);
+            }
         }
     }
 

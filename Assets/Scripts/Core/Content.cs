@@ -6,7 +6,7 @@ namespace LastTide.Core
     public enum ItemKind { Resource, Food, Drink, Tool, Weapon, Medical }
 
     /// <summary>What a tool is good for: chopping palms, breaking rock.</summary>
-    public enum ToolUse { None, Chop, Mine }
+    public enum ToolUse { None, Chop, Mine, Fish }
 
     public sealed class ItemDef
     {
@@ -88,6 +88,10 @@ namespace LastTide.Core
             Item("cloth", "Sailcloth", ItemKind.Resource, 30);
             Item("hide", "Boar Hide", ItemKind.Resource, 20);
             Item("rope", "Rope", ItemKind.Resource, 20);
+            Item("iron_ore", "Iron Ore", ItemKind.Resource, 30);
+            Item("nails", "Iron Nails", ItemKind.Resource, 40);
+            Item("pearl", "Pearl", ItemKind.Resource, 20);
+            Item("gunpowder", "Gunpowder", ItemKind.Resource, 20);
             // Food and drink
             Food("coconut", "Coconut", 6, 18, 0);
             Food("berries", "Wild Berries", 8, 4, 0);
@@ -96,6 +100,9 @@ namespace LastTide.Core
             Food("crab", "Raw Crab", 4, 0, -2);
             Food("crab_cooked", "Grilled Crab", 22, 2, 4);
             Food("water", "Flask of Water", 0, 40, 0);
+            Food("fish", "Raw Fish", 5, 0, -3);
+            Food("fish_cooked", "Grilled Fish", 28, 4, 5);
+            Food("rum", "Bottle of Rum", 0, 15, 10);
             var water = Items["water"]; water.Kind = ItemKind.Drink;
             Items["coconut"].Kind = ItemKind.Drink;
             // Medicine
@@ -105,6 +112,9 @@ namespace LastTide.Core
             Tool("pickaxe", "Stone Pickaxe", ToolUse.Mine, 9, 60);
             Tool("spear", "Bamboo Spear", ToolUse.None, 18, 45);
             Tool("club", "Spiked Club", ToolUse.None, 26, 70);
+            Tool("rod", "Fishing Rod", ToolUse.Fish, 4, 40);
+            Tool("harpoon", "Iron Harpoon", ToolUse.None, 32, 90);
+            Tool("cutlass", "Pirate Cutlass", ToolUse.None, 38, 120);
 
             // Workbench recipes
             Recipe("pickaxe", "workbench", 1, 3f, I("wood", 4), I("stone", 4), I("fiber", 3));
@@ -113,15 +123,20 @@ namespace LastTide.Core
             Recipe("club", "workbench", 1, 4f, I("wood", 8), I("scrap", 4), I("rope", 2));
             Recipe("rope", "workbench", 1, 2f, I("fiber", 4));
             Recipe("bandage", "workbench", 1, 2f, I("fiber", 3), I("cloth", 1));
+            Recipe("nails", "workbench", 4, 2f, I("scrap", 2));
+            Recipe("rod", "workbench", 1, 3f, I("wood", 3), I("rope", 2), I("nails", 1));
+            Recipe("harpoon", "workbench", 1, 4f, I("wood", 4), I("iron_ore", 3), I("rope", 2));
             // Campfire recipes
             Recipe("meat", "campfire", 1, 4f, I("raw_meat", 1));
             Recipe("crab_cooked", "campfire", 1, 3f, I("crab", 1));
+            Recipe("fish_cooked", "campfire", 1, 3f, I("fish", 1));
 
             // Camp structures
             Build("campfire", "Campfire", "Cook food and keep the night at bay.", I("wood", 6), I("stone", 5));
             Build("shelter", "Palm Shelter", "Rest to heal. You wake up here if you fall.", I("wood", 12), I("fiber", 10), I("cloth", 2));
             Build("workbench", "Workbench", "Craft tools, weapons and rope.", I("wood", 14), I("stone", 8), I("scrap", 4));
             Build("raincatcher", "Rain Catcher", "Collects fresh water over time.", I("wood", 8), I("cloth", 3), I("scrap", 2));
+            Build("radio", "Ship's Radio", "Listen for other survivors calling for help.", I("scrap", 8), I("rope", 2), I("cloth", 2));
             Build("chest", "Sea Chest", "Store what you can't carry. Safe if you fall.", I("wood", 16), I("scrap", 3), I("rope", 2));
 
             // Harvestable things
@@ -135,6 +150,9 @@ namespace LastTide.Core
             Node("barrel", "Ship Barrel", ToolUse.None, 2.0f, 1, 420f, new[] { I("water", 1), I("scrap", 1) }, null);
             Node("tidepool", "Tide Pool", ToolUse.None, 2.0f, 2, 160f, new[] { I("crab", 1) }, null);
             Node("spring", "Fresh Spring", ToolUse.None, 1.2f, 99, 1f, new ItemCount[0], null).ThirstPerHit = 25;
+            Node("ironvein", "Iron Vein", ToolUse.Mine, 2.2f, 3, 300f, new[] { I("iron_ore", 1), I("stone", 1) }, new[] { I("iron_ore", 1) });
+            Node("fishspot", "Fishing Spot", ToolUse.Fish, 3.0f, 3, 240f, new[] { I("fish", 1) }, null);
+            Node("treasure", "Smuggler's Chest", ToolUse.None, 3.0f, 1, 1800f, new[] { I("doubloon", 8), I("pearl", 1) }, null);
             Node("hatchet_pickup", "Hatchet", ToolUse.None, 0.6f, 1, -1f, new[] { I("hatchet", 1) }, null);
         }
 

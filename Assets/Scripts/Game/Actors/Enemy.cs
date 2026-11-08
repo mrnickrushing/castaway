@@ -4,12 +4,16 @@ using UnityEngine;
 
 namespace LastTide.Game
 {
-    /// <summary>A wild boar: roots about its patch of jungle, charges anyone who comes close, and fights to the death.</summary>
-    public sealed class Boar : MonoBehaviour
+    /// <summary>
+    /// Anything that fights back: wanders its patch, charges anyone who comes close and fights to the death. Boars,
+    /// giant crabs, vipers and Red Jack's raiders share the behaviour; they differ in their numbers and their bodies.
+    /// </summary>
+    public sealed class Enemy : MonoBehaviour
     {
-        public static readonly List<Boar> All = new List<Boar>();
+        public static readonly List<Enemy> All = new List<Enemy>();
+        public string Kind { get { return _def.Id; } }
         EnemyDef _def;
-        BoarRig _rig;
+        EnemyBody _body;
         Vector3 _home, _wander;
         float _health, _gait, _move, _attack = -1, _cooldown, _think, _dead, _flash, _grunt;
         bool _hit, _angry;
@@ -17,15 +21,15 @@ namespace LastTide.Game
         public float Health01 { get { return _health / _def.Health; } }
         public bool Hurt { get { return _health < _def.Health; } }
 
-        public static Boar Spawn(Transform parent, Vector3 home)
+        public static Enemy Spawn(Transform parent, string kind, Vector3 home)
         {
-            var go = new GameObject("Boar");
+            var go = new GameObject(kind);
             go.transform.SetParent(parent, false);
-            var b = go.AddComponent<Boar>();
-            b._def = Enemies.All["boar"];
+            var b = go.AddComponent<Enemy>();
+            b._def = Enemies.All[kind];
             b._health = b._def.Health;
             b._home = home;
-            b._rig = BoarRig.Build(go.transform);
+            b._body = EnemyBody.Create(kind, go.transform);
             go.transform.position = Island.Ground(home);
             go.transform.rotation = Quaternion.Euler(0, Random.value * 360, 0);
             b._wander = home;
@@ -35,9 +39,9 @@ namespace LastTide.Game
         void OnEnable() { All.Add(this); }
         void OnDisable() { All.Remove(this); }
 
-        public static Boar Nearest(Vector3 p, float range)
+        public static Enemy Nearest(Vector3 p, float range)
         {
-            Boar best = null;
+            Enemy best = null;
             float bd = range;
             foreach (var b in All)
             {
@@ -63,7 +67,7 @@ namespace LastTide.Game
             {
                 _health = 0;
                 _dead = 0.001f;
-                Sfx.Play("boardie", transform.position);
+                Sfx.Play(_def.Id == "pirate" ? "pirate_die" : "boardie", transform.position);
                 G.Session.Killed(_def.Id);
             }
         }
@@ -74,7 +78,7 @@ namespace LastTide.Game
             if (_dead > 0)
             {
                 _dead += dt;
-                _rig.Pose(_gait, 0, -1, Mathf.Clamp01(_dead / 0.4f));
+                Pose(0, -1, Mathf.Clamp01(_dead / 0.4f));
                 if (_dead > 4f) transform.position += Vector3.down * dt * 0.6f;
                 if (_dead > 6f) Destroy(gameObject);
                 return;
@@ -87,7 +91,7 @@ namespace LastTide.Game
             bool alive = G.Session.State.health > 0;
             if (alive && (toPlayer < _def.Aggro || (_angry && toPlayer < _def.Aggro * 2.2f)) && Vector3.Distance(pos, _home) < 30f)
             {
-                if (!_angry) { Sfx.Play("grunt", pos); _angry = true; }
+                if (!_angry) { Sfx.Play(_def.Id == "pirate" ? "pirate_shout" : _def.Id == "boar" ? "grunt" : "hiss", pos); _angry = true; }
                 goal = player.transform.position;
                 speed = _def.Speed;
             }
@@ -104,7 +108,7 @@ namespace LastTide.Game
                         if (Island.Walkable(c.x, c.z) && Island.Height(c.x, c.z) > 0.6f) { _wander = c; break; }
                     }
                 }
-                if (Random.value < dt * 0.15f) Sfx.Play("grunt", pos, 0.4f);
+                if (_def.Id == "boar" && Random.value < dt * 0.15f) Sfx.Play("grunt", pos, 0.4f);
             }
 
             // Attack when close.
@@ -144,9 +148,11 @@ namespace LastTide.Game
             pos.y = Island.Ground(pos).y;
             transform.position = pos;
             _gait += dt * (2 + _move * 3.2f);
-            _rig.Pose(_gait, Mathf.Clamp01(_move / 2.5f), _attack, 0);
+            Pose(_move, _attack, 0);
             _flash -= dt;
         }
+
+        void Pose(float speed, float attack, float dead) { _body.Pose(_gait, speed, attack, dead); }
 
         static Vector3 Step(Vector3 pos, Vector3 step)
         {
@@ -156,29 +162,30 @@ namespace LastTide.Game
         }
     }
 
-    /// <summary>Keeps the jungle stocked with boars: each den has one, and a new one wanders in a while after it is killed.</summary>
-    public sealed class BoarDens : MonoBehaviour
+    /// <summary>Keeps the island stocked: each den has one animal (or raider), and a new one turns up a while after it is killed.</summary>
+    public sealed class Dens : MonoBehaviour
     {
         public const float Respawn = 75f;
         readonly List<Vector3> _dens = new List<Vector3>();
-        readonly Dictionary<int, Boar> _boars = new Dictionary<int, Boar>();
+        readonly List<string> _kinds = new List<string>();
+        readonly Dictionary<int, Enemy> _boars = new Dictionary<int, Enemy>();
         readonly Dictionary<int, float> _gone = new Dictionary<int, float>();
 
-        public void Add(Vector3 den) { _dens.Add(den); }
+        public void Add(string kind, Vector3 den) { _kinds.Add(kind); _dens.Add(den); }
 
         void Update()
         {
             var player = Player.Instance;
             for (int i = 0; i < _dens.Count; i++)
             {
-                Boar b;
+                Enemy b;
                 if (_boars.TryGetValue(i, out b) && b != null && b.Alive) continue;
                 if (b != null && !b.Alive) { _boars.Remove(i); _gone[i] = Time.time; continue; }
                 float since;
                 bool waited = !_gone.TryGetValue(i, out since) || Time.time - since > Respawn;
                 // Don't pop one into view right next to the player.
                 bool far = player == null || Vector3.Distance(player.transform.position, _dens[i]) > 26f;
-                if (waited && far) _boars[i] = Boar.Spawn(transform, _dens[i]);
+                if (waited && far) _boars[i] = Enemy.Spawn(transform, _kinds[i], _dens[i]);
             }
         }
     }

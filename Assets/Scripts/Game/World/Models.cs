@@ -338,6 +338,18 @@ namespace LastTide.Game
                     mb.Box(new Vector3(0, 0.55f, 0), new Vector3(0.04f, 1.6f, 0.04f), Palette.Hex(0xB8A060));
                     mb.Cylinder(new Vector3(0, 1.35f, 0), new Vector3(0, 1.62f, 0), 0.06f, 0f, 4, Tropic.Rock);
                     break;
+                case "cutlass":
+                    mb.Box(new Vector3(0, 0.05f, 0), new Vector3(0.05f, 0.2f, 0.05f), Palette.WoodDark);
+                    mb.Box(new Vector3(0, 0.16f, 0), new Vector3(0.05f, 0.03f, 0.18f), Palette.Brass);
+                    mb.Box(new Vector3(0, 0.55f, 0.03f), new Vector3(0.02f, 0.75f, 0.08f), Palette.Steel);
+                    break;
+                case "harpoon":
+                    mb.Box(new Vector3(0, 0.55f, 0), new Vector3(0.04f, 1.6f, 0.04f), Palette.Wood);
+                    mb.Cylinder(new Vector3(0, 1.35f, 0), new Vector3(0, 1.7f, 0), 0.05f, 0f, 4, Palette.Steel);
+                    break;
+                case "rod":
+                    mb.Cylinder(new Vector3(0, -0.1f, 0), new Vector3(0, 1.8f, 0), 0.03f, 0.01f, 5, Palette.Hex(0xB8A060));
+                    break;
                 case "club":
                     mb.Cylinder(new Vector3(0, -0.1f, 0), new Vector3(0, 0.75f, 0), 0.04f, 0.1f, 6, Palette.WoodDark);
                     for (int i = 0; i < 5; i++) mb.Box(Quaternion.Euler(0, i * 72, 0) * new Vector3(0.1f, 0.55f + i * 0.04f, 0), new Vector3(0.12f, 0.03f, 0.03f), Palette.Steel);
@@ -401,6 +413,203 @@ namespace LastTide.Game
             return mb;
         }
 
+        public static MeshBuilder IronVein(float seed)
+        {
+            var mb = Boulder(seed + 7, new Vector3(2.4f, 1.7f, 2.1f), Palette.Hex(0x7A6E66));
+            // Rusty orange streaks and glints of ore.
+            for (int i = 0; i < 7; i++)
+            {
+                var d = Quaternion.Euler(Hash(seed, i) * 60 - 30, i * 51, 0) * new Vector3(0, 0.6f, 1.05f);
+                mb.Surf = SurfaceKind.Rust;
+                mb.Box(d + Vector3.up * 0.2f, new Vector3(0.3f, 0.12f, 0.12f), Palette.Hex(0xB0582A));
+            }
+            return mb;
+        }
+
+        /// <summary>A smugglers' chest spilling gold coins.</summary>
+        public static MeshBuilder Treasure(float seed)
+        {
+            var mb = new MeshBuilder();
+            mb.Push().RotateY(seed * 47 % 360);
+            mb.Surf = SurfaceKind.Planks;
+            mb.Box(new Vector3(0, 0.3f, 0), new Vector3(1.1f, 0.6f, 0.7f), Palette.Hex(0x5A3218));
+            mb.Surf = SurfaceKind.None;
+            mb.Push().Translate(0, 0.6f, -0.33f).Rotate(Quaternion.Euler(-60, 0, 0));
+            mb.Box(new Vector3(0, 0.05f, 0.35f), new Vector3(1.14f, 0.12f, 0.72f), Palette.Hex(0x4A2814));
+            mb.Pop();
+            mb.Mat(0.7f, 0.9f);
+            mb.Box(new Vector3(0, 0.6f, 0), new Vector3(0.95f, 0.06f, 0.55f), Palette.Hex(0xE8B830));
+            for (int i = 0; i < 12; i++)
+                mb.Cylinder(new Vector3(Hash(seed, i) * 1.6f - 0.8f, 0.01f, -0.5f - Hash(seed, i + 3) * 0.5f), new Vector3(Hash(seed, i) * 1.6f - 0.8f, 0.04f, -0.5f - Hash(seed, i + 3) * 0.5f), 0.07f, 8, Palette.Hex(0xE8B830));
+            mb.Mat(0.15f);
+            foreach (float x in new[] { -0.45f, 0.45f }) mb.Box(new Vector3(x, 0.3f, 0), new Vector3(0.06f, 0.62f, 0.72f), Tropic.Iron);
+            mb.Pop();
+            return mb;
+        }
+
+        /// <summary>Where the fish are: a ring of ripples and a floating cork.</summary>
+        public static MeshBuilder FishSpot()
+        {
+            var mb = new MeshBuilder { Surf = SurfaceKind.None };
+            mb.Mat(0.9f);
+            for (int i = 0; i < 3; i++)
+            {
+                float r = 0.5f + i * 0.35f;
+                for (int k = 0; k < 16; k++)
+                {
+                    float a0 = k / 16f * Mathf.PI * 2, a1 = (k + 0.6f) / 16f * Mathf.PI * 2;
+                    mb.Quad(new Vector3(Mathf.Sin(a0) * r, 0.03f, Mathf.Cos(a0) * r), new Vector3(Mathf.Sin(a1) * r, 0.03f, Mathf.Cos(a1) * r),
+                        new Vector3(Mathf.Sin(a1) * (r + 0.06f), 0.03f, Mathf.Cos(a1) * (r + 0.06f)), new Vector3(Mathf.Sin(a0) * (r + 0.06f), 0.03f, Mathf.Cos(a0) * (r + 0.06f)), new Color(0.9f, 0.97f, 1f));
+                }
+            }
+            mb.Mat(0.3f);
+            mb.Sphere(new Vector3(0, 0.08f, 0), new Vector3(0.1f, 0.1f, 0.1f), 6, Palette.Hex(0xD03A2A));
+            mb.Sphere(new Vector3(0, 0.15f, 0), new Vector3(0.07f, 0.05f, 0.07f), 6, Color.white);
+            return mb;
+        }
+
+        /// <summary>The castaway's raft drawn up on the sand: logs lashed together, a mast and a patched sail.</summary>
+        public static MeshBuilder Raft()
+        {
+            var mb = new MeshBuilder { Surf = SurfaceKind.Bark };
+            for (int i = 0; i < 6; i++)
+                mb.Cylinder(new Vector3(-1.1f + i * 0.44f, 0.2f, -1.9f), new Vector3(-1.1f + i * 0.44f, 0.2f, 1.9f), 0.21f, 0.2f, 7, Color.Lerp(Palette.Hex(0x8A6A48), Palette.Hex(0x6E5236), Hash(i, 2)));
+            mb.Surf = SurfaceKind.None;
+            foreach (float z in new[] { -1.3f, 0, 1.3f }) mb.Box(new Vector3(0, 0.38f, z), new Vector3(2.7f, 0.06f, 0.12f), Tropic.Rope);
+            mb.Surf = SurfaceKind.WoodGrain;
+            mb.Cylinder(new Vector3(0, 0.3f, 0.4f), new Vector3(0, 3.6f, 0.4f), 0.08f, 0.06f, 6, Palette.Wood);
+            mb.Cylinder(new Vector3(-1f, 3.2f, 0.4f), new Vector3(1f, 3.2f, 0.4f), 0.05f, 6, Palette.Wood);
+            mb.Surf = SurfaceKind.None;
+            mb.Quad(new Vector3(-0.95f, 3.15f, 0.45f), new Vector3(0.95f, 3.15f, 0.45f), new Vector3(0.8f, 1.0f, 0.55f), new Vector3(-0.8f, 1.0f, 0.55f), Tropic.Sail);
+            mb.Quad(new Vector3(-0.8f, 1.0f, 0.55f), new Vector3(0.8f, 1.0f, 0.55f), new Vector3(0.95f, 3.15f, 0.45f), new Vector3(-0.95f, 3.15f, 0.45f), MeshBuilder.Darken(Tropic.Sail, 0.8f));
+            mb.Box(new Vector3(0.2f, 2.0f, 0.5f), new Vector3(0.5f, 0.4f, 0.02f), Palette.Hex(0xA87A50)); // patch
+            mb.Surf = SurfaceKind.WoodGrain;
+            mb.Box(new Vector3(0.6f, 0.45f, -1.2f), new Vector3(0.12f, 0.06f, 1.6f), Palette.WoodPale); // paddle
+            return mb;
+        }
+
+        /// <summary>A white and red striped lighthouse with a keeper's hut.</summary>
+        public static MeshBuilder Lighthouse()
+        {
+            var mb = new MeshBuilder();
+            mb.Surf = SurfaceKind.Stone;
+            mb.Cylinder(new Vector3(0, 0, 0), new Vector3(0, 0.8f, 0), 3.4f, 3.3f, 14, Tropic.Rock);
+            for (int i = 0; i < 6; i++)
+            {
+                float y0 = 0.8f + i * 2.2f, y1 = y0 + 2.2f;
+                mb.Surf = SurfaceKind.Concrete;
+                mb.Cylinder(new Vector3(0, y0, 0), new Vector3(0, y1, 0), 2.6f - i * 0.18f, 2.6f - (i + 1) * 0.18f, 14, i % 2 == 0 ? Palette.White : Palette.Hex(0xB83A2E));
+            }
+            float top = 0.8f + 6 * 2.2f;
+            mb.Surf = SurfaceKind.PaintedMetal;
+            mb.Cylinder(new Vector3(0, top, 0), new Vector3(0, top + 0.3f, 0), 2.2f, 2.2f, 14, Tropic.Iron);
+            mb.Lit();
+            mb.Cylinder(new Vector3(0, top + 0.3f, 0), new Vector3(0, top + 2.0f, 0), 1.3f, 1.3f, 10, Palette.Hex(0xFFE7A0));
+            mb.Mat(0.4f, 0.3f);
+            mb.Cylinder(new Vector3(0, top + 2.0f, 0), new Vector3(0, top + 3.2f, 0), 1.6f, 0.15f, 10, Tropic.Iron);
+            mb.Mat(0.15f);
+            // Keeper's hut against the tower.
+            mb.Surf = SurfaceKind.Siding;
+            mb.Box(new Vector3(0, 1.3f, -4.2f), new Vector3(4f, 2.6f, 3f), Palette.Cream);
+            mb.Surf = SurfaceKind.Shingles;
+            mb.GableRoof(new Vector3(0, 2.6f, -4.2f), new Vector3(4f, 1.2f, 3f), Palette.RoofShingle, Palette.Cream);
+            mb.Surf = SurfaceKind.WoodGrain;
+            mb.Box(new Vector3(0, 0.9f, -5.75f), new Vector3(0.9f, 1.8f, 0.08f), Palette.WoodDark);
+            return mb;
+        }
+
+        /// <summary>The mouth of the smugglers' cave: a dark arch in a wall of rock, crates stacked by the entrance.</summary>
+        public static MeshBuilder CaveMouth()
+        {
+            var mb = new MeshBuilder { Surf = SurfaceKind.Stone };
+            for (int i = 0; i < 9; i++)
+            {
+                float a = Mathf.Lerp(-80, 80, i / 8f) * Mathf.Deg2Rad;
+                var p = new Vector3(Mathf.Sin(a) * 5.5f, Mathf.Cos(a) * 3.2f, 1.5f);
+                Rock(mb, p, new Vector3(3.2f, 2.6f, 3.4f), i * 2.3f, Color.Lerp(Tropic.Rock, Tropic.RockDark, Hash(i, 4)));
+            }
+            Rock(mb, new Vector3(-7f, 1.5f, 2f), new Vector3(4f, 4f, 4f), 31, Tropic.RockDark);
+            Rock(mb, new Vector3(7f, 1.5f, 2f), new Vector3(4f, 4f, 4f), 37, Tropic.RockDark);
+            mb.Surf = SurfaceKind.None;
+            // The darkness inside.
+            mb.Quad(new Vector3(-3.8f, 0.05f, 2.6f), new Vector3(-3.4f, 4.2f, 2.6f), new Vector3(3.4f, 4.2f, 2.6f), new Vector3(3.8f, 0.05f, 2.6f), Palette.Hex(0x0B0B0D));
+            mb.Surf = SurfaceKind.Planks;
+            mb.Box(new Vector3(-2.6f, 0.4f, 0.6f), new Vector3(0.8f, 0.8f, 0.8f), Palette.WoodPale);
+            mb.Box(new Vector3(-2.4f, 1.15f, 0.7f), new Vector3(0.7f, 0.7f, 0.7f), Palette.Wood);
+            // A lantern on a post.
+            mb.Surf = SurfaceKind.WoodGrain;
+            mb.Box(new Vector3(2.8f, 1.1f, 0.3f), new Vector3(0.12f, 2.2f, 0.12f), Palette.WoodDark);
+            mb.Lit();
+            mb.Box(new Vector3(2.8f, 2.25f, 0.3f), new Vector3(0.25f, 0.3f, 0.25f), Palette.Window);
+            mb.Mat(0.15f);
+            return mb;
+        }
+
+        /// <summary>Where the raiders' tents stand around their fire (offsets from the camp centre).</summary>
+        public static readonly Vector3[] PirateTents = { new Vector3(-7, 0, 3), new Vector3(7, 0, 4), new Vector3(0, 0, 9), new Vector3(-9, 0, -5) };
+
+        /// <summary>Red Jack's camp: patched tents, a fire with a spit, rum barrels and a black flag on a pole.</summary>
+        public static MeshBuilder PirateCamp()
+        {
+            var mb = new MeshBuilder();
+            Campfire(mb);
+            for (int i = 0; i < PirateTents.Length; i++)
+            {
+                var t = PirateTents[i];
+                var c = i % 2 == 0 ? Palette.Hex(0xC9B48A) : Palette.Hex(0x9A4A3A);
+                mb.Push().Translate(t).RotateY(Mathf.Atan2(-t.x, -t.z) * Mathf.Rad2Deg);
+                Vector3 a = new Vector3(-1.7f, 0, -1.6f), b = new Vector3(1.7f, 0, -1.6f), ridge0 = new Vector3(0, 2.3f, -1.8f), ridge1 = new Vector3(0, 2.3f, 1.8f), c0 = new Vector3(-1.7f, 0, 1.6f), d0 = new Vector3(1.7f, 0, 1.6f);
+                mb.Quad(a, ridge0, ridge1, c0, c);
+                mb.Quad(d0, ridge1, ridge0, b, MeshBuilder.Darken(c, 0.85f));
+                mb.Tri(c0, ridge1, d0, MeshBuilder.Darken(c, 0.7f));
+                mb.Surf = SurfaceKind.WoodGrain;
+                mb.Cylinder(new Vector3(0, 0, 1.85f), new Vector3(0, 2.4f, 1.85f), 0.05f, 5, Palette.WoodDark);
+                mb.Surf = SurfaceKind.None;
+                mb.Pop();
+            }
+            // Barrels and a crate pile.
+            for (int i = 0; i < 5; i++)
+            {
+                mb.Push().Translate(new Vector3(4.5f + (i % 2) * 0.9f, 0, -3.5f + i * 0.5f));
+                mb.Surf = SurfaceKind.WoodGrain;
+                mb.Cylinder(Vector3.zero, new Vector3(0, 1f, 0), 0.4f, 0.4f, 9, Palette.Wood);
+                mb.Pop();
+            }
+            // The flag.
+            mb.Surf = SurfaceKind.WoodGrain;
+            mb.Cylinder(new Vector3(-3, 0, -2), new Vector3(-3, 7.5f, -2), 0.1f, 0.07f, 6, Palette.WoodDark);
+            mb.Surf = SurfaceKind.None;
+            mb.Quad(new Vector3(-3, 7.3f, -2), new Vector3(-0.9f, 7.1f, -2), new Vector3(-0.9f, 5.8f, -2), new Vector3(-3, 6.0f, -2), Palette.Hex(0x161616));
+            mb.Quad(new Vector3(-3, 6.0f, -2), new Vector3(-0.9f, 5.8f, -2), new Vector3(-0.9f, 7.1f, -2), new Vector3(-3, 7.3f, -2), Palette.Hex(0x161616));
+            mb.Sphere(new Vector3(-1.95f, 6.6f, -2.03f), new Vector3(0.22f, 0.24f, 0.02f), 6, Palette.White); // skull
+            return mb;
+        }
+
+        /// <summary>An old wooden jetty on piles, running out from the beach (along +Z).</summary>
+        public static MeshBuilder Pier(float length)
+        {
+            var mb = new MeshBuilder();
+            for (float z = -4; z < length; z += 0.55f)
+            {
+                mb.Surf = SurfaceKind.Planks;
+                var c = Color.Lerp(Palette.Hex(0xA88A62), Palette.Hex(0x8A6E4E), Hash(z, 3));
+                mb.Box(new Vector3(0, Island.PierDeck - 0.05f, z), new Vector3(3.2f, 0.1f, 0.5f), c);
+            }
+            mb.Surf = SurfaceKind.WoodGrain;
+            for (float z = 0; z <= length; z += 4f)
+                foreach (float x in new[] { -1.5f, 1.5f })
+                    mb.Cylinder(new Vector3(x, -4f, z), new Vector3(x, Island.PierDeck + (z % 8 == 0 ? 0.9f : 0.2f), z), 0.17f, 0.15f, 7, Palette.Hex(0x5E4632));
+            // A rowing boat tied up at the end, and a stack of lobster pots.
+            mb.Push().Translate(2.8f, 0.15f, length - 4).RotateY(8);
+            mb.Surf = SurfaceKind.Planks;
+            mb.Box(new Vector3(0, 0.25f, 0), new Vector3(1.3f, 0.5f, 3.6f), Palette.Hex(0x4E6A80));
+            mb.Box(new Vector3(0, 0.45f, 0), new Vector3(1.1f, 0.1f, 3.3f), Palette.WoodPale);
+            mb.Pop();
+            mb.Surf = SurfaceKind.None;
+            for (int i = 0; i < 3; i++) mb.Box(new Vector3(-0.9f, Island.PierDeck + 0.25f + i * 0.4f, length - 2.5f), new Vector3(0.7f, 0.4f, 0.5f), Tropic.Rope);
+            return mb;
+        }
+
         // ------------------------------------------------------------------ camp structures
 
         public static MeshBuilder Structure(string id)
@@ -413,6 +622,7 @@ namespace LastTide.Game
                 case "workbench": Workbench(mb); break;
                 case "raincatcher": RainCatcher(mb); break;
                 case "chest": Chest(mb); break;
+                case "radio": Radio(mb); break;
             }
             return mb;
         }
@@ -516,6 +726,26 @@ namespace LastTide.Game
             mb.Mat(0.9f);
             mb.Cylinder(new Vector3(0, 0.9f, 0), new Vector3(0, 0.98f, 0), 0.4f, 0.4f, 10, Tropic.Water);
             mb.Mat(0.15f);
+        }
+
+        /// <summary>The ship's radio set salvaged from the wreck, on a crate under a little palm-leaf awning, with a wire aerial.</summary>
+        static void Radio(MeshBuilder mb)
+        {
+            mb.Surf = SurfaceKind.Planks;
+            mb.Box(new Vector3(0, 0.45f, 0), new Vector3(1.2f, 0.9f, 0.8f), Palette.WoodPale);
+            mb.Surf = SurfaceKind.PaintedMetal;
+            mb.Box(new Vector3(0, 1.15f, 0), new Vector3(0.9f, 0.5f, 0.55f), Palette.Hex(0x3E4A3A));
+            mb.Lit();
+            mb.Box(new Vector3(-0.12f, 1.2f, -0.28f), new Vector3(0.45f, 0.18f, 0.02f), Palette.Hex(0xE8A040)); // dial
+            mb.Mat(0.15f);
+            foreach (float x in new[] { 0.25f, 0.36f }) mb.Cylinder(new Vector3(x, 1.08f, -0.28f), new Vector3(x, 1.08f, -0.32f), 0.05f, 8, Palette.Hex(0x222222));
+            mb.Surf = SurfaceKind.Bark;
+            mb.Cylinder(new Vector3(0.9f, 0, 0.4f), new Vector3(0.9f, 4.5f, 0.4f), 0.06f, 0.04f, 5, Palette.Hex(0x7A5A3A));
+            mb.Cylinder(new Vector3(0.9f, 4.5f, 0.4f), new Vector3(0.3f, 1.3f, 0.1f), 0.012f, 3, Tropic.Iron, false);
+            mb.Surf = SurfaceKind.None;
+            foreach (float x in new[] { -0.8f, 0.8f }) mb.Cylinder(new Vector3(x, 0, -0.6f), new Vector3(x, 2.1f, -0.6f), 0.05f, 5, Palette.Hex(0x7A5A3A));
+            mb.Quad(new Vector3(-1f, 2.1f, -0.8f), new Vector3(1f, 2.1f, -0.8f), new Vector3(1f, 1.9f, 0.7f), new Vector3(-1f, 1.9f, 0.7f), Tropic.FrondDry);
+            mb.Quad(new Vector3(-1f, 1.9f, 0.7f), new Vector3(1f, 1.9f, 0.7f), new Vector3(1f, 2.1f, -0.8f), new Vector3(-1f, 2.1f, -0.8f), MeshBuilder.Darken(Tropic.FrondDry, 0.7f));
         }
 
         static void Chest(MeshBuilder mb)
