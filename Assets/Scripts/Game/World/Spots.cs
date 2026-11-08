@@ -679,3 +679,101 @@ namespace LastTide.Game
         public override void Leave() { _t = 0; }
     }
 }
+
+namespace LastTide.Game
+{
+    /// <summary>A drowned sailor's sea bag washed up on the sand: open it to see what's inside and take what you want.</summary>
+    public sealed class LootSpot : Spot
+    {
+        public string Key;
+        GameObject _model;
+        float _t;
+        public override string Kind { get { return "lootbag"; } }
+        public override bool Active { get { return G.Session.Standing(Key, "lootbag"); } }
+        public override string Label { get { return "Sailor's bag"; } }
+        public override float Fill { get { return Mathf.Clamp01(_t / 0.8f); } }
+
+        public static LootSpot Create(Transform parent, string key, Vector3 pos, float yaw)
+        {
+            var go = new GameObject("Loot " + key);
+            go.transform.SetParent(parent, false);
+            go.transform.position = pos;
+            go.transform.rotation = Quaternion.Euler(0, yaw, 0);
+            var s = go.AddComponent<LootSpot>();
+            s.Key = key;
+            var mb = new MeshBuilder();
+            // A canvas sea bag lying on its side, its rope loose, a few things spilled.
+            mb.Surf = SurfaceKind.None;
+            mb.Sphere(new Vector3(0, 0.3f, 0), new Vector3(0.45f, 0.32f, 0.7f), 10, Palette.Hex(0xB8AA88));
+            mb.Cylinder(new Vector3(0, 0.3f, 0.62f), new Vector3(0, 0.3f, 0.82f), 0.16f, 0.08f, 8, Palette.Hex(0xA09070));
+            mb.Cylinder(new Vector3(0.05f, 0.32f, 0.78f), new Vector3(0.5f, 0.05f, 1.2f), 0.03f, 4, Tropic.Rope, false);
+            mb.Box(new Vector3(0.6f, 0.06f, 0.9f), new Vector3(0.3f, 0.1f, 0.2f), Palette.WoodPale);
+            mb.Cylinder(new Vector3(-0.5f, 0.05f, 0.8f), new Vector3(-0.5f, 0.3f, 0.8f), 0.07f, 6, Palette.Hex(0x2E6A3A));
+            s._model = mb.ToObject("Bag", go.transform);
+            s.MakeRing(1.6f);
+            return s;
+        }
+
+        public override Act Work(Player p, float dt)
+        {
+            _t += dt;
+            if (_t >= 0.8f) { Hud.Instance.OpenLoot(Key); return Act.None; }
+            return Act.Gather;
+        }
+
+        public override void Leave() { _t = 0; if (Hud.Instance != null) Hud.Instance.CloseLoot(Key); }
+
+        void Update() { bool on = Active; if (_model.activeSelf != on) _model.SetActive(on); }
+    }
+
+    /// <summary>Biscuit, waiting by his master's bag on Driftwood Shore until the castaway comes for him.</summary>
+    public sealed class PetSpot : Spot
+    {
+        CharacterArt _art;
+        float _t;
+        public override string Kind { get { return "pet"; } }
+        public override bool Active { get { return !G.Session.HasPet; } }
+        public override string Label { get { return "Biscuit"; } }
+        public override string Detail { get { return "The Gull's dog"; } }
+        public override float Fill { get { return Mathf.Clamp01(_t / 1.5f); } }
+
+        public static PetSpot Create(Transform parent, Vector3 pos)
+        {
+            var go = new GameObject("Stray dog");
+            go.transform.SetParent(parent, false);
+            go.transform.position = pos;
+            var s = go.AddComponent<PetSpot>();
+            s._art = CharacterArt.TryCreate("shiba", go.transform);
+            s.MakeRing(1.8f);
+            return s;
+        }
+
+        public override Act Work(Player p, float dt)
+        {
+            _t += dt;
+            if (_t >= 1.5f)
+            {
+                _t = 0;
+                G.Session.AdoptPet();
+                Sfx.Play("quest", Pos);
+                GameRoot.Instance.SpawnPet(transform.position);
+                gameObject.SetActive(false);
+            }
+            return Act.Gather;
+        }
+
+        public override void Leave() { _t = 0; }
+
+        void Update()
+        {
+            if (G.Session.HasPet) { gameObject.SetActive(false); return; }
+            if (_art != null) _art.Loop("Idle_2_HeadLow");
+            var pl = Player.Instance;
+            if (pl != null)
+            {
+                var d = pl.transform.position - transform.position; d.y = 0;
+                if (d.sqrMagnitude < 64 && d.sqrMagnitude > 0.1f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(d), Time.deltaTime * 3);
+            }
+        }
+    }
+}

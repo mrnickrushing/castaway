@@ -14,15 +14,15 @@ namespace LastTide.Game
         static readonly (string icon, string title, string text)[] HowTo =
         {
             ("person", "Moving", "Touch the left side of the screen and drag to walk. Let go to stop."),
-            ("pin", "Green rings", "Walk into a green ring and let go of the stick: your castaway chops, mines, gathers, builds or drinks there by themselves. An amber ring means you need a tool or room in your backpack."),
-            ("heart", "Staying alive", "Health, food and water run down. Eat and drink from the backpack, cook at the campfire, rest in the shelter. If health hits zero you pass out and your backpack stays where you fell."),
-            ("pack", "Backpack and crafting", "Pockets (the top row) stay with you when you pass out. CRAFT opens the blueprints: some things are made by hand, others at the campfire, workbench or furnace. Stand at a station to cook, smelt and upgrade it."),
+            ("pin", "Green rings", "Walk into a green ring and let go of the stick: your castaway chops, mines, gathers, builds or drinks there by themselves. An amber ring means you need a tool or room in your backpack. The hand button walks you to the nearest ring; sailors' bags open a loot window (TAKE ALL)."),
+            ("heart", "Staying alive", "Health, food and water run down. Eat and drink from the backpack, cook at the campfire, rest in the shelter. Nights are dark and animals hunt farther: stay by the fire or sneak. If health hits zero you pass out and your backpack stays where you fell."),
+            ("pack", "Backpack and crafting", "Pockets (the top row) stay with you when you pass out. CRAFT opens the blueprints: some things are made by hand, others at the campfire, workbench (wood into planks) or furnace. Stand at a station to cook, smelt and upgrade it."),
             ("build", "Building your base", "Story blueprints glow green: stand in their ring to build them. BUILD at camp lets you lay floors, walls, doors and windows on the grid, and add boxes, a bed, a furnace and more. Tap a piece in build mode to take it down."),
             ("map", "The map", "Take the raft on the beach (or the MAP button) to see the islands. RUN there for energy, or WALK for free and wait. Energy refills over time. Some islands need a higher level."),
             ("radio", "The radio", "Rebuild the ship's radio at camp and tune it in. Survivors call for help: bring them what they need to rescue them and move the story on."),
             ("coin", "Doubloons", "Earn doubloons from treasure, pirates, rescues and levelling up. Spend them at the trading post, to refill energy, to arrive at once or finish a craft. You can buy more in the shop."),
-            ("bolt", "Fighting", "Hold a weapon and your castaway fights anything that comes close. Wear clothes for armour. Red Jack's raiders hit hard."),
-            ("path", "Survivor's Path", "Every finished step of the guide pays a reward: claim it on the PATH screen. The Ultra pass adds a golden reward to every step."),
+            ("bolt", "Fighting", "With AUTO on your castaway fights anything that comes close; turn it off and tap the weapon button to strike, the target button to pick an enemy. Sneak (the crouching button) to slip past. Biscuit the dog fights at your side once you find him. Wear clothes for armour."),
+            ("path", "Survivor's Path", "Every finished step of the guide pays a reward: claim it on the PATH screen. The Ultra pass adds a golden reward to every step. LEVEL UP! under the quest card collects the gifts for each new level."),
         };
 
         void BuildHelp()
@@ -123,7 +123,7 @@ namespace LastTide.Game
             }));
             var credits = UIKit.Label("Credits", _helpBody,
                 "LAST TIDE  ·  a Rushing Technologies game\n" +
-                "3D models: Kenney (kenney.nl) Pirate, Survival and Nature kits, and Quaternius (quaternius.com) pirate characters, all CC0. " +
+                "3D models: Kenney (kenney.nl) Pirate, Survival and Nature kits, and Quaternius (quaternius.com) pirate characters and dog, all CC0. " +
                 "Castaway, boar and palm models, icons and paintings made for this game. Fonts: Barlow (SIL Open Font License).",
                 26, new Color(1, 1, 1, 0.6f), TextAnchor.UpperLeft, false);
             credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(1600, 200));

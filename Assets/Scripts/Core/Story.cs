@@ -61,6 +61,10 @@ namespace LastTide.Core
                 new StoryLine(You, "The Gull's raft held together. Lash on a sail and it'll carry me between the islands.", "home"),
                 new StoryLine(You, "There's land on every horizon. If anyone else made it ashore, they're out there.", "shore"),
             } } },
+            { "dog", new SceneDef { Id = "biscuit", Title = "Biscuit", Lines = new[] {
+                new StoryLine(You, "Barking, over on Driftwood Shore. Faint, but I'd know that bark anywhere.", "shore"),
+                new StoryLine(You, "Biscuit. The bosun's dog. If he made it ashore, he'll be hungry and scared. Let's bring him home.", "shore"),
+            } } },
             { "radio", new SceneDef { Id = "radio", Title = "The Ship's Radio", Lines = new[] {
                 new StoryLine(You, "The ship's radio. Waterlogged, but the valves look whole.", "home"),
                 new StoryLine(You, "Scrap for the casing, rope for an aerial, sailcloth to keep the rain off. Then we'll see who's listening.", "home"),

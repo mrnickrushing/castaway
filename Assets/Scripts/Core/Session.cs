@@ -119,7 +119,7 @@ namespace LastTide.Core
 
         // ------------------------------------------------------------------ gathering
 
-        NodeState Node(string key, bool create)
+        internal NodeState Node(string key, bool create)
         {
             foreach (var n in State.nodes) if (n.key == key) return n;
             if (!create) return null;

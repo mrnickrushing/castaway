@@ -119,7 +119,7 @@ for r in roots:
 
 if rigged and arm is not None:
     for act in bpy.data.actions:
-        parts = [p for p in act.name.split("|") if p and p != "CharacterArmature"]
+        parts = [p for p in act.name.split("|") if p and not p.endswith("Armature")]
         act.name = parts[0] if parts else act.name
     # Keep the armature's transform (applying scale to it would leave the animations' bone moves at the old size).
     for o in list(bpy.context.scene.objects):

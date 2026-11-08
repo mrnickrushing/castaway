@@ -49,6 +49,14 @@ namespace LastTide.Game
 
             PieceViews.Create(world);
 
+            // Drowned sailors' bags washed up around the wreck.
+            for (int k = 0; k < 3; k++)
+            {
+                var b = Find(q => Vector3.Distance(q, Island.Wreck) < 30 && Vector3.Distance(q, Island.Wreck) > 12 && Vector3.Distance(q, Island.Start) > 9 && Island.Distance01(q.x, q.z) > 0.8f, 4f, Island.Wreck + new Vector3(-16 + k * 6, 0, 10));
+                LootSpot.Create(nodes, _prefix + "lootbag#" + k, Island.Ground(b), k * 77);
+                Take(b, 4f);
+            }
+
             // The raft on the beach that takes the castaway out to the rest of the archipelago.
             var raftAt = Island.Start + new Vector3(-12, 0, -4);
             ExitSpot.Create(nodes, Island.Ground(raftAt), 200);
@@ -195,6 +203,14 @@ namespace LastTide.Game
                 }
 
             foreach (var (kind, n) in loc.Nodes) Place(nodes, kind, n);
+            // Bags of the drowned, and on Driftwood Shore the Gull's dog waiting beside his master's.
+            for (int k = 0; k < 3; k++)
+            {
+                var b = Find(q => Island.Distance01(q.x, q.z) < 0.9f && Vector3.Distance(q, Island.Camp) > 8, 6f, new Vector3(k * 7 - 7, 0, 0));
+                LootSpot.Create(nodes, _prefix + "lootbag#" + k, Island.Ground(b), k * 91);
+                Take(b, 5f);
+                if (k == 0 && loc.Biome == Biome.Shore) PetSpot.Create(nodes, Island.Ground(b + new Vector3(1.8f, 0, 0.6f)));
+            }
             Jungle(world, loc.Biome == Biome.Grove ? 50 : loc.Biome == Biome.Shore || loc.Biome == Biome.Pier ? 14 : 28, 0.45f);
             Undergrowth(world, 600);
 
@@ -541,13 +557,16 @@ namespace LastTide.Game
             _mat.SetFloat("_Pulse", 0.5f + 0.5f * Mathf.Sin(Time.time * 5));
         }
 
+        public static Vector3? GoalPosition(Vector3 from) { return Target(from); }
+
         /// <summary>The nearest working spot for the current guide step (a boar for the hunt).</summary>
         static Vector3? Target(Vector3 from)
         {
             var q = G.Session.CurrentQuest;
-            if (q.PointNode == "boar")
+            if (q.PointNode == "boar" || q.PointNode == "skeleton" || q.PointNode == "redjack")
             {
-                var b = Enemy.Nearest(from, 400f);
+                Enemy b = null; float eb = 400;
+                foreach (var e in Enemy.All) { if (!e.Alive || e.Kind != q.PointNode) continue; float d = Vector3.Distance(e.transform.position, from); if (d < eb) { eb = d; b = e; } }
                 return b != null ? b.transform.position : (Vector3?)null;
             }
             string kind = q.PointBuild ?? q.PointNode;

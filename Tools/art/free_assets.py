@@ -22,7 +22,7 @@ SRC = os.path.join(ROOT, "art-src", "free")
 UA = {"User-Agent": "Mozilla/5.0"}
 KITS = ["pirate-kit", "survival-kit", "nature-kit"]
 # Quaternius (CC0) on poly.pizza: model page id.
-CHARACTERS = {"henry": "yEdSk8tRKc", "anne": "tZYaOQ4l94", "mako": "2urczqZ9Xf", "sharky": "iPV5YmAoIv", "skeleton": "yq5ATpujSt"}
+CHARACTERS = {"shiba": "y4wdQpg767", "henry": "yEdSk8tRKc", "anne": "tZYaOQ4l94", "mako": "2urczqZ9Xf", "sharky": "iPV5YmAoIv", "skeleton": "yq5ATpujSt"}
 
 P, S, N = "pirate-kit/Models/GLB format/", "survival-kit/Models/GLB format/", "nature-kit/Models/GLTF format/"
 # id: (source, longest side in metres)
@@ -79,7 +79,7 @@ STATIC = {
     "lily": (N + "lily_large.glb", 1.2),
 }
 # Characters: height in metres.
-RIGGED = {"henry": 1.78, "anne": 1.68, "mako": 1.82, "sharky": 1.85, "skeleton": 1.8}
+RIGGED = {"shiba": 0.62, "henry": 1.78, "anne": 1.68, "mako": 1.82, "sharky": 1.85, "skeleton": 1.8}
 
 
 def get(url, path, headers=None):

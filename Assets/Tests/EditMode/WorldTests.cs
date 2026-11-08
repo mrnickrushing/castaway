@@ -19,7 +19,9 @@ namespace LastTide.Tests
             Assert.AreEqual(2, g.State.level);
             Assert.AreEqual(5, g.State.xp);
             Assert.AreEqual(1, ups);
-            Assert.AreEqual(5, g.State.coins, "a few doubloons per level");
+            Assert.AreEqual(1, g.LevelRewardsWaiting);
+            Assert.AreEqual(new System.Collections.Generic.List<int> { 2 }, g.ClaimLevelRewards());
+            Assert.AreEqual(7, g.State.coins, "a few doubloons per level, taken with LEVEL UP");
         }
 
         [Test]
