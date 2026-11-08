@@ -43,9 +43,9 @@ namespace LastTide.EditorTools
                 }
                 renderer.renderingMode = RenderingMode.ForwardPlus; // campfire and torch lights without per-object limits
                 EditorUtility.SetDirty(renderer);
-                // Sharp cascade reaches past the default camera distance (95 m); soft (PCF) edges so
+                // Two cascades over 50 m: the camera sits 11-32 m from the castaway, so shadows stay crisp; soft (PCF) edges so
                 // shadow outlines don't crawl as pixel stairs.
-                asset.shadowDistance = 200f;
+                asset.shadowDistance = 50f;
                 asset.shadowCascadeCount = 2;
                 asset.cascade2Split = 0.55f;
                 var so = new SerializedObject(asset);
@@ -55,6 +55,7 @@ namespace LastTide.EditorTools
                 asset.supportsHDR = true;
                 asset.renderScale = 1f;
                 asset.supportsCameraDepthTexture = true;
+                asset.supportsCameraOpaqueTexture = true;   // the sea refracts the sand and rocks under it
                 EditorUtility.SetDirty(asset);
 
                 GraphicsSettings.defaultRenderPipeline = asset;

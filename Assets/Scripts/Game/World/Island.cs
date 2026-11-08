@@ -170,6 +170,17 @@ namespace LastTide.Game
         public const float PierDeck = 0.95f;
         public static Vector3 Ground(float x, float z) { return Ground(new Vector3(x, 0, z)); }
 
+        static readonly float[] _gw = new float[6];
+
+        /// <summary>How grassy the ground is here (0 on sand, rock and the trodden camp, 1 in the meadows).</summary>
+        public static float GrassAmount(float x, float z)
+        {
+            float h = Height(x, z);
+            if (h < 0.4f) return 0;
+            Weights(x, z, h, Slope(x, z), _gw);
+            return _gw[0] + _gw[1] * 0.6f;
+        }
+
         /// <summary>Layer weights for LastTide/Terrain: grass, dry grass, dirt, sand, rock, gravel.</summary>
         static void Weights(float x, float z, float h, float slope, float[] w)
         {
@@ -183,8 +194,8 @@ namespace LastTide.Game
             float camp = Vector2.Distance(new Vector2(x, z), new Vector2(Camp.x, Camp.z));
             float dirt = Mathf.Clamp01((CampRadius * 0.75f - camp) / 6f) * (0.55f + 0.45f * n);
             float grass = 1 - sand;
-            w[0] = grass * (1 - dry * 0.6f);
-            w[1] = grass * dry * 0.6f;
+            w[0] = grass * (1 - dry * 0.45f);
+            w[1] = grass * dry * 0.45f;
             w[3] = sand;
             Blend(w, 2, dirt);
             Blend(w, 4, rock);

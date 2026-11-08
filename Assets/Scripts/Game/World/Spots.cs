@@ -101,6 +101,46 @@ namespace LastTide.Game
         static GameObject ArtFor(string kind, Transform parent, string key)
         {
             float h0 = Noise2.Hash(key.GetHashCode(), 3);
+            // Photoscanned plants, wood and stone (Poly Haven) for the gathering spots.
+            string[] scans = kind == "bush" ? new[] { "fern_02_a", "fern_02_c", "fern_02_b" }
+                : kind == "berrybush" ? new[] { "fern_02_c", "fern_02_a" }
+                : kind == "driftwood" ? new[] { "dry_branches_medium_01_a", "dry_branches_medium_01_b", "dry_branches_medium_01_c" }
+                : kind == "stones" ? new[] { "rock_moss_set_01_b", "rock_moss_set_01_d", "stone_01" } : null;
+            if (scans != null)
+            {
+                var pick = scans[(int)(h0 * scans.Length) % scans.Length];
+                if (ModelRegistry.Prefab(ModelRegistry.Scan, pick) != null)
+                {
+                    var hs = new GameObject("Model");
+                    hs.transform.SetParent(parent, false);
+                    var sa = ModelRegistry.Spawn(ModelRegistry.Scan, pick, hs.transform);
+                    sa.transform.localRotation = Quaternion.Euler(0, h0 * 360, 0);
+                    float sc = kind == "stones" ? 0.45f : kind == "driftwood" ? 0.9f : kind == "bush" ? 0.75f : 0.95f;
+                    sa.transform.localScale *= sc * (0.85f + Noise2.Hash(key.GetHashCode(), 5) * 0.3f);
+                    if (kind == "stones")
+                        for (int i = 0; i < 2; i++)
+                        {
+                            var extra = ModelRegistry.Spawn(ModelRegistry.Scan, scans[(i + 1 + (int)(h0 * 3)) % scans.Length], hs.transform);
+                            if (extra == null) continue;
+                            extra.transform.localPosition = new Vector3(i == 0 ? 0.6f : -0.5f, 0, i == 0 ? 0.3f : 0.4f);
+                            extra.transform.localRotation = Quaternion.Euler(0, i * 140 + h0 * 90, 0);
+                            extra.transform.localScale *= 0.3f;
+                        }
+                    if (kind == "berrybush")
+                    {
+                        // Ripe red berries in clusters on the shrub.
+                        var b = new MeshBuilder();
+                        b.Mat(0.6f, 0);
+                        for (int i = 0; i < 16; i++)
+                        {
+                            float ang = i * 2.4f, r = 0.25f + (i % 4) * 0.18f;
+                            b.Sphere(new Vector3(Mathf.Cos(ang) * r, 0.3f + (i % 5) * 0.09f, Mathf.Sin(ang) * r), Vector3.one * 0.06f, 6, new Color(0.7f, 0.05f, 0.08f));
+                        }
+                        b.ToObject("Berries", hs.transform);
+                    }
+                    return hs;
+                }
+            }
             string free = kind == "crate" ? "crate" : kind == "barrel" ? "barrel" : kind == "treasure" ? "chest"
                 : kind == "boulder" ? (h0 < 0.33f ? "rock_a" : h0 < 0.66f ? "rock_b" : "rock_c") : null;
             if (free != null && ModelRegistry.Has(ModelRegistry.Free, free))
@@ -392,7 +432,12 @@ namespace LastTide.Game
                 if (t >= 1) { _pop = 0; _built.transform.localScale = Vector3.one; }
             }
             if (_fire != null && _fire.gameObject.activeSelf)
-                _fire.intensity = 2.2f + Mathf.PerlinNoise(Time.time * 6, 0) * 1.2f;
+            {
+                // Brighter and wider after dark, when the fire is the camp's only light.
+                float night = DayNight.Instance != null ? DayNight.Instance.Night : 0;
+                _fire.intensity = (2.2f + Mathf.PerlinNoise(Time.time * 6, 0) * 1.2f) * (1 + night * 2.2f);
+                _fire.range = 9 + night * 5;
+            }
             base.LateUpdate();
         }
     }

@@ -34,9 +34,9 @@ Shader "LastTide/Terrain"
             float4 _MacroTex_ST;
         CBUFFER_END
         // Meters per texture tile for grass, dry grass, dirt, sand, rock, gravel.
-        static const float kTile[6] = { 7.0, 8.0, 4.0, 5.0, 9.0, 2.6 };
+        static const float kTile[6] = { 4.5, 4.0, 3.5, 5.0, 7.0, 3.0 };
         // Per layer color correction so the photo textures sit in the game's warm palette.
-        static const float3 kTint[6] = { float3(0.6, 1.05, 0.42), float3(0.85, 1.05, 0.5), float3(1.0, 0.95, 0.9), float3(1.05, 1.0, 0.95), float3(1.05, 0.95, 0.9), float3(1.0, 1.0, 1.0) };
+        static const float3 kTint[6] = { float3(0.95, 1.02, 0.9), float3(0.92, 1.0, 0.85), float3(1.0, 0.97, 0.92), float3(1.08, 1.04, 0.96), float3(1.0, 0.97, 0.94), float3(1.06, 1.03, 0.97) };
         ENDHLSL
 
         Pass
@@ -211,9 +211,9 @@ Shader "LastTide/Terrain"
                 float green = saturate((albedo.g - max(albedo.r, albedo.b)) * 10);
                 float m3 = SAMPLE_TEXTURE2D(_MacroTex, sampler_MacroTex, pos.xz * 0.011 + float2(0.61, 0.13)).r - 0.5;
                 float m4 = SAMPLE_TEXTURE2D(_MacroTex, sampler_MacroTex, pos.xz * 0.085 + float2(0.21, 0.77)).r - 0.5;
-                float3 cured = albedo * float3(1.25, 1.08, 0.6);
-                float3 lush = albedo * float3(0.62, 0.86, 0.6);
-                albedo = lerp(albedo, m3 > 0 ? cured : lush, saturate(abs(m3) * 2.8) * green * 0.9);
+                float3 cured = albedo * float3(1.1, 1.06, 0.82);   // sun-bleached
+                float3 lush = albedo * float3(0.66, 0.92, 0.7);     // deep tropical green
+                albedo = lerp(albedo, m3 > 0 ? cured : lush, saturate(abs(m3) * 2.8) * green * 0.75);
                 albedo *= 1 + m4 * 0.22 * green;
                 // Tufts and clumps: metre-scale light and dark mottling on the grass, readable from mid zoom, and a
                 // slightly darker, cooler shade in the hollows between them.
@@ -224,10 +224,10 @@ Shader "LastTide/Terrain"
                 // Big patches you can read from the top of the zoom: whole hillsides of yellow-green, deep green and olive.
                 float m5 = SAMPLE_TEXTURE2D(_MacroTex, sampler_MacroTex, pos.xz * 0.0032 + float2(0.43, 0.29)).r - 0.5;
                 float m6 = SAMPLE_TEXTURE2D(_MacroTex, sampler_MacroTex, pos.xz * 0.0071 + float2(0.17, 0.83)).r - 0.5;
-                float3 sunlit = albedo * float3(1.22, 1.12, 0.62);
-                float3 deep = albedo * float3(0.55, 0.78, 0.55);
+                float3 sunlit = albedo * float3(1.08, 1.08, 0.85);
+                float3 deep = albedo * float3(0.6, 0.85, 0.66);
                 albedo = lerp(albedo, m5 > 0 ? sunlit : deep, saturate(abs(m5) * 7) * green * 0.9);
-                albedo = lerp(albedo, albedo * float3(0.92, 0.86, 0.62), saturate(m6 * 6) * green * 0.65); // olive scrub
+                albedo = lerp(albedo, albedo * float3(0.95, 0.92, 0.78), saturate(m6 * 6) * green * 0.35); // drier scrub
                 float2 tuv = (pos.xz - _GroundTintRect.xy) * _GroundTintRect.zw;
                 float grassW = saturate((w[0] + w[1]) / max(wsum, 1e-3));
                 if (_GroundTintRect.z > 0) albedo *= lerp(float3(1, 1, 1), SAMPLE_TEXTURE2D(_GroundTint, sampler_GroundTint, tuv).rgb * 2, grassW);

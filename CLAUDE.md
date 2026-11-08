@@ -54,6 +54,19 @@ setting only.
   "gather:fish", "loot", "craft", "nightkill") with three milestones. Days turn at local midnight (`UtcOffsetSeconds`).
   Rewards include supply crates and gold chests (`OpenCrate`, the inventory's OPEN) and companions (`pet_<id>` items unlock
   `Season.Pets`; `Pet.FitHeight` sizes the free animal models by their skeleton). `Hud.ShowRewards` is the reward card.
+- Photoscanned art (Poly Haven + ambientCG, CC0, free): `Tools/art/polyhaven.py` packs the six terrain layers
+  (grass, leaf litter, dirt, sand, rock, pebbles; height maps normalised so the height blend stays soft) and imports
+  models through `Tools/blender/scan_import.py` (sets split into `<id>_a`, `_b`...; rocks/logs rebaked onto a clean
+  low-poly mesh; plants keep alpha leaf cards, two-sided; trees whose leaves are separate cards get thinned), then
+  `slim` (drop unused pieces, cap maps at 1024, normals to JPG). Output: `Resources/Models/Scan/<piece>.fbx` + `.json`
+  (one material slot per submesh) + `tex/`. `ModelRegistry.ScanFor` swaps kit models for scans everywhere; camp
+  structures are built from scans in `Models.ScanStructure` (sail lean-to from the ship's sailcloth, stone fire ring,
+  table with tools; `Span` lays a pole between two points whatever axis it was modelled along). `GrassField` draws
+  GPU-instanced grass clumps by `Island.GrassAmount`. Budgets: trees ~22k tris, rocks 1-4k, plants 1-3k; check
+  `UnityEditor.UnityStats.triangles` (about 1.2M at the default zoom) after adding art.
+- Look: ACES tonemapping, HDRI reflections (`Resources/Sky`), SSAO (radius 0.4), shadows to 50 m; the sea refracts
+  the opaque texture with depth absorption and caustics (`Water.shader`, needs URP opaque + depth textures). Never add
+  a negative lift to the grading: it crushes the night to black.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor
