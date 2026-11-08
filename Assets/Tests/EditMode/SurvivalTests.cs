@@ -109,9 +109,12 @@ namespace LastTide.Tests
             var g = Fresh();
             bool died = false;
             g.Died += () => died = true;
-            g.Give("wood", 10);
+            g.Give("bandage", 1);                                   // pocket 0
+            for (int i = 1; i < Content.PocketSlots; i++) g.State.backpack[i].id = null;
+            Inventory.Add(g.State.backpack.GetRange(Content.PocketSlots, g.State.backpack.Count - Content.PocketSlots), "wood", 10);
             g.State.px = 5; g.State.pz = 7;
             g.Damage(500);
+            Assert.AreEqual(1, g.Count("bandage"), "pockets are kept");
             Assert.IsTrue(died);
             Assert.AreEqual(0, g.Count("wood"));
             Assert.IsNotNull(g.State.lostBag);
@@ -149,7 +152,11 @@ namespace LastTide.Tests
             Assert.AreEqual("campfire", g.CurrentQuest.Id, "delivering part of the wood doesn't step back");
             g.Deliver("campfire", 99);
             Assert.AreEqual("fiber", g.CurrentQuest.Id);
+            Assert.AreEqual(0, g.Count("coconut"), "rewards wait on the Survivor's Path");
+            int step = Quests.All.FindIndex(q => q.Id == "campfire");
+            Assert.IsTrue(g.Claim(step));
             Assert.AreEqual(2, g.Count("coconut"), "campfire reward");
+            Assert.IsFalse(g.Claim(step), "once");
         }
 
         [Test]

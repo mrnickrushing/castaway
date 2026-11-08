@@ -14,6 +14,43 @@ namespace LastTide.Game
         const float AttackRange = 2.3f, AttackEvery = 0.8f;
 
         public Spot Current { get; private set; }
+        /// <summary>Crouched and quiet: slower, and animals notice you much later.</summary>
+        public bool Sneaking;
+        /// <summary>Swing at anything that comes close by yourself (off: only when the weapon button is pressed).</summary>
+        public bool AutoAttack = true;
+        bool _attackPressed;
+        Spot _walkTo;
+        Enemy _locked;
+        public float Cooldown01 { get { return Mathf.Clamp01(_cooldown / AttackEvery); } }
+        public Enemy Locked { get { return _locked != null && _locked.Alive ? _locked : null; } }
+
+        /// <summary>The weapon button: swing now (at the locked or nearest enemy).</summary>
+        public void Attack() { _attackPressed = true; }
+
+        /// <summary>The hand button: walk to the nearest thing to work on and get to it.</summary>
+        public void Interact()
+        {
+            Spot best = null; float bd = 12f;
+            foreach (var sp in Spot.All)
+            {
+                if (!sp.Active || sp.Blocked) continue;
+                float d = Vector3.Distance(sp.Pos, transform.position);
+                if (d < bd) { bd = d; best = sp; }
+            }
+            _walkTo = best;
+            if (best == null && Hud.Instance != null) Hud.Instance.Toast("Nothing to do nearby");
+        }
+
+        /// <summary>The target button: lock on to the next enemy in reach, nearest first.</summary>
+        public void CycleTarget()
+        {
+            var list = new System.Collections.Generic.List<Enemy>();
+            foreach (var e in Enemy.All) if (e.Alive && Vector3.Distance(e.transform.position, transform.position) < 14) list.Add(e);
+            list.Sort((a, b) => Vector3.Distance(a.transform.position, transform.position).CompareTo(Vector3.Distance(b.transform.position, transform.position)));
+            if (list.Count == 0) { _locked = null; return; }
+            int i = _locked != null ? list.IndexOf(_locked) : -1;
+            _locked = list[(i + 1) % list.Count];
+        }
         public Vector3 Velocity { get; private set; }
         public bool Working { get; private set; }
 
@@ -51,13 +88,21 @@ namespace LastTide.Game
 #endif
             if (Hud.Instance != null && Hud.Instance.Blocking) input = Vector2.zero;
 
+            // The hand button walks to its target until the stick takes over.
+            if (input.sqrMagnitude > 0.01f) _walkTo = null;
+            if (_walkTo != null)
+            {
+                var to = _walkTo.Pos - transform.position; to.y = 0;
+                if (!_walkTo.Active || to.magnitude < _walkTo.Radius * 0.6f) _walkTo = null;
+                else { var n = to.normalized; input = new Vector2(n.x, n.z); }
+            }
             // Move: camera-relative (the camera looks north).
             var want = new Vector3(input.x, 0, input.y);
             float mag = Mathf.Clamp01(want.magnitude);
             var pos = transform.position;
             if (mag > 0.05f)
             {
-                var step = want.normalized * Speed * mag * dt;
+                var step = want.normalized * Speed * (Sneaking ? 0.55f : 1f) * mag * dt;
                 var next = Move(pos, step);
                 Velocity = (next - pos) / Mathf.Max(dt, 1e-4f);
                 pos = next;
@@ -72,7 +117,9 @@ namespace LastTide.Game
 
             // Fight first: anything hostile in reach gets hit.
             _cooldown -= dt;
-            _target = Enemy.Nearest(pos, AttackRange);
+            _target = Locked != null && Vector3.Distance(Locked.transform.position, pos) < AttackRange ? Locked : Enemy.Nearest(pos, AttackRange);
+            bool swingNow = _attackPressed || AutoAttack;
+            _attackPressed = false;
             if (_swing >= 0)
             {
                 _swing += dt / 0.45f;
@@ -87,7 +134,7 @@ namespace LastTide.Game
                 }
                 if (_swing >= 1) _swing = -1;
             }
-            else if (_target != null && _cooldown <= 0 && mag < 0.95f)
+            else if (_target != null && _cooldown <= 0 && mag < 0.95f && swingNow)
             {
                 _swing = 0; _struck = false; _cooldown = AttackEvery;
                 Sfx.Play("swing", pos, 0.6f);
@@ -116,9 +163,11 @@ namespace LastTide.Game
             // The tool in hand: what we're using, else the weapon.
             string held = _act == Act.Chop ? s.ToolFor(ToolUse.Chop) >= 0 ? s.State.backpack[s.ToolFor(ToolUse.Chop)].id : null
                 : _act == Act.Mine ? s.ToolFor(ToolUse.Mine) >= 0 ? s.State.backpack[s.ToolFor(ToolUse.Mine)].id : null
-                : _act == Act.Gather || _act == Act.Build || _act == Act.Drink || _act == Act.Rest ? null
+                : _act == Act.Build ? "hammer"
+                : _act == Act.Gather || _act == Act.Drink || _act == Act.Rest ? null
                 : s.WeaponId;
             _rig.Hold(held);
+            if (_rig is SurvivorArt art) art.Sneak = Sneaking && _act == Act.None;
             _rig.Pose(_walk, _move, _act, _actPhase, _swing);
 
             if (_hurt > 0) _hurt -= dt;

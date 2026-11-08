@@ -11,6 +11,8 @@ namespace LastTide.Game
         Vector3 _focus;
         public float Distance = 17f;
         public float Pitch = 52f;
+        /// <summary>When set, the camera looks here instead of at the castaway (build mode follows the ghost).</summary>
+        public Vector3? Focus;
         const float MinDist = 11f, MaxDist = 32f;
 
         public static CameraRig Create(Transform target)
@@ -49,7 +51,7 @@ namespace LastTide.Game
             if (_target == null) return;
             // Lead the castaway a little in the direction they're walking.
             var lead = Player.Instance != null ? Player.Instance.Velocity * 0.25f : Vector3.zero;
-            _focus = Vector3.Lerp(_focus, _target.position + lead, 1 - Mathf.Exp(-Time.deltaTime * 5f));
+            _focus = Vector3.Lerp(_focus, Focus ?? (_target.position + lead), 1 - Mathf.Exp(-Time.deltaTime * 5f));
             if (Input.touchCount == 2)
             {
                 var a = Input.GetTouch(0); var b = Input.GetTouch(1);

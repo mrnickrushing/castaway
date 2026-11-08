@@ -25,13 +25,12 @@ namespace LastTide.Core
         public void AddXp(int n)
         {
             if (n <= 0) return;
+            AddSeasonPoints(n);
             State.xp += n;
             while (State.xp >= XpToNext(State.level))
             {
                 State.xp -= XpToNext(State.level);
                 State.level++;
-                State.coins += 5;
-                State.energy = Math.Min(World.EnergyMax, State.energy + 20);
                 Toast?.Invoke("Level " + State.level + "!");
                 LevelUp?.Invoke(State.level);
                 CheckQuests();
