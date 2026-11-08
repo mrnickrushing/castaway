@@ -167,7 +167,15 @@ namespace LastTide.Game
                 decor.Pop();
             }
             decor.ToObject("Undergrowth", world, false);
-            GrassField.Build(world, 1.6f, 7);
+            var grass = GrassField.Build(world, 1.6f, 7);
+            if (grass != null)
+                foreach (var piece in G.Session.State.pieces)
+                {
+                    if (Content.Pieces[piece.id].Kind == PieceKind.Edge) continue;
+                    Vector3 at; Quaternion turn;
+                    CampGrid.Pose(piece, out at, out turn);
+                    grass.ClearAround(at, Content.CellSize * 0.75f);
+                }
 
             // Enemy dens in the jungle north of camp.
             var dens = new GameObject("Boars").AddComponent<Dens>();

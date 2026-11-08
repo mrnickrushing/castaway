@@ -67,6 +67,11 @@ setting only.
 - Look: ACES tonemapping, HDRI reflections (`Resources/Sky`), SSAO (radius 0.4), shadows to 50 m; the sea refracts
   the opaque texture with depth absorption and caustics (`Water.shader`, needs URP opaque + depth textures). Never add
   a negative lift to the grading: it crushes the night to black.
+- Building animations (`World/BuildAnim.cs`): `Assembly` drops a camp structure's parts in, in child order, as
+  deliveries pay for them (`SiteSpot`), inside a driftwood scaffold (`Models.Pole`) that topples when it's done; the
+  ghost outlines only the parts still to come. Build-mode pieces play `Appear` (floors settle, walls rise with hammer
+  taps, objects drop and squash) and `Crumble` when taken down; `BuildFx` has dust, chips, sparks and the busy look of
+  a station with a craft running. Build a structure's parts in the order they'd go up (poles before the ridge).
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

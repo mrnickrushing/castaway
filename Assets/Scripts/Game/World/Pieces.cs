@@ -252,6 +252,17 @@ namespace LastTide.Game
         }
 
         protected override void OnDisable() { base.OnDisable(); Obstacles.Remove(this); }
+
+        float _work;
+
+        void Update()
+        {
+            // A station built in build mode (the furnace) shows its work while a job runs.
+            var st = Def.Station;
+            if (st == null || G.Session.Job(st) == null) return;
+            _work -= Time.deltaTime;
+            if (_work <= 0) { _work = Random.Range(0.5f, 0.85f); BuildFx.Working(st, transform.position); }
+        }
     }
 
     /// <summary>Keeps a <see cref="PieceView"/> for every built piece (built when the home island is).</summary>
@@ -273,14 +284,39 @@ namespace LastTide.Game
 
         void OnDestroy() { if (G.Session != null) G.Session.Changed -= Sync; if (Instance == this) Instance = null; }
 
+        bool _ready;
+
         public void Sync()
         {
             var live = G.Session.State.pieces;
             foreach (var p in live)
-                if (!_views.ContainsKey(p)) _views[p] = PieceView.Create(transform, p);
+                if (!_views.ContainsKey(p))
+                {
+                    var v = PieceView.Create(transform, p);
+                    _views[p] = v;
+                    // No grass growing up through floors and boxes.
+                    if (GrassField.Instance != null && Content.Pieces[p.id].Kind != PieceKind.Edge)
+                        GrassField.Instance.ClearAround(v.transform.position, Content.CellSize * 0.75f);
+                    // Pieces placed now (not the ones loaded with the island) are built before your eyes.
+                    if (_ready && v.transform.childCount > 0)
+                    {
+                        var kind = Content.Pieces[p.id].Kind;
+                        Appear.Play(v.transform.GetChild(0), kind == PieceKind.Floor ? Appear.Style.Floor : kind == PieceKind.Edge ? Appear.Style.Wall : Appear.Style.Drop);
+                    }
+                }
             var gone = new List<PieceState>();
             foreach (var kv in _views) if (!live.Contains(kv.Key)) gone.Add(kv.Key);
-            foreach (var p in gone) { if (_views[p] != null) Destroy(_views[p].gameObject); _views.Remove(p); }
+            foreach (var p in gone)
+            {
+                var v = _views[p];
+                _views.Remove(p);
+                if (v == null) continue;
+                // Taken down: it stops blocking the way at once, then tips over and breaks up.
+                Obstacles.Remove(v);
+                v.enabled = false;
+                Crumble.Play(v.gameObject);
+            }
+            _ready = true;
         }
 
         public PieceState At(Vector3 world, float r)
