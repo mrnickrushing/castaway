@@ -223,6 +223,8 @@ namespace LastTide.Game
         {
             var shelter = G.Session.AtHome && G.Session.IsBuilt("shelter");
             var p = shelter ? WorldBuilder.SitePosition("shelter") + new Vector3(0, 0, -2.6f) : Island.Start;
+            var bed = G.Session.AtHome ? G.Session.Bed : null;
+            if (bed != null) { Quaternion r; CampGrid.Pose(bed, out p, out r); p += r * new Vector3(1.6f, 0, 0); }
             Player.Instance.Place(p, 0);
             Save();
             if (G.Session.State.lostBag != null)

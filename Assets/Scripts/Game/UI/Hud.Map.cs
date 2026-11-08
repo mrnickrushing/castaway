@@ -346,7 +346,7 @@ namespace LastTide.Game
             // Taps on the map choose an island.
             Vector2 tap;
             bool overUi = OverUI(Input.touchCount > 0 ? Input.GetTouch(0).fingerId : -1);
-            if (map.UpdateInput(overUi || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null, out tap))
+            if (map.UpdateInput(overUi || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || InvOpen, out tap))
             {
                 LocationDef best = null;
                 float bd = 160 / Scale;

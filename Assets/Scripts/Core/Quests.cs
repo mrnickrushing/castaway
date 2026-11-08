@@ -12,6 +12,8 @@ namespace LastTide.Core
         public int Need;
         public string PointNode, PointBuild; // what the guide arrow points at
         public ItemCount[] Reward = new ItemCount[0];
+        /// <summary>The Ultra track's reward for this step (Survivor's Path).</summary>
+        public ItemCount[] Premium = new ItemCount[0];
 
         public string Label(Session s)
         {
@@ -33,7 +35,7 @@ namespace LastTide.Core
             Q("shelter", "Build a palm shelter", s => s.Built("shelter"), build: "shelter", reward: new[] { Content.I("bandage", 1) }),
             Count("scrap", "Salvage ship scrap from the wreck", "scrap", 4, "workbench", node: "crate"),
             Q("workbench", "Build a workbench", s => s.Built("workbench"), build: "workbench"),
-            Q("spear", "Craft a bamboo spear at the workbench", s => s.Has("spear") || s.Has("club") || s.State.kills > 0, build: "workbench"),
+            Q("spear", "Craft a bamboo spear (Blueprints)", s => s.Has("spear") || s.Has("club") || s.State.kills > 0, build: "workbench"),
             Q("hunt", "Hunt a wild boar in the jungle", s => s.State.kills > 0, node: "boar", reward: new[] { Content.I("bandage", 1) }),
             Q("cook", "Roast meat on the campfire", s => s.Flag("cooked"), build: "campfire"),
             Q("rain", "Build a rain catcher", s => s.Built("raincatcher"), build: "raincatcher", reward: new[] { Content.I("water", 2) }),
@@ -51,6 +53,23 @@ namespace LastTide.Core
             Q("sail", "Board Red Jack's ship and sail on the Last Tide", s => s.Flag("ending"), node: "ship"),
             Q("free", "Captain of the islands: explore, build and survive", s => false),
         };
+
+        /// <summary>Every step pays something on the free track and more on the Ultra track.</summary>
+        static Quests()
+        {
+            var ultra = new[]
+            {
+                new[] { Content.I("meat", 3), Content.I("water", 3) }, new[] { Content.I("bandage", 2) }, new[] { Content.I("rope", 4) },
+                new[] { Content.I("doubloon", 25) }, new[] { Content.I("nails", 8) }, new[] { Content.I("iron_bar", 2) },
+                new[] { Content.I("hide_vest", 1) }, new[] { Content.I("doubloon", 40) }, new[] { Content.I("stew", 2) },
+            };
+            for (int i = 0; i < All.Count; i++)
+            {
+                var q = All[i];
+                if (q.Reward.Length == 0) q.Reward = new[] { Content.I("doubloon", 5 + i) };
+                q.Premium = ultra[i % ultra.Length];
+            }
+        }
 
         static Quest Q(string id, string text, Func<Session, bool> done, string node = null, string build = null, ItemCount[] reward = null)
         {

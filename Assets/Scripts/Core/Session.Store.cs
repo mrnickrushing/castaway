@@ -40,7 +40,9 @@ namespace LastTide.Core
             new ProductDef { Id = "lasttide.starter", Name = "Castaway Starter Pack", Blurb = "300 doubloons, a full meal, medicine, rope and a bamboo spear. Once only.", FallbackPrice = "$1.99",
                 Coins = 300, Energy = 100, Consumable = false, Art = "offer_starter",
                 Items = new[] { Content.I("spear", 1), Content.I("bandage", 5), Content.I("meat", 6), Content.I("water", 6), Content.I("rope", 6) } },
-            new ProductDef { Id = "lasttide.bigpack", Name = "Sailor's Big Backpack", Blurb = "8 more backpack slots, for good.", FallbackPrice = "$2.99", Consumable = false, Perk = "bigpack", Art = "pack" },
+            new ProductDef { Id = "lasttide.bigpack", Name = "Sailor's Big Backpack", Blurb = "10 more backpack slots, for good.", FallbackPrice = "$2.99", Consumable = false, Perk = "bigpack", Art = "pack" },
+            new ProductDef { Id = "lasttide.ultra", Name = "Survivor's Path: Ultra", Blurb = "Unlocks the golden Ultra rewards on every step of the Survivor's Path, past and future.", FallbackPrice = "$4.99",
+                Consumable = false, Perk = "ultra", Art = "keyart" },
             new ProductDef { Id = "lasttide.captain", Name = "Captain's Chest", Blurb = "3,500 doubloons, a pirate cutlass and an iron harpoon.", FallbackPrice = "$19.99",
                 Coins = 3500, Energy = 200, Art = "offer_builder", Items = new[] { Content.I("cutlass", 1), Content.I("harpoon", 1) } },
         };
@@ -52,7 +54,7 @@ namespace LastTide.Core
     public sealed partial class Session
     {
         public const int RefillEnergyCost = 40, RushCraftCost = 5, RecoverBagCost = 15;
-        public const int BigPackSlots = 8;
+        public const int BigPackSlots = 10;
 
         public bool Owns(string productId) { return Flag("owned_" + productId); }
         public bool HasPendingPurchases { get { return State.pendingPurchases.Count > 0; } }

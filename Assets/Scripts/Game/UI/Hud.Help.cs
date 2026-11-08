@@ -16,11 +16,13 @@ namespace LastTide.Game
             ("person", "Moving", "Touch the left side of the screen and drag to walk. Let go to stop."),
             ("pin", "Green rings", "Walk into a green ring and let go of the stick: your castaway chops, mines, gathers, builds or drinks there by themselves. An amber ring means you need a tool or room in your backpack."),
             ("heart", "Staying alive", "Health, food and water run down. Eat and drink from the backpack, cook at the campfire, rest in the shelter. If health hits zero you pass out and your backpack stays where you fell."),
-            ("pack", "Building and crafting", "Camp blueprints glow green. Stand in their ring with the materials in your backpack to build them. The workbench crafts tools and weapons, the campfire cooks."),
+            ("pack", "Backpack and crafting", "Pockets (the top row) stay with you when you pass out. CRAFT opens the blueprints: some things are made by hand, others at the campfire, workbench or furnace. Stand at a station to cook, smelt and upgrade it."),
+            ("build", "Building your base", "Story blueprints glow green: stand in their ring to build them. BUILD at camp lets you lay floors, walls, doors and windows on the grid, and add boxes, a bed, a furnace and more. Tap a piece in build mode to take it down."),
             ("map", "The map", "Take the raft on the beach (or the MAP button) to see the islands. RUN there for energy, or WALK for free and wait. Energy refills over time. Some islands need a higher level."),
             ("radio", "The radio", "Rebuild the ship's radio at camp and tune it in. Survivors call for help: bring them what they need to rescue them and move the story on."),
             ("coin", "Doubloons", "Earn doubloons from treasure, pirates, rescues and levelling up. Spend them at the trading post, to refill energy, to arrive at once or finish a craft. You can buy more in the shop."),
-            ("bolt", "Fighting", "Hold a weapon from the backpack and your castaway fights anything that comes close. Boars, crabs and snakes are only the start: Red Jack's raiders hit hard."),
+            ("bolt", "Fighting", "Hold a weapon and your castaway fights anything that comes close. Wear clothes for armour. Red Jack's raiders hit hard."),
+            ("path", "Survivor's Path", "Every finished step of the guide pays a reward: claim it on the PATH screen. The Ultra pass adds a golden reward to every step."),
         };
 
         void BuildHelp()
@@ -71,7 +73,7 @@ namespace LastTide.Game
                 var (icon, title, text) = HowTo[i];
                 int c = i % 2, r = i / 2;
                 var row = UIKit.Img("Row", _helpBody, UIKit.Round, new Color(1, 1, 1, 0.06f)).rectTransform;
-                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(c * 810, -r * 210), new Vector2(790, 196));
+                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(c * 810, -r * 172), new Vector2(790, 164));
                 var disc = UIKit.Img("Disc", row, UIKit.Circle, UIKit.Ink);
                 disc.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 0), new Vector2(110, 110));
                 var ic = UIKit.Img("Icon", disc.transform, UIKit.Symbol(icon), UIKit.Sand);
