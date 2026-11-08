@@ -641,6 +641,16 @@ namespace LastTide.Game
             return holder;
         }
 
+        /// <summary>A rough driftwood pole between two local points (scaffolding): a scanned branch, else a plain log.</summary>
+        public static GameObject Pole(Transform parent, Vector3 from, Vector3 to)
+        {
+            var go = Scan("dry_branches_medium_01_b", parent, Vector3.zero, 0);
+            if (go != null) { Span(go, parent, from, to); return go; }
+            var mb = new MeshBuilder();
+            mb.Cylinder(from, to, 0.07f, 0.06f, 6, Palette.Hex(0x8A6A48));
+            return mb.ToObject("Pole", parent);
+        }
+
         /// <summary>Lays a scanned pole or log (whatever axis it was modelled along) from one local point to another.</summary>
         static void Span(GameObject go, Transform space, Vector3 from, Vector3 to)
         {

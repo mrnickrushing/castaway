@@ -30,6 +30,7 @@ namespace LastTide.Game
             { "barrel", new[] { "wooden_barrels_01_d" } },
             { "chest", new[] { "treasure_chest" } },
             { "bucket", new[] { "wooden_bucket_01" } },
+            { "box", new[] { "wooden_crate_01" } },
             { "log", new[] { "dead_tree_trunk" } },
             { "stump", new[] { "tree_stump_01" } },
             { "bush_large", new[] { "shrub_04", "fern_02_a", "fern_02_c" } },
@@ -91,7 +92,8 @@ namespace LastTide.Game
         /// <summary>Instantiates the prefab (or returns null). Colliders inside art are removed; the game adds its own.</summary>
         public static GameObject Spawn(string category, string id, Transform parent)
         {
-            if (category == Free && Prefab(Free, id) == null) { var alt = ScanId(id, Vector3.zero); if (alt != null) { category = Scan; id = alt; } }
+            // A photoscanned stand-in wins over the kit model wherever there is one.
+            if (category == Free) { var alt = ScanId(id, Vector3.zero); if (alt != null) { category = Scan; id = alt; } }
             var prefab = Prefab(category, id);
             if (prefab == null) return null;
             var go = Object.Instantiate(prefab, parent, false);

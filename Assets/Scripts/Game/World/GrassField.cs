@@ -17,6 +17,25 @@ namespace LastTide.Game
         Material _mat;
         readonly Plane[] _planes = new Plane[6];
 
+        public static GrassField Instance { get; private set; }
+
+        /// <summary>Clears the grass under something built (a floor, a box), so it doesn't poke through.</summary>
+        public void ClearAround(Vector3 pos, float radius)
+        {
+            float r2 = radius * radius;
+            foreach (var c in _cells)
+            {
+                if (pos.x < c.Bounds.min.x - radius || pos.x > c.Bounds.max.x + radius || pos.z < c.Bounds.min.z - radius || pos.z > c.Bounds.max.z + radius) continue;
+                var keep = new List<Matrix4x4>(c.M.Length);
+                foreach (var m in c.M)
+                {
+                    float dx = m.m03 - pos.x, dz = m.m23 - pos.z;
+                    if (dx * dx + dz * dz > r2) keep.Add(m);
+                }
+                if (keep.Count != c.M.Length) c.M = keep.ToArray();
+            }
+        }
+
         public static GrassField Build(Transform parent, float density, int seed)
         {
             var mat = ModelRegistry.FirstMaterial("grass_medium_02_c");
@@ -24,6 +43,7 @@ namespace LastTide.Game
             var go = new GameObject("Grass");
             go.transform.SetParent(parent, false);
             var g = go.AddComponent<GrassField>();
+            Instance = g;
             // The scanned blades are pale and dry; a fresher green to match the island's grass.
             g._mat = new Material(mat) { name = "Grass", enableInstancing = true };
             g._mat.SetColor("_BaseColor", new Color(0.72f, 0.95f, 0.55f));
@@ -91,7 +111,7 @@ namespace LastTide.Game
             var camPos = cam.transform.position;
             foreach (var c in _cells)
             {
-                if ((c.Bounds.center - camPos).sqrMagnitude > 90 * 90) continue;
+                if (c.M.Length == 0 || (c.Bounds.center - camPos).sqrMagnitude > 90 * 90) continue;
                 if (!GeometryUtility.TestPlanesAABB(_planes, c.Bounds)) continue;
                 rp.worldBounds = c.Bounds;
                 Graphics.RenderMeshInstanced(rp, _mesh, 0, c.M);

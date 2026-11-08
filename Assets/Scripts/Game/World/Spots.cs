@@ -273,6 +273,7 @@ namespace LastTide.Game
             s._built = Models.StructureArt(id, go.transform) ?? Models.Structure(id).ToObject("Built", go.transform);
             s._built.name = "Built";
             s._ghost = Object.Instantiate(s._built, go.transform);
+            s._asm = Assembly.Attach(s._built);
             s._ghost.name = "Ghost";
             s._ghostMat = new Material(Shader.Find("LastTide/Ghost"));
             foreach (var r in s._ghost.GetComponentsInChildren<Renderer>())
@@ -305,6 +306,9 @@ namespace LastTide.Game
 
         float _obstacle;
         bool _wasBuilt;
+        Assembly _asm;
+        int _level = -1;
+        float _work;
 
         bool Visible
         {
@@ -322,12 +326,15 @@ namespace LastTide.Game
             if (!force && built == _wasBuilt) return;
             if (built && !_wasBuilt && !force)
             {
+                // The last parts cascade into place, the scaffold falls away, then it all settles with a puff.
+                _asm.SetProgress(1, true);
+                _asm.Scaffold(false);
                 Sfx.Play("built", Pos);
-                Burst.Play(Pos + Vector3.up * 0.5f);
-                _pop = 0.001f;
+                _pop = -_asm.Settling;
             }
+            else if (force) _asm.SetProgress(built ? 1 : G.Session.BuildProgress(Id), false);
             _wasBuilt = built;
-            _built.SetActive(built);
+            _built.SetActive(built || (Visible && G.Session.BuildProgress(Id) > 0));
             if (_fire != null) _fire.gameObject.SetActive(built);
             if (_flames != null) _flames.gameObject.SetActive(built);
             if (_smoke != null) _smoke.gameObject.SetActive(built);
@@ -422,8 +429,37 @@ namespace LastTide.Game
             Sync(false);
             bool vis = Visible;
             _ghost.SetActive(vis && !IsBuilt);
-            if (_ghost.activeSelf) _ghostMat.SetFloat("_Fill", G.Session.BuildProgress(Id));
-            if (_pop > 0)
+            if (_ghost.activeSelf)
+            {
+                // The blueprint outlines only what's still to come: the real parts replace it as they're built.
+                _ghostMat.SetFloat("_Fill", _asm.Parts > 1 ? 0 : G.Session.BuildProgress(Id));
+                if (_asm.Parts > 1 && _ghost.transform.childCount == _asm.Parts)
+                    for (int i = 0; i < _asm.Parts; i++) _ghost.transform.GetChild(i).gameObject.SetActive(i >= _asm.Shown);
+            }
+            if (!IsBuilt)
+            {
+                // Under construction: each delivery pays for the next part, dropped in from above inside a scaffold.
+                float prog = G.Session.BuildProgress(Id);
+                bool going = vis && prog > 0;
+                if (going && !_built.activeSelf) _built.SetActive(true);
+                _asm.SetProgress(prog, true);
+                _asm.Scaffold(going);
+            }
+            else
+            {
+                // A craft in progress: the station looks busy.
+                if (G.Session.Job(Id) != null) { _work -= Time.deltaTime; if (_work <= 0) { _work = Random.Range(0.55f, 0.9f); BuildFx.Working(Id, Pos); } }
+                // An upgrade (campfire or workbench level 2): a flourish of sparkles and a little bounce.
+                int lv = G.Session.Level(Id);
+                if (_level >= 0 && lv > _level) { _pop = 0.001f; Burst.Play(Pos + Vector3.up * 0.5f); Sfx.Play("levelup", Pos, 0.6f); }
+                _level = lv;
+            }
+            if (_pop < 0)
+            {
+                _pop += Time.deltaTime;
+                if (_pop >= 0) { _pop = 0.001f; Burst.Play(Pos + Vector3.up * 0.5f); BuildFx.Dust(Pos, 1.8f, 24); }
+            }
+            else if (_pop > 0)
             {
                 _pop += Time.deltaTime;
                 float t = Mathf.Clamp01(_pop / 0.45f);
