@@ -38,6 +38,11 @@ namespace LastTide.Game
             var ml = UIKit.Outlined(UIKit.Label("Label", map.transform, "MAP", 26, Color.white, TextAnchor.LowerCenter), 1.5f);
             ml.rectTransform.Fill(); ml.rectTransform.offsetMin = new Vector2(0, -30);
 
+            // Help, beside the map.
+            var help = UIKit.Button("Help", safe, "?", new Color(0.2f, 0.32f, 0.38f, 0.95f), () => OpenHelp(), 60);
+            help.GetComponent<Image>().sprite = UIKit.Circle; help.GetComponent<Image>().type = Image.Type.Simple;
+            ((RectTransform)help.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-190, -40), new Vector2(100, 100));
+
             _weaponSlot = UIKit.Img("Weapon", safe, UIKit.Circle, UIKit.Ink).rectTransform;
             _weaponSlot.Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-210, 50), new Vector2(110, 110));
         }
@@ -205,6 +210,9 @@ namespace LastTide.Game
                     var f = UIKit.Img("Fill", bar.transform, UIKit.Round, UIKit.Amber);
                     f.rectTransform.anchorMin = Vector2.zero; f.rectTransform.anchorMax = new Vector2(Mathf.Clamp01(t), 1);
                     f.rectTransform.offsetMin = f.rectTransform.offsetMax = Vector2.zero;
+                    bar.rectTransform.anchoredPosition = new Vector2(-14, 18);
+                    var rush = UIKit.Button("Rush", rt, "RUSH " + Session.RushCraftCost, new Color(0.8f, 0.62f, 0.12f), () => { if (s.RushCraft(station)) Sfx.Play("coin"); }, 22);
+                    ((RectTransform)rush.transform).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, -22), new Vector2(150, 36));
                 }
                 else
                 {

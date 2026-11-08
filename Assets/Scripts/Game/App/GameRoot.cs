@@ -111,6 +111,8 @@ namespace LastTide.Game
             Hud.Create();
             GuideArrow.Create(transform);
             Sfx.Init(transform);
+            Sfx.Muted = state.muted;
+            Store.Reconcile();
             G.Session.CheckQuests();
             // Closed the app mid-journey: open on the map to finish it.
             if (state.travel != null) Hud.Instance.OpenMap();
@@ -223,6 +225,27 @@ namespace LastTide.Game
             var p = shelter ? WorldBuilder.SitePosition("shelter") + new Vector3(0, 0, -2.6f) : Island.Start;
             Player.Instance.Place(p, 0);
             Save();
+            if (G.Session.State.lostBag != null)
+                Hud.Instance.Confirm("Recover your backpack?", "Everything you carried lies where you fell. Get it back right now for " + Session.RecoverBagCost + " doubloons, or walk back for it.", "RECOVER " + Session.RecoverBagCost,
+                    () => { if (G.Session.RecoverBag()) Sfx.Play("coin"); });
+        }
+
+        /// <summary>Starts again from a fresh save: tears the game down and boots it anew next frame.</summary>
+        public void Restart()
+        {
+            var boot = new GameObject("Restart").AddComponent<Restarter>();
+            if (Hud.Instance != null) Destroy(Hud.Instance.gameObject);
+            if (MapView.Instance != null) Destroy(MapView.Instance.gameObject);
+            if (CameraRig.Instance != null) Destroy(CameraRig.Instance.gameObject);
+            if (_world != null) Destroy(_world.gameObject);
+            Instance = null;
+            Destroy(gameObject);
+        }
+
+        sealed class Restarter : MonoBehaviour
+        {
+            int _frames;
+            void Update() { if (++_frames < 2) return; new GameObject("Last Tide").AddComponent<GameRoot>(); Destroy(gameObject); }
         }
 
         void OnApplicationPause(bool paused) { if (paused && G.Session != null) Save(); }

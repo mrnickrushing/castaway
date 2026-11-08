@@ -116,7 +116,8 @@ namespace LastTide.Game
             // The tool in hand: what we're using, else the weapon.
             string held = _act == Act.Chop ? s.ToolFor(ToolUse.Chop) >= 0 ? s.State.backpack[s.ToolFor(ToolUse.Chop)].id : null
                 : _act == Act.Mine ? s.ToolFor(ToolUse.Mine) >= 0 ? s.State.backpack[s.ToolFor(ToolUse.Mine)].id : null
-                : _act == Act.Gather || _act == Act.Build || _act == Act.Drink || _act == Act.Rest ? null
+                : _act == Act.Build ? "hammer"
+                : _act == Act.Gather || _act == Act.Drink || _act == Act.Rest ? null
                 : s.WeaponId;
             _rig.Hold(held);
             _rig.Pose(_walk, _move, _act, _actPhase, _swing);

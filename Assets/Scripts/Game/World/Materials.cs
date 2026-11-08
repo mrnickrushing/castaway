@@ -25,6 +25,21 @@ namespace LastTide.Game
             }
         }
 
+        static Material _kit;
+
+        /// <summary>The world material for free kit models and the Quaternius characters: vertex colours, matte, no
+        /// surface channel (those meshes don't carry one).</summary>
+        public static Material Kit
+        {
+            get
+            {
+                if (_kit != null) return _kit;
+                _kit = new Material(World) { name = "Kit" };
+                _kit.SetFloat("_KitSurface", 1);
+                return _kit;
+            }
+        }
+
         public static Material Terrain
         {
             get

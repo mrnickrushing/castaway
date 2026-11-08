@@ -9,7 +9,19 @@ namespace LastTide.Game
     /// </summary>
     public static class ModelRegistry
     {
-        public const string Props = "Props", Buildings = "Buildings", Animals = "Animals", People = "People";
+        public const string Props = "Props", Buildings = "Buildings", Animals = "Animals", People = "People", Free = "Free";
+
+        /// <summary>A free kit model (Resources/Models/Free/{id}) placed at a world position, turned and scaled; null if missing.</summary>
+        public static GameObject Free_(string id, Transform parent, Vector3 pos, float yaw = 0, float scale = 1)
+        {
+            var go = Spawn(Free, id, parent);
+            if (go == null) return null;
+            go.transform.position = pos;
+            go.transform.rotation = Quaternion.Euler(0, yaw, 0) * go.transform.rotation;
+            go.transform.localScale *= scale;
+            foreach (var r in go.GetComponentsInChildren<MeshRenderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            return go;
+        }
         static readonly Dictionary<string, GameObject> _cache = new Dictionary<string, GameObject>();
 
         public static GameObject Prefab(string category, string id)
@@ -35,6 +47,8 @@ namespace LastTide.Game
             go.name = id;
             foreach (var c in go.GetComponentsInChildren<Collider>()) Object.Destroy(c);
             var mat = Material(category, id);
+            // Free kit models and the Quaternius characters carry their colours in the vertices.
+            if (mat == null && (category == Free || category == People)) mat = Materials.Kit;
             if (mat != null)
                 foreach (var r in go.GetComponentsInChildren<Renderer>()) r.sharedMaterial = mat;
             return go;

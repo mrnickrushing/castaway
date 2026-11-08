@@ -83,7 +83,7 @@ namespace LastTide.Core
             new LocationDef { Id = "cave", Name = "Smuggler's Cave", Biome = Biome.Cave, Level = 10, MapX = 60, MapZ = -230, RunEnergy = 20, WalkSeconds = 540, Size = 55,
                 Blurb = "A sea cave behind a sandbar, where smugglers hid their goods. Some of it is still there. So are some of the smugglers.",
                 MainLoot = new[] { "gunpowder", "rum", "scrap", "iron_ore" }, PossibleLoot = new[] { "pearl", "cutlass", "nails", "doubloon" },
-                Nodes = new[] { ("crate", 8), ("barrel", 6), ("ironvein", 5), ("boulder", 6), ("treasure", 2) }, Enemies = new[] { ("pirate", 3), ("snake", 2) } },
+                Nodes = new[] { ("crate", 8), ("barrel", 6), ("ironvein", 5), ("boulder", 6), ("treasure", 2) }, Enemies = new[] { ("skeleton", 3), ("snake", 2) } },
             new LocationDef { Id = "pirates", Name = "Pirate Camp", Biome = Biome.PirateCamp, Level = 12, MapX = 300, MapZ = 150, RunEnergy = 26, WalkSeconds = 720, Size = 66,
                 Blurb = "Red Jack's raiders have made camp here. Their stores are full and their blades are sharp. Come armed, come fed.",
                 MainLoot = new[] { "rum", "gunpowder", "cutlass", "doubloon" }, PossibleLoot = new[] { "pearl", "nails", "iron_ore", "bandage" },
