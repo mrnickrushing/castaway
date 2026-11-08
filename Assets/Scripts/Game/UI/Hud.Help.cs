@@ -22,6 +22,7 @@ namespace LastTide.Game
             ("radio", "The radio", "Rebuild the ship's radio at camp and tune it in. Survivors call for help: bring them what they need to rescue them and move the story on."),
             ("coin", "Doubloons", "Earn doubloons from treasure, pirates, rescues and levelling up. Spend them at the trading post, to refill energy, to arrive at once or finish a craft. You can buy more in the shop."),
             ("bolt", "Fighting", "With AUTO on your castaway fights anything that comes close; turn it off and tap the weapon button to strike, the target button to pick an enemy. Sneak (the crouching button) to slip past. Biscuit the dog fights at your side once you find him. Wear clothes for armour."),
+            ("season", "Season and events", "The star-shield button at the top opens the season: everything that earns experience fills the season bar, and each level pays a free reward (premium pass: a second one, with companions). EVENTS shows the week's calendar: each event counts one thing, like boars hunted or wood gathered, and pays at three milestones."),
             ("path", "Survivor's Path", "Every finished step of the guide pays a reward: claim it on the PATH screen. The Ultra pass adds a golden reward to every step. LEVEL UP! under the quest card collects the gifts for each new level."),
         };
 
@@ -114,6 +115,14 @@ namespace LastTide.Game
             var s = G.Session;
             float y = 0;
             Setting(ref y, "Sound", s.State.muted ? "OFF" : "ON", () => { s.State.muted = !s.State.muted; Sfx.Muted = s.State.muted; RefreshHelp(); });
+            var pets = s.OwnedPets;
+            if (pets.Count > 1)
+                Setting(ref y, "Companion: " + s.ActivePet.Name, "CHANGE", () =>
+                {
+                    int i = pets.FindIndex(p => p.Id == s.ActivePet.Id);
+                    s.ChoosePet(pets[(i + 1) % pets.Count].Id);
+                    RefreshHelp();
+                });
             Setting(ref y, "Restore purchases", "RESTORE", RestorePurchases);
             Setting(ref y, "Shop", "OPEN", () => { _helpOpen = false; OpenShop(); });
             Setting(ref y, "Start a new game (erases this one)", "START OVER", () => Confirm("Start over?", "Your island, camp and backpack will be gone for good. Purchases stay with your Apple account and can be restored.", "START OVER", () =>

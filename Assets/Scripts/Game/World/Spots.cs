@@ -732,7 +732,7 @@ namespace LastTide.Game
         CharacterArt _art;
         float _t;
         public override string Kind { get { return "pet"; } }
-        public override bool Active { get { return !G.Session.HasPet; } }
+        public override bool Active { get { return !G.Session.FoundBiscuit; } }
         public override string Label { get { return "Biscuit"; } }
         public override string Detail { get { return "The Gull's dog"; } }
         public override float Fill { get { return Mathf.Clamp01(_t / 1.5f); } }
@@ -766,7 +766,7 @@ namespace LastTide.Game
 
         void Update()
         {
-            if (G.Session.HasPet) { gameObject.SetActive(false); return; }
+            if (G.Session.FoundBiscuit) { gameObject.SetActive(false); return; }
             if (_art != null) _art.Loop("Idle_2_HeadLow");
             var pl = Player.Instance;
             if (pl != null)

@@ -14,14 +14,34 @@ namespace LastTide.Game
         Enemy _target;
         float _bite, _bark;
 
-        public static Pet Create(Transform parent)
+        public string Model { get; private set; }
+
+        public static Pet Create(Transform parent, string model = "shiba")
         {
-            var go = new GameObject("Biscuit");
+            var go = new GameObject("Pet " + model);
             go.transform.SetParent(parent, false);
             var p = go.AddComponent<Pet>();
-            p._art = CharacterArt.TryCreate("shiba", go.transform);
+            p.Model = model;
+            p._art = CharacterArt.TryCreate(model, go.transform);
+            var def = Season.Pets.Find(d => d.Model == model);
+            if (p._art != null) FitHeight(p._art.gameObject, def != null ? def.Height : 0.6f);
             Instance = p;
             return p;
+        }
+
+        /// <summary>The free animals come in at odd scales: size one by its skeleton in the idle pose.</summary>
+        public static void FitHeight(GameObject art, float height)
+        {
+            var anim = art.GetComponent<Animation>();
+            if (anim != null) anim.Sample();
+            float lo = float.MaxValue, hi = float.MinValue;
+            foreach (var t in art.GetComponentsInChildren<Transform>())
+            {
+                if (t.GetComponent<Renderer>() != null || t == art.transform) continue;
+                lo = Mathf.Min(lo, t.position.y); hi = Mathf.Max(hi, t.position.y);
+            }
+            float h = (hi - lo) * 0.85f;
+            if (h > 0.01f) art.transform.localScale *= height / h;
         }
 
         public void Place(Vector3 at) { transform.position = Island.Ground(at); }

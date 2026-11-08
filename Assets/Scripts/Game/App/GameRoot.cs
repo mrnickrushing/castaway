@@ -92,7 +92,9 @@ namespace LastTide.Game
             foreach (var l in FindObjectsByType<Light>(FindObjectsSortMode.None)) Destroy(l.gameObject);
 
             var state = SaveSystem.Load() ?? GameState.New();
+            Session.UtcOffsetSeconds = (int)System.TimeZoneInfo.Local.GetUtcOffset(System.DateTime.Now).TotalSeconds;
             G.Session = new Session(state);
+            G.Session.PetChanged += OnPetChanged;
             G.Session.UpdateEnergy();
 
             Lighting();
@@ -105,7 +107,7 @@ namespace LastTide.Game
             }
             else player.Place(new Vector3(state.px, 0, state.pz), state.facing);
             CameraRig.Create(player.transform);
-            if (state.flags.Contains("pet")) SpawnPet(player.transform.position - player.transform.forward * 2);
+            if (G.Session.HasPet) SpawnPet(player.transform.position - player.transform.forward * 2);
             if (FindFirstObjectByType<EventSystem>() == null)
                 new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             MapView.Create();
@@ -137,8 +139,23 @@ namespace LastTide.Game
 
         public void SpawnPet(Vector3 at)
         {
-            if (Pet.Instance != null) return;
-            Pet.Create(transform).Place(at);
+            var want = G.Session.ActivePet;
+            if (Pet.Instance != null)
+            {
+                if (want != null && Pet.Instance.Model == want.Model) return;
+                at = Pet.Instance.transform.position;
+                Destroy(Pet.Instance.gameObject);
+            }
+            if (want == null) return;
+            Pet.Create(transform, want.Model).Place(at);
+        }
+
+        /// <summary>A new companion (season reward, or picked in settings): swap the one at heel.</summary>
+        void OnPetChanged()
+        {
+            if (OnMap || Player.Instance == null) return;
+            var p = Player.Instance.transform;
+            SpawnPet(p.position - p.forward * 2);
         }
 
         /// <summary>True while the map is up (the island is hidden and survival pauses).</summary>

@@ -47,6 +47,13 @@ setting only.
   rewards wait until claimed from LEVEL UP! (`ClaimLevelRewards`). HUD (LDoE style): name/health top-left, quest card
   with fold, radar minimap (`Hud.Minimap`), hand/weapon/target/sneak/AUTO buttons (`Hud.Panels`), XP bar at the bottom.
   The map is a parchment chart with ink sketches; water is cut smoothly where it ends (`MapView.BuildSea`).
+- Season and events (`Core/Season.cs` content and tuning, `Core/Session.Season.cs` rules, `UI/Hud.Season.cs`): four-week
+  seasons from `Season.EpochDay`; every XP point is a season point (plus three free daily takes); 30 levels, each with a free
+  and a premium reward (`lasttide.season` buys premium for the current season only). Events run on a 14-day cycle
+  (`EventDef.StartDay/Days`), each counting one stat through `Session.Tally` ("kill:boar", "kill:raider", "gather:wood",
+  "gather:fish", "loot", "craft", "nightkill") with three milestones. Days turn at local midnight (`UtcOffsetSeconds`).
+  Rewards include supply crates and gold chests (`OpenCrate`, the inventory's OPEN) and companions (`pet_<id>` items unlock
+  `Season.Pets`; `Pet.FitHeight` sizes the free animal models by their skeleton). `Hud.ShowRewards` is the reward card.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

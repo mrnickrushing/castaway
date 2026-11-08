@@ -59,7 +59,14 @@ namespace LastTide.Game
                 x -= 104;
             }
 
-            // Top right: gift, settings and the map.
+            // Top right: the season and events, gift, settings and the map.
+            var season = UIKit.Button("Season", safe, null, new Color(0.08f, 0.1f, 0.1f, 0.6f), () => OpenSeason());
+            season.GetComponent<Image>().sprite = UIKit.Circle; season.GetComponent<Image>().type = Image.Type.Simple;
+            var srt = (RectTransform)season.transform;
+            srt.Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-430, -20), new Vector2(96, 96));
+            var sring = UIKit.Img("Ring", srt, UIKit.RingSprite, new Color(1f, 0.8f, 0.3f, 0.9f)); sring.rectTransform.Fill(2);
+            var si = UIKit.Img("I", srt, UIKit.Symbol("season"), Color.white); si.rectTransform.Fill(18);
+            _seasonBadge = Badge(srt);
             var gift = UIKit.Button("Gift", safe, null, new Color(0, 0, 0, 0), OpenOffers);
             ((RectTransform)gift.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-330, -20), new Vector2(80, 80));
             var gi = UIKit.Img("I", gift.transform, UIKit.Symbol("gift"), Color.white); gi.rectTransform.Fill(8);
@@ -255,7 +262,9 @@ namespace LastTide.Game
             var s = G.Session;
             if (_sel < 0 || s.State.backpack[_sel].Empty) { Toast("Choose an item first"); return; }
             var d = Content.Item(s.State.backpack[_sel].id);
-            if (d != null && d.Gear != GearSlot.None) { if (s.PutOn(_sel)) Sfx.Play("click"); }
+            var crate = s.OpenCrate(_sel);
+            if (crate != null) { Sfx.Play("coin"); ShowRewards(d.Name.ToUpper(), crate); }
+            else if (d != null && d.Gear != GearSlot.None) { if (s.PutOn(_sel)) Sfx.Play("click"); }
             else if (s.Use(_sel)) Sfx.Play(d != null && (d.Kind == ItemKind.Food || d.Kind == ItemKind.Drink) ? "eat" : "click");
             if (s.State.backpack[_sel].Empty) _sel = -1;
         }
@@ -300,6 +309,7 @@ namespace LastTide.Game
             int claim = s.Claimable;
             _pathBadge.transform.parent.gameObject.SetActive(claim > 0);
             _pathBadge.text = claim > 9 ? "9+" : claim.ToString();
+            UpdateSeasonBadge();
         }
 
         // ------------------------------------------------------------------ the left: clothes, pockets, backpack
@@ -414,7 +424,7 @@ namespace LastTide.Game
             var blurb = UIKit.Label("Blurb", _invSide, d?.Blurb ?? "", 28, new Color(1, 1, 1, 0.75f), TextAnchor.UpperCenter, false);
             blurb.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -390), new Vector2(560, 160));
             string act = d == null ? null : d.Gear != GearSlot.None ? "WEAR" : d.Kind == ItemKind.Weapon || d.Kind == ItemKind.Tool ? (s.State.equipped == _sel ? "PUT AWAY" : "HOLD")
-                : d.Kind == ItemKind.Food || d.Kind == ItemKind.Drink ? "EAT" : d.Kind == ItemKind.Medical ? "USE" : null;
+                : d.Kind == ItemKind.Food || d.Kind == ItemKind.Drink ? "EAT" : d.Kind == ItemKind.Medical ? "USE" : d.Id == "supply_crate" || d.Id == "gold_chest" ? "OPEN" : null;
             if (act != null)
             {
                 var b = UIKit.Button("Act", _invSide, act, new Color(0.8f, 0.62f, 0.12f), UseSelected, 38);

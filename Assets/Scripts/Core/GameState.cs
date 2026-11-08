@@ -106,6 +106,11 @@ namespace LastTide.Core
         public List<PieceState> pieces = new List<PieceState>();
         public int levelsClaimed;           // level-up rewards taken
         public string name;                 // what the castaway is called (settings)
+        // Season pass and events (Session.Season).
+        public int seasonNo, seasonPts, seasonPremium, takesDay, takes;
+        public List<int> seasonFree = new List<int>(), seasonPrem = new List<int>();
+        public List<EventProgress> events = new List<EventProgress>();
+        public string pet;                  // companion at heel
 
         public static GameState New()
         {
@@ -134,6 +139,9 @@ namespace LastTide.Core
             if (gear == null) gear = new List<Slot>();
             while (gear.Count < 4) gear.Add(new Slot());
             if (pieces == null) pieces = new List<PieceState>();
+            if (seasonFree == null) seasonFree = new List<int>();
+            if (seasonPrem == null) seasonPrem = new List<int>();
+            if (events == null) events = new List<EventProgress>();
             foreach (var p in pieces) if (p.slots == null) p.slots = new List<Slot>();
             if (level < 1) level = 1;
             if (string.IsNullOrEmpty(location) || World.Location(location) == null) location = World.HomeId;

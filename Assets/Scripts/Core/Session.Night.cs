@@ -26,14 +26,17 @@ namespace LastTide.Core
 
         // ------------------------------------------------------------------ Biscuit
 
-        public bool HasPet { get { return Flag("pet"); } }
+        public bool HasPet { get { return ActivePet != null; } }
+        /// <summary>Biscuit has been found (his quest step).</summary>
+        public bool FoundBiscuit { get { return Flag("pet"); } }
         public const string PetName = "Biscuit";
         public const int PetDamage = 9;
 
         public void AdoptPet()
         {
-            if (HasPet) return;
+            if (FoundBiscuit) return;
             SetFlag("pet");
+            State.pet = "biscuit";
             Toast?.Invoke(PetName + " joins you!");
             AddXp(25);
             Changed?.Invoke();
@@ -82,7 +85,7 @@ namespace LastTide.Core
                 if (s.Empty) continue;
                 if (s.id == "doubloon") { Give("doubloon", s.n); got += s.n; s.Clear(); continue; }
                 int k = Inventory.Add(State.backpack, s.id, s.n, s.wear);
-                if (k > 0) Gained?.Invoke(s.id, k);
+                if (k > 0) { Gained?.Invoke(s.id, k); Tally("loot", k); }
                 s.n -= k; got += k;
                 if (s.n <= 0) s.Clear();
             }

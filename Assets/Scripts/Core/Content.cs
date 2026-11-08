@@ -208,6 +208,6 @@ namespace LastTide.Core
         }
 
         public static ItemDef Item(string id) { ItemDef d; return Items.TryGetValue(id, out d) ? d : null; }
-        public static string NameOf(string id) { var d = Item(id); return d != null ? d.Name : id; }
+        public static string NameOf(string id) { var d = Item(id); return d != null ? d.Name : id == "doubloon" ? "Doubloons" : id; }
     }
 }

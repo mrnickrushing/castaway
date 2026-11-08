@@ -59,6 +59,7 @@ namespace LastTide.Game
             BuildBlueprints();
             BuildBuildMode();
             BuildPath();
+            BuildSeason();
             BuildRadio();
             BuildOffers();
             BuildShop();
@@ -274,7 +275,7 @@ namespace LastTide.Game
         {
             Vector2 pos = Vector2.zero;
             bool down = false, began = false;
-            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _building || (InvOpen && _station != "radio")) { _finger = -2; Stick = Vector2.zero; return; }
+            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _seasonOpen || _rewardCard.gameObject.activeSelf || _building || (InvOpen && _station != "radio")) { _finger = -2; Stick = Vector2.zero; return; }
             if (Input.touchCount > 0)
             {
                 for (int i = 0; i < Input.touchCount; i++)
@@ -369,6 +370,7 @@ namespace LastTide.Game
                 if (_shopOpen) RefreshShop(); else _shop.gameObject.SetActive(false);
                 if (_bpOpen) RefreshBlueprints(); else _bp.gameObject.SetActive(false);
                 if (_pathOpen) RefreshPath(); else _path.gameObject.SetActive(false);
+                if (_seasonOpen) RefreshSeason(); else _season.gameObject.SetActive(false);
                 RefreshBuild();
                 if (_helpOpen) RefreshHelp(); else _help.gameObject.SetActive(false);
                 if (MapOpen) RefreshLocationPanel();

@@ -172,6 +172,12 @@ namespace LastTide.Game
                 case "arrow":
                     f = (u, v) => Poly(u, v, new[] { new Vector2(0.5f, 0.95f), new Vector2(0.85f, 0.1f), new Vector2(0.5f, 0.3f), new Vector2(0.15f, 0.1f) });
                     break;
+                case "season": // a shield with a star
+                    f = (u, v) => Poly(u, v, new[] { new Vector2(0.14f, 0.86f), new Vector2(0.5f, 0.95f), new Vector2(0.86f, 0.86f), new Vector2(0.82f, 0.4f), new Vector2(0.5f, 0.05f), new Vector2(0.18f, 0.4f) }) * (1 - Star(u, v, 0.5f, 0.52f, 0.24f, 0.1f) * 0.85f);
+                    break;
+                case "calendar":
+                    f = (u, v) => Mathf.Max(Box(u, v, 0.1f, 0.08f, 0.9f, 0.82f, 0.05f) * (1 - Box(u, v, 0.18f, 0.16f, 0.82f, 0.62f, 0.01f) * 0.85f) + Box(u, v, 0.28f, 0.44f, 0.72f, 0.5f, 0.0f) * 0.85f + Box(u, v, 0.28f, 0.28f, 0.6f, 0.34f, 0.0f) * 0.85f, Mathf.Max(Capsule(u, v, 0.3f, 0.76f, 0.3f, 0.94f, 0.05f), Capsule(u, v, 0.7f, 0.76f, 0.7f, 0.94f, 0.05f)));
+                    break;
                 case "lock":
                     f = (u, v) => Mathf.Max(Box(u, v, 0.2f, 0.08f, 0.8f, 0.55f, 0.06f), Mathf.Min(Disc(u, v, 0.5f, 0.6f, 0.26f), 1 - Disc(u, v, 0.5f, 0.6f, 0.16f)) * (v > 0.55f ? 1 : 0));
                     break;
@@ -183,6 +189,14 @@ namespace LastTide.Game
         }
 
         /// <summary>Coverage of a convex or simple polygon (even-odd rule) with a soft edge.</summary>
+        /// <summary>A five-pointed star (outer and inner radius).</summary>
+        static float Star(float u, float v, float cx, float cy, float ro, float ri)
+        {
+            var pts = new Vector2[10];
+            for (int i = 0; i < 10; i++) { float a = Mathf.PI / 2 + i * Mathf.PI / 5, r = i % 2 == 0 ? ro : ri; pts[i] = new Vector2(cx + Mathf.Cos(a) * r, cy + Mathf.Sin(a) * r); }
+            return Poly(u, v, pts);
+        }
+
         static float Poly(float u, float v, Vector2[] pts)
         {
             bool inside = false;
