@@ -63,7 +63,10 @@ namespace LastTide.Game
         public static void Play(string name) { Play(name, null, 1f); }
         public static void Play(string name, Vector3 at, float volume = 1f) { Play(name, (Vector3?)at, volume); }
 
-        static void Play(string name, Vector3? at, float volume)
+        /// <summary>A sound at a set pitch (hammer taps, thuds of timber settling).</summary>
+        public static void Play(string name, Vector3 at, float volume, float pitch) { Play(name, (Vector3?)at, volume, pitch); }
+
+        static void Play(string name, Vector3? at, float volume, float pitch = 0)
         {
             if (_pool == null || Muted) return;
             var clip = Clip(name);
@@ -72,7 +75,7 @@ namespace LastTide.Game
             var cam = CameraRig.Instance != null ? CameraRig.Instance.transform.position : Vector3.zero;
             s.transform.position = at ?? cam;
             s.spatialBlend = at.HasValue ? 0.55f : 0;
-            s.pitch = Random.Range(0.94f, 1.06f);
+            s.pitch = pitch > 0 ? pitch * Random.Range(0.97f, 1.03f) : Random.Range(0.94f, 1.06f);
             s.PlayOneShot(clip, volume);
         }
 

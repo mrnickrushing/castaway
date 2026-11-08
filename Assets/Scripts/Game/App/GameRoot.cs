@@ -195,7 +195,7 @@ namespace LastTide.Game
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
             sun.color = new Color(1f, 0.95f, 0.84f);
-            sun.intensity = 1.35f;
+            sun.intensity = 1.6f;
             sun.shadows = LightShadows.Soft;
             sun.shadowStrength = 0.75f;
             sun.transform.rotation = Quaternion.Euler(52, -35, 0);
@@ -206,6 +206,14 @@ namespace LastTide.Game
             RenderSettings.ambientSkyColor = new Color(0.62f, 0.74f, 0.86f);
             RenderSettings.ambientEquatorColor = new Color(0.58f, 0.62f, 0.55f);
             RenderSettings.ambientGroundColor = new Color(0.36f, 0.32f, 0.26f);
+            // Reflections of a real sky (Poly Haven HDRI) on the sea, wet rock, glass and metal.
+            var sky = Resources.Load<Cubemap>("Sky/sky_day");
+            if (sky != null)
+            {
+                RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
+                RenderSettings.customReflectionTexture = sky;
+                RenderSettings.reflectionIntensity = 0.85f;
+            }
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.fogColor = new Color(0.62f, 0.8f, 0.86f);
@@ -219,14 +227,24 @@ namespace LastTide.Game
             vol.isGlobal = true;
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             var tone = profile.Add<Tonemapping>(true);
-            tone.mode.Override(TonemappingMode.Neutral);
+            tone.mode.Override(TonemappingMode.ACES);
             var bloom = profile.Add<Bloom>(true);
-            bloom.intensity.Override(0.35f);
-            bloom.threshold.Override(1.05f);
+            bloom.intensity.Override(0.45f);
+            bloom.threshold.Override(1.0f);
+            bloom.scatter.Override(0.65f);
             var color = profile.Add<ColorAdjustments>(true);
-            color.saturation.Override(14f);
-            color.postExposure.Override(0.15f);
-            color.colorFilter.Override(new Color(1f, 0.98f, 0.94f));
+            color.saturation.Override(18f);
+            color.contrast.Override(14f);
+            color.postExposure.Override(0.45f);
+            color.colorFilter.Override(new Color(1f, 0.98f, 0.95f));
+            var wb = profile.Add<WhiteBalance>(true);
+            wb.temperature.Override(2f);
+            var lgg = profile.Add<LiftGammaGain>(true);
+            lgg.lift.Override(new Vector4(0.98f, 1f, 1.03f, 0f));       // cooler shadows (no darkening: it would crush the night)
+            lgg.gain.Override(new Vector4(1.02f, 1f, 0.98f, 0.02f));    // a little warmth in the highlights
+            var vig = profile.Add<Vignette>(true);
+            vig.intensity.Override(0.24f);
+            vig.smoothness.Override(0.45f);
             vol.profile = profile;
 #endif
         }

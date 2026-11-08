@@ -14,8 +14,8 @@ namespace LastTide.Game
         public float Night { get; private set; }   // 0 day .. 1 full night
 
         static readonly Color SunDay = new Color(1f, 0.95f, 0.84f), SunGold = new Color(1f, 0.68f, 0.4f), Moon = new Color(0.55f, 0.65f, 1f);
-        static readonly Color SkyDay = new Color(0.62f, 0.74f, 0.86f), SkyNight = new Color(0.07f, 0.1f, 0.24f);
-        static readonly Color EqDay = new Color(0.58f, 0.62f, 0.55f), EqNight = new Color(0.04f, 0.06f, 0.14f);
+        static readonly Color SkyDay = new Color(0.5f, 0.62f, 0.78f), SkyNight = new Color(0.2f, 0.28f, 0.55f);
+        static readonly Color EqDay = new Color(0.45f, 0.5f, 0.44f), EqNight = new Color(0.12f, 0.17f, 0.34f);
         static readonly Color GroundDay = new Color(0.36f, 0.32f, 0.26f), GroundNight = new Color(0.04f, 0.05f, 0.1f);
         static readonly Color FogDay = new Color(0.62f, 0.8f, 0.86f), FogDusk = new Color(0.86f, 0.6f, 0.5f), FogNight = new Color(0.05f, 0.08f, 0.16f);
 
@@ -34,7 +34,7 @@ namespace LastTide.Game
             d._grade.priority = 1;
             var prof = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>();
             var ca = prof.Add<UnityEngine.Rendering.Universal.ColorAdjustments>(true);
-            ca.postExposure.Override(-0.9f);
+            ca.postExposure.Override(-0.15f);
             ca.saturation.Override(-25f);
             ca.colorFilter.Override(new Color(0.62f, 0.75f, 1f));
             d._grade.profile = prof;
@@ -63,8 +63,8 @@ namespace LastTide.Game
             _sun.transform.rotation = Quaternion.Euler(elev, yaw, 0);
             var dayCol = Color.Lerp(SunDay, SunGold, Mathf.Clamp01(dusk));
             _sun.color = Color.Lerp(dayCol, Moon, night);
-            _sun.intensity = Mathf.Lerp(1.35f - dusk * 0.25f, 0.2f, night);
-            _sun.shadowStrength = Mathf.Lerp(0.75f, 0.45f, night);
+            _sun.intensity = Mathf.Lerp(1.75f - dusk * 0.3f, 0.85f, night);
+            _sun.shadowStrength = Mathf.Lerp(0.85f, 0.45f, night);
 
             RenderSettings.ambientSkyColor = Color.Lerp(Color.Lerp(SkyDay, new Color(0.8f, 0.6f, 0.55f), dusk * 0.5f), SkyNight, night);
             RenderSettings.ambientEquatorColor = Color.Lerp(EqDay, EqNight, night);

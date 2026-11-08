@@ -101,6 +101,46 @@ namespace LastTide.Game
         static GameObject ArtFor(string kind, Transform parent, string key)
         {
             float h0 = Noise2.Hash(key.GetHashCode(), 3);
+            // Photoscanned plants, wood and stone (Poly Haven) for the gathering spots.
+            string[] scans = kind == "bush" ? new[] { "fern_02_a", "fern_02_c", "fern_02_b" }
+                : kind == "berrybush" ? new[] { "fern_02_c", "fern_02_a" }
+                : kind == "driftwood" ? new[] { "dry_branches_medium_01_a", "dry_branches_medium_01_b", "dry_branches_medium_01_c" }
+                : kind == "stones" ? new[] { "rock_moss_set_01_b", "rock_moss_set_01_d", "stone_01" } : null;
+            if (scans != null)
+            {
+                var pick = scans[(int)(h0 * scans.Length) % scans.Length];
+                if (ModelRegistry.Prefab(ModelRegistry.Scan, pick) != null)
+                {
+                    var hs = new GameObject("Model");
+                    hs.transform.SetParent(parent, false);
+                    var sa = ModelRegistry.Spawn(ModelRegistry.Scan, pick, hs.transform);
+                    sa.transform.localRotation = Quaternion.Euler(0, h0 * 360, 0);
+                    float sc = kind == "stones" ? 0.45f : kind == "driftwood" ? 0.9f : kind == "bush" ? 0.75f : 0.95f;
+                    sa.transform.localScale *= sc * (0.85f + Noise2.Hash(key.GetHashCode(), 5) * 0.3f);
+                    if (kind == "stones")
+                        for (int i = 0; i < 2; i++)
+                        {
+                            var extra = ModelRegistry.Spawn(ModelRegistry.Scan, scans[(i + 1 + (int)(h0 * 3)) % scans.Length], hs.transform);
+                            if (extra == null) continue;
+                            extra.transform.localPosition = new Vector3(i == 0 ? 0.6f : -0.5f, 0, i == 0 ? 0.3f : 0.4f);
+                            extra.transform.localRotation = Quaternion.Euler(0, i * 140 + h0 * 90, 0);
+                            extra.transform.localScale *= 0.3f;
+                        }
+                    if (kind == "berrybush")
+                    {
+                        // Ripe red berries in clusters on the shrub.
+                        var b = new MeshBuilder();
+                        b.Mat(0.6f, 0);
+                        for (int i = 0; i < 16; i++)
+                        {
+                            float ang = i * 2.4f, r = 0.25f + (i % 4) * 0.18f;
+                            b.Sphere(new Vector3(Mathf.Cos(ang) * r, 0.3f + (i % 5) * 0.09f, Mathf.Sin(ang) * r), Vector3.one * 0.06f, 6, new Color(0.7f, 0.05f, 0.08f));
+                        }
+                        b.ToObject("Berries", hs.transform);
+                    }
+                    return hs;
+                }
+            }
             string free = kind == "crate" ? "crate" : kind == "barrel" ? "barrel" : kind == "treasure" ? "chest"
                 : kind == "boulder" ? (h0 < 0.33f ? "rock_a" : h0 < 0.66f ? "rock_b" : "rock_c") : null;
             if (free != null && ModelRegistry.Has(ModelRegistry.Free, free))
@@ -233,6 +273,7 @@ namespace LastTide.Game
             s._built = Models.StructureArt(id, go.transform) ?? Models.Structure(id).ToObject("Built", go.transform);
             s._built.name = "Built";
             s._ghost = Object.Instantiate(s._built, go.transform);
+            s._asm = Assembly.Attach(s._built);
             s._ghost.name = "Ghost";
             s._ghostMat = new Material(Shader.Find("LastTide/Ghost"));
             foreach (var r in s._ghost.GetComponentsInChildren<Renderer>())
@@ -265,6 +306,9 @@ namespace LastTide.Game
 
         float _obstacle;
         bool _wasBuilt;
+        Assembly _asm;
+        int _level = -1;
+        float _work;
 
         bool Visible
         {
@@ -282,12 +326,15 @@ namespace LastTide.Game
             if (!force && built == _wasBuilt) return;
             if (built && !_wasBuilt && !force)
             {
+                // The last parts cascade into place, the scaffold falls away, then it all settles with a puff.
+                _asm.SetProgress(1, true);
+                _asm.Scaffold(false);
                 Sfx.Play("built", Pos);
-                Burst.Play(Pos + Vector3.up * 0.5f);
-                _pop = 0.001f;
+                _pop = -_asm.Settling;
             }
+            else if (force) _asm.SetProgress(built ? 1 : G.Session.BuildProgress(Id), false);
             _wasBuilt = built;
-            _built.SetActive(built);
+            _built.SetActive(built || (Visible && G.Session.BuildProgress(Id) > 0));
             if (_fire != null) _fire.gameObject.SetActive(built);
             if (_flames != null) _flames.gameObject.SetActive(built);
             if (_smoke != null) _smoke.gameObject.SetActive(built);
@@ -382,8 +429,37 @@ namespace LastTide.Game
             Sync(false);
             bool vis = Visible;
             _ghost.SetActive(vis && !IsBuilt);
-            if (_ghost.activeSelf) _ghostMat.SetFloat("_Fill", G.Session.BuildProgress(Id));
-            if (_pop > 0)
+            if (_ghost.activeSelf)
+            {
+                // The blueprint outlines only what's still to come: the real parts replace it as they're built.
+                _ghostMat.SetFloat("_Fill", _asm.Parts > 1 ? 0 : G.Session.BuildProgress(Id));
+                if (_asm.Parts > 1 && _ghost.transform.childCount == _asm.Parts)
+                    for (int i = 0; i < _asm.Parts; i++) _ghost.transform.GetChild(i).gameObject.SetActive(i >= _asm.Shown);
+            }
+            if (!IsBuilt)
+            {
+                // Under construction: each delivery pays for the next part, dropped in from above inside a scaffold.
+                float prog = G.Session.BuildProgress(Id);
+                bool going = vis && prog > 0;
+                if (going && !_built.activeSelf) _built.SetActive(true);
+                _asm.SetProgress(prog, true);
+                _asm.Scaffold(going);
+            }
+            else
+            {
+                // A craft in progress: the station looks busy.
+                if (G.Session.Job(Id) != null) { _work -= Time.deltaTime; if (_work <= 0) { _work = Random.Range(0.55f, 0.9f); BuildFx.Working(Id, Pos); } }
+                // An upgrade (campfire or workbench level 2): a flourish of sparkles and a little bounce.
+                int lv = G.Session.Level(Id);
+                if (_level >= 0 && lv > _level) { _pop = 0.001f; Burst.Play(Pos + Vector3.up * 0.5f); Sfx.Play("levelup", Pos, 0.6f); }
+                _level = lv;
+            }
+            if (_pop < 0)
+            {
+                _pop += Time.deltaTime;
+                if (_pop >= 0) { _pop = 0.001f; Burst.Play(Pos + Vector3.up * 0.5f); BuildFx.Dust(Pos, 1.8f, 24); }
+            }
+            else if (_pop > 0)
             {
                 _pop += Time.deltaTime;
                 float t = Mathf.Clamp01(_pop / 0.45f);
@@ -392,7 +468,12 @@ namespace LastTide.Game
                 if (t >= 1) { _pop = 0; _built.transform.localScale = Vector3.one; }
             }
             if (_fire != null && _fire.gameObject.activeSelf)
-                _fire.intensity = 2.2f + Mathf.PerlinNoise(Time.time * 6, 0) * 1.2f;
+            {
+                // Brighter and wider after dark, when the fire is the camp's only light.
+                float night = DayNight.Instance != null ? DayNight.Instance.Night : 0;
+                _fire.intensity = (2.2f + Mathf.PerlinNoise(Time.time * 6, 0) * 1.2f) * (1 + night * 2.2f);
+                _fire.range = 9 + night * 5;
+            }
             base.LateUpdate();
         }
     }

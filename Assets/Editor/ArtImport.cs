@@ -53,11 +53,31 @@ namespace LastTide.EditorTools
 
         void OnPreprocessTexture()
         {
+            if (assetPath.StartsWith("Assets/Resources/Sky/"))
+            {
+                // HDRI skies (Poly Haven, CC0): a cubemap for reflections.
+                var c = (TextureImporter)assetImporter;
+                c.textureShape = TextureImporterShape.TextureCube;
+                c.generateCubemap = TextureImporterGenerateCubemap.Cylindrical;
+                c.sRGBTexture = false;
+                c.mipmapEnabled = true;
+                c.maxTextureSize = 512;
+                c.textureCompression = TextureImporterCompression.CompressedHQ;
+                return;
+            }
             if (assetPath.StartsWith(Models))
             {
                 var t = (TextureImporter)assetImporter;
                 bool normal = assetPath.EndsWith("_normal.jpg") || assetPath.EndsWith("_normal.png"), data = assetPath.EndsWith("_ms.png");
                 t.textureType = normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
+                if (assetPath.Contains("/Scan/") && assetPath.EndsWith("_albedo.png"))
+                {
+                    // Leaf cutouts: keep their coverage in the small mips so distant plants don't thin out.
+                    t.alphaSource = TextureImporterAlphaSource.FromInput;
+                    t.alphaIsTransparency = true;
+                    t.mipMapsPreserveCoverage = true;
+                    t.alphaTestReferenceValue = 0.45f;
+                }
                 t.sRGBTexture = !normal && !data;
                 t.mipmapEnabled = true;
                 t.anisoLevel = 4;

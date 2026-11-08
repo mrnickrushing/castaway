@@ -72,7 +72,17 @@ namespace LastTide.Game
             Take(Island.Camp, Island.CampRadius * 0.5f);
 
             // The wreck on the beach, and what washed out of it.
-            var wreck = ModelRegistry.Free_("wreck", world, Island.Ground(Island.Wreck) + Vector3.down * 0.9f, -28 + 90);
+            // The Gull: the scanned Dutch merchantman run aground, heeled over and settled into the sand.
+            GameObject wreck = null;
+            if (ModelRegistry.Prefab(ModelRegistry.Scan, "dutch_ship_large_01") != null)
+            {
+                wreck = ModelRegistry.Spawn(ModelRegistry.Scan, "dutch_ship_large_01", world);
+                wreck.name = "Wreck";
+                wreck.transform.position = Island.Ground(Island.Wreck) + Vector3.down * 2.2f;
+                wreck.transform.rotation = Quaternion.Euler(0, -28 + 90, 0) * Quaternion.Euler(4, 0, 17) * wreck.transform.rotation;
+                wreck.transform.localScale *= 0.85f;
+            }
+            if (wreck == null) wreck = ModelRegistry.Free_("wreck", world, Island.Ground(Island.Wreck) + Vector3.down * 0.9f, -28 + 90);
             if (wreck == null)
             {
                 wreck = Models.Wreck().ToObject("Wreck", world);
@@ -149,12 +159,23 @@ namespace LastTide.Game
                 var g = Island.Ground(p);
                 decor.Push().Translate(g).RotateY(R() * 360).Scale(0.6f + R() * 0.7f);
                 float pick = R();
+                if (d < 0.74f && ScanPlant(world, g, pick, i)) { decor.Pop(); continue; }
+                if (d < 0.8f && ScanPlants.Length > 0 && ModelRegistry.Prefab(ModelRegistry.Scan, ScanPlants[0]) != null) { decor.Pop(); continue; }
                 if (d < 0.74f) decor.Append(pick < 0.45f ? Models.Fern(i + 100, false) : Models.Tuft(i, pick > 0.85f));
                 else if (d < 0.8f) decor.Append(Models.Tuft(i, false));
                 else if (pick < 0.3f) Models.Rock(decor, new Vector3(0, 0.05f, 0), new Vector3(0.3f, 0.18f, 0.25f), i, Tropic.Rock);
                 decor.Pop();
             }
             decor.ToObject("Undergrowth", world, false);
+            var grass = GrassField.Build(world, 1.6f, 7);
+            if (grass != null)
+                foreach (var piece in G.Session.State.pieces)
+                {
+                    if (Content.Pieces[piece.id].Kind == PieceKind.Edge) continue;
+                    Vector3 at; Quaternion turn;
+                    CampGrid.Pose(piece, out at, out turn);
+                    grass.ClearAround(at, Content.CellSize * 0.75f);
+                }
 
             // Enemy dens in the jungle north of camp.
             var dens = new GameObject("Boars").AddComponent<Dens>();
@@ -213,6 +234,7 @@ namespace LastTide.Game
             }
             Jungle(world, loc.Biome == Biome.Grove ? 50 : loc.Biome == Biome.Shore || loc.Biome == Biome.Pier ? 14 : 28, 0.45f);
             Undergrowth(world, 600);
+            GrassField.Build(world, loc.Biome == Biome.Grove ? 2f : 1.2f, loc.Id.GetHashCode());
 
             var dens = new GameObject("Dens").AddComponent<Dens>();
             dens.transform.SetParent(world, false);
@@ -421,7 +443,15 @@ namespace LastTide.Game
                 if (d > maxD + 0.2f || Island.Slope(p.x, p.z) > 0.45f || !Free(p, 4.5f)) continue;
                 if (Vector3.Distance(p, Island.Camp) < Island.CampRadius + 6) continue;
                 var g = Island.Ground(p);
-                if (art) ModelRegistry.Free_(Trees[trees % Trees.Length], holder, g + Vector3.down * 0.1f, R() * 360, 0.8f + R() * 0.45f);
+                // Every other jungle tree is a palm: lighter to draw, and the island reads as tropical.
+                if (art && trees % 2 == 1 && ModelRegistry.Has("Trees", "palm"))
+                {
+                    var palm = ModelRegistry.Spawn("Trees", "palm", holder);
+                    palm.transform.position = g + Vector3.down * 0.1f;
+                    palm.transform.rotation = Quaternion.Euler(0, R() * 360, 0) * palm.transform.rotation;
+                    palm.transform.localScale *= 0.75f + R() * 0.35f;
+                }
+                else if (art) ModelRegistry.Free_(Trees[trees % Trees.Length], holder, g + Vector3.down * 0.1f, R() * 360, 0.8f + R() * 0.45f);
                 else
                 {
                     canopy.Push().Translate(g + Vector3.down * 0.2f).RotateY(R() * 360);
@@ -433,6 +463,24 @@ namespace LastTide.Game
                 trees++;
             }
             canopy.ToObject("Jungle", world);
+        }
+
+        static readonly string[] ScanPlants = { "fern_02_a", "fern_02_b", "fern_02_c", "fern_02_d", "anthurium_botany_01_a", "anthurium_botany_01_b",
+            "calathea_orbifolia_01_a", "calathea_orbifolia_01_e", "shrub_04", "anthurium_botany_01_e", "shrub_sorrel_01_c", "shrub_sorrel_01_h" };
+        static Transform _plants;
+
+        /// <summary>A photoscanned fern or jungle plant as scenery (about one decor spot in four), or false.</summary>
+        static bool ScanPlant(Transform world, Vector3 g, float pick, int i)
+        {
+            if (pick > 0.45f) return false;
+            var id = ScanPlants[i % ScanPlants.Length];
+            if (ModelRegistry.Prefab(ModelRegistry.Scan, id) == null) return false;
+            if (_plants == null || _plants.parent != world) { _plants = new GameObject("Scanned plants").transform; _plants.SetParent(world, false); }
+            var go = ModelRegistry.Spawn(ModelRegistry.Scan, id, _plants);
+            go.transform.position = g;
+            go.transform.rotation = Quaternion.Euler(0, R() * 360, 0);
+            go.transform.localScale *= 0.5f + R() * 0.5f;
+            return true;
         }
 
         static void Undergrowth(Transform world, int count)
@@ -465,6 +513,9 @@ namespace LastTide.Game
                 var g = Island.Ground(p);
                 decor.Push().Translate(g).RotateY(R() * 360).Scale(0.6f + R() * 0.7f);
                 float pick = R();
+                bool scanned = ModelRegistry.Prefab(ModelRegistry.Scan, ScanPlants[0]) != null;
+                if (d < 0.74f && ScanPlant(world, g, pick, i)) { decor.Pop(); continue; }
+                if (scanned && d < 0.8f) { decor.Pop(); continue; }   // the grass field covers the tufts
                 if (d < 0.74f) decor.Append(pick < 0.45f ? Models.Fern(i + 100, false) : Models.Tuft(i, pick > 0.85f));
                 else if (d < 0.8f) decor.Append(Models.Tuft(i, false));
                 else if (pick < 0.3f) Models.Rock(decor, new Vector3(0, 0.05f, 0), new Vector3(0.3f, 0.18f, 0.25f), i, Tropic.Rock);

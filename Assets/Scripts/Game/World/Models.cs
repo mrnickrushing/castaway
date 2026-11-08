@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace LastTide.Game
@@ -616,6 +617,8 @@ namespace LastTide.Game
         /// roasting spit, its workbench with an anvil, a canvas tent with a bedroll for the shelter, the pirate chest.</summary>
         public static GameObject StructureArt(string id, Transform parent)
         {
+            var scan = ScanStructure(id, parent);
+            if (scan != null) return scan;
             (string art, Vector3 at, float yaw)[] parts;
             switch (id)
             {
@@ -636,6 +639,158 @@ namespace LastTide.Game
                 go.transform.localRotation = Quaternion.Euler(0, yaw, 0) * go.transform.localRotation;
             }
             return holder;
+        }
+
+        /// <summary>A rough driftwood pole between two local points (scaffolding): a scanned branch, else a plain log.</summary>
+        public static GameObject Pole(Transform parent, Vector3 from, Vector3 to)
+        {
+            var go = Scan("dry_branches_medium_01_b", parent, Vector3.zero, 0);
+            if (go != null) { Span(go, parent, from, to); return go; }
+            var mb = new MeshBuilder();
+            mb.Cylinder(from, to, 0.07f, 0.06f, 6, Palette.Hex(0x8A6A48));
+            return mb.ToObject("Pole", parent);
+        }
+
+        /// <summary>Lays a scanned pole or log (whatever axis it was modelled along) from one local point to another.</summary>
+        static void Span(GameObject go, Transform space, Vector3 from, Vector3 to)
+        {
+            if (go == null) return;
+            var mf = go.GetComponentInChildren<MeshFilter>();
+            if (mf == null || mf.sharedMesh == null) return;
+            from = space.TransformPoint(from); to = space.TransformPoint(to);
+            var b = mf.sharedMesh.bounds;
+            var e = b.extents;
+            int k = e.x >= e.y && e.x >= e.z ? 0 : e.y >= e.z ? 1 : 2;
+            var axis = Vector3.zero; axis[k] = e[k] * 2;
+            var dir = to - from;
+            // Stretch along the length only, so a long pole stays a slim pole.
+            var ls = mf.transform.localScale;
+            ls[k] *= dir.magnitude / mf.transform.TransformVector(axis).magnitude;
+            mf.transform.localScale = ls;
+            var along = mf.transform.TransformVector(axis);
+            go.transform.rotation = Quaternion.FromToRotation(along.normalized, dir.normalized) * go.transform.rotation;
+            go.transform.position += (from + to) / 2 - mf.transform.TransformPoint(b.center);
+        }
+
+        static GameObject Scan(string id, Transform parent, Vector3 at, float yaw, float scale = 1, Vector3? tilt = null)
+        {
+            var go = ModelRegistry.Spawn(ModelRegistry.Scan, id, parent);
+            if (go == null) return null;
+            go.transform.localPosition = at;
+            go.transform.localRotation = Quaternion.Euler(0, yaw, 0) * Quaternion.Euler(tilt ?? Vector3.zero);
+            go.transform.localScale *= scale;
+            return go;
+        }
+
+        /// <summary>
+        /// Camp structures from photoscanned parts (Poly Haven): a fire pit ringed with stones, a rough table with the
+        /// castaway's tools, and a lean-to made from one of the Gull's torn sails stretched over driftwood poles.
+        /// </summary>
+        static GameObject ScanStructure(string id, Transform parent)
+        {
+            if (ModelRegistry.Prefab(ModelRegistry.Scan, "rock_moss_set_01_a") == null) return null;
+            var holder = new GameObject("Built");
+            holder.transform.SetParent(parent, false);
+            var t = holder.transform;
+            switch (id)
+            {
+                case "campfire":
+                {
+                    string[] stones = { "rock_moss_set_01_a", "rock_moss_set_01_b", "rock_moss_set_01_c", "rock_moss_set_01_d", "rock_moss_set_01_e", "stone_01" };
+                    for (int i = 0; i < 11; i++)
+                    {
+                        float a = i / 11f * Mathf.PI * 2;
+                        Scan(stones[i % stones.Length], t, new Vector3(Mathf.Cos(a) * 0.95f, -0.04f, Mathf.Sin(a) * 0.95f), i * 67, 0.17f + (i % 3) * 0.03f);
+                    }
+                    string[] wood = { "dry_branches_medium_01_a", "dry_branches_medium_01_b", "dry_branches_medium_01_c" };
+                    for (int i = 0; i < 5; i++)
+                        Scan(wood[i % 3], t, new Vector3(Mathf.Cos(i * 1.26f) * 0.15f, 0.06f + i * 0.04f, Mathf.Sin(i * 1.26f) * 0.15f), i * 72 + 20, 0.4f, new Vector3(0, 0, i % 2 == 0 ? 14 : -10));
+                    // Sitting log and supplies around the fire.
+                    Scan("dead_tree_trunk", t, new Vector3(0, 0, -2.1f), 95, 0.42f);
+                    Scan("wooden_bucket_01", t, new Vector3(1.8f, 0, 0.9f), 30, 0.8f);
+                    Scan("bananas_c", t, new Vector3(-1.6f, 0, 1.2f), 70, 1.3f);
+                    break;
+                }
+                case "workbench":
+                {
+                    var table = Scan("WoodenTable_03", t, Vector3.zero, 0);
+                    if (table == null) { Object.Destroy(holder); return null; }
+                    float top = ModelRegistry.RendererBounds(table).max.y - t.position.y;
+                    Scan("wooden_axe", t, new Vector3(-0.5f, top, 0.05f), 80, 1, new Vector3(0, 0, 90));
+                    Scan("wooden_hammer_01", t, new Vector3(0.25f, top, -0.1f), 30, 1, new Vector3(0, 0, 90));
+                    Scan("handsaw_wood", t, new Vector3(0.6f, top, 0.15f), -20, 1, new Vector3(90, 0, 0));
+                    Scan("wooden_crate_01", t, new Vector3(1.9f, 0, 0.2f), 15, 0.8f);
+                    Scan("wooden_lantern_01", t, new Vector3(-0.2f, top, -0.25f), 10, 0.8f);
+                    break;
+                }
+                case "shelter":
+                {
+                    var shipSail = ModelRegistry.SailMaterial;
+                    if (shipSail == null) { Object.Destroy(holder); return null; }
+                    var sail = new Material(shipSail) { name = "Lean-to sail" };
+                    sail.SetFloat("_Smoothness", 0.12f);
+                    sail.SetColor("_BaseColor", new Color(1.1f, 1.06f, 0.98f));
+                    // Two upright driftwood poles and a ridge pole lashed across them; the sail runs from the ridge down
+                    // to the sand behind, pegged with stones. (The scanned branches lie along Z: tip them upright.)
+                    foreach (float x in new[] { -1.6f, 1.6f })
+                        Span(Scan("dry_branches_medium_01_b", t, Vector3.zero, 0), t, new Vector3(x, -0.1f, 0.95f), new Vector3(x * 0.97f, 2.05f, 0.9f));
+                    Span(Scan("dry_branches_medium_01_c", t, Vector3.zero, 0), t, new Vector3(-2.1f, 1.88f, 0.9f), new Vector3(2.1f, 1.92f, 0.9f));
+                    Cloth(t, sail, SailMesh(3.6f, 1.85f, 0.9f, -1.9f, new Vector4(0.42f, 0.64f, 0.94f, 0.97f)));
+                    foreach (float x in new[] { -1.7f, 0f, 1.7f })
+                        Scan(x == 0 ? "stone_01" : "rock_moss_set_01_f", t, new Vector3(x, 0, -2.05f), x * 50, 0.22f);
+                    // A bedroll of folded sailcloth under the shelter.
+                    Cloth(t, sail, SailMesh(0.95f, 0.1f, 0.6f, -1.4f, new Vector4(0.03f, 0.03f, 0.3f, 0.48f), flat: true)).transform.localPosition = new Vector3(0.3f, 0.02f, 0);
+                    Scan("wooden_lantern_01", t, new Vector3(1.3f, 0, 1.3f), 20, 0.9f);
+                    Scan("wooden_crate_02", t, new Vector3(-1.9f, 0, -0.6f), 70, 0.7f);
+                    break;
+                }
+                default:
+                    Object.Destroy(holder);
+                    return null;
+            }
+            return holder;
+        }
+
+        /// <summary>A sheet of cloth in the camp: casts shadows but doesn't receive them.</summary>
+        static GameObject Cloth(Transform parent, Material mat, Mesh mesh)
+        {
+            var cloth = new GameObject("Sail");
+            cloth.transform.SetParent(parent, false);
+            cloth.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = cloth.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = mat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            mr.receiveShadows = false;   // a thin sheet shadowing itself goes black
+            return cloth;
+        }
+
+        /// <summary>A sagging sheet of sailcloth from a ridge at (height, zFront) down to the ground at zBack (or lying flat).</summary>
+        static Mesh SailMesh(float width, float height, float zFront, float zBack, Vector4 uvRect, bool flat = false)
+        {
+            const int nx = 10, ny = 8;
+            var v = new List<Vector3>(); var uv = new List<Vector2>(); var tri = new List<int>();
+            for (int j = 0; j <= ny; j++)
+                for (int i = 0; i <= nx; i++)
+                {
+                    float u = i / (float)nx, w = j / (float)ny;
+                    float sag = flat ? -Mathf.Sin(u * Mathf.PI) * 0.05f : Mathf.Sin(w * Mathf.PI) * 0.28f * (0.6f + 0.4f * Mathf.Sin(u * Mathf.PI));
+                    float x = (u - 0.5f) * width * (1 + w * 0.12f);
+                    float y = Mathf.Lerp(height, 0.02f, w) - sag + Mathf.Sin(u * 9 + w * 5) * 0.03f;
+                    float z = Mathf.Lerp(zFront, zBack, w);
+                    v.Add(new Vector3(x, y, z));
+                    // A patch of the sail texture, a little skewed so the seams don't read as a grid.
+                    uv.Add(new Vector2(Mathf.Lerp(uvRect.x, uvRect.z, u), Mathf.Lerp(uvRect.w, uvRect.y, w)));
+                }
+            for (int j = 0; j < ny; j++)
+                for (int i = 0; i < nx; i++)
+                {
+                    int a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1;
+                    tri.AddRange(new[] { a, b, c, b, d, c });   // normals up, towards the camera
+                }
+            var m = new Mesh { name = "Sail" };
+            m.SetVertices(v); m.SetUVs(0, uv); m.SetTriangles(tri, 0);
+            m.RecalculateNormals(); m.RecalculateTangents(); m.RecalculateBounds();
+            return m;
         }
 
         public static MeshBuilder Structure(string id)
