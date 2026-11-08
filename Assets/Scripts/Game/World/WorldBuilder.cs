@@ -62,8 +62,12 @@ namespace LastTide.Game
             Take(Island.Camp, Island.CampRadius * 0.5f);
 
             // The wreck on the beach, and what washed out of it.
-            var wreck = Models.Wreck().ToObject("Wreck", world);
-            wreck.transform.position = Island.Ground(Island.Wreck) + Vector3.down * 0.6f;
+            var wreck = ModelRegistry.Free_("wreck", world, Island.Ground(Island.Wreck) + Vector3.down * 0.9f, -28 + 90);
+            if (wreck == null)
+            {
+                wreck = Models.Wreck().ToObject("Wreck", world);
+                wreck.transform.position = Island.Ground(Island.Wreck) + Vector3.down * 0.6f;
+            }
             for (int i = -3; i <= 3; i++)
             {
                 var along = Quaternion.Euler(0, -28, 0) * new Vector3(0, 0, i * 3.2f);
@@ -123,24 +127,7 @@ namespace LastTide.Game
             Count("tidepool", 5, nodes, p => { float d = Island.Distance01(p.x, p.z); return d > 0.9f && d < 0.98f; }, 6f, (k, i) => Models.TidePool(i), 2.2f, 0);
 
             // Jungle canopy inland (scenery: it blocks the way but isn't harvested).
-            var canopy = new MeshBuilder();
-            int trees = 0;
-            for (int i = 0; i < 2500 && trees < 170; i++)
-            {
-                var p = RandomOnIsland();
-                float d = Island.Distance01(p.x, p.z);
-                float dense = Mathf.PerlinNoise(p.x * 0.025f + 21, p.z * 0.025f + 4);
-                if (d > 0.68f || dense < 0.42f || Island.Slope(p.x, p.z) > 0.45f || !Free(p, 4.5f)) continue;
-                if (Vector3.Distance(p, Island.Camp) < Island.CampRadius + 6) continue;
-                var g = Island.Ground(p);
-                canopy.Push().Translate(g + Vector3.down * 0.2f).RotateY(R() * 360);
-                canopy.Append(Models.Jungle(trees, 6f + R() * 4f));
-                canopy.Pop();
-                Obstacles.Add(g, 0.5f);
-                Take(p, 4.5f);
-                trees++;
-            }
-            canopy.ToObject("Jungle", world);
+            Jungle(world, 170, 0.48f);
 
             // Undergrowth that's just scenery: ferns, grass tufts and flowers inland, pebbles on the beach.
             for (int i = 0; i < 1600; i++)
@@ -218,6 +205,17 @@ namespace LastTide.Game
                     dens.Add(kind, p);
                     Take(p, 8f);
                 }
+
+            // Red Jack by his fire, and his ship lying off the camp.
+            if (loc.Biome == Biome.PirateCamp)
+            {
+                dens.Add("redjack", Island.Landmark + new Vector3(0, 0, 4.5f));
+                var shore = Island.Landmark;
+                for (float z = Island.Landmark.z; z < Island.Radius * 1.5f; z += 1) { shore = new Vector3(Island.Radius * 0.35f, 0, z); if (Island.Distance01(shore.x, shore.z) > 0.9f) break; }
+                var ship = ModelRegistry.Free_("pirate_ship", world, new Vector3(shore.x + 6, -0.6f, shore.z + 20), 70);
+                if (ship != null) ship.AddComponent<Bob>();
+                ShipSpot.Create(nodes, Island.Ground(shore));
+            }
         }
 
         /// <summary>Places <paramref name="n"/> harvestable things of a kind where that kind belongs.</summary>
@@ -286,22 +284,75 @@ namespace LastTide.Game
                 }
                 case Biome.Cave:
                 {
-                    var go = Models.CaveMouth().ToObject("Cave", world);
-                    go.transform.position = at;
+                    var go = ModelRegistry.Free_("cliff_cave", world, at + new Vector3(0, -0.3f, 2.5f), 180, 1.3f);
+                    if (go != null)
+                    {
+                        ModelRegistry.Free_("cliff", world, at + new Vector3(-10.5f, -0.3f, 3.5f), 180, 1.2f);
+                        ModelRegistry.Free_("cliff", world, at + new Vector3(10.5f, -0.3f, 3.5f), 180, 1.2f);
+                        ModelRegistry.Free_("crate", world, Island.Ground(at + new Vector3(-3, 0, -2)), 15);
+                        ModelRegistry.Free_("barrel", world, Island.Ground(at + new Vector3(3.2f, 0, -1.5f)));
+                    }
+                    else { go = Models.CaveMouth().ToObject("Cave", world); go.transform.position = at; }
                     foreach (float x in new[] { -6f, -3.5f, 3.5f, 6f }) Obstacles.Add(at + new Vector3(x, 0, 1.5f), 1.8f);
                     Take(at, 10f);
                     break;
                 }
                 case Biome.PirateCamp:
                 {
-                    var go = Models.PirateCamp().ToObject("Pirate camp", world);
-                    go.transform.position = at;
+                    GameObject go;
+                    if (ModelRegistry.Has(ModelRegistry.Free, "tent"))
+                    {
+                        go = new GameObject("Pirate camp");
+                        go.transform.SetParent(world, false);
+                        go.transform.position = at;
+                        ModelRegistry.Free_("campfire", go.transform, at);
+                        ModelRegistry.Free_("spit", go.transform, at);
+                        foreach (var t in Models.PirateTents) ModelRegistry.Free_("tent", go.transform, Island.Ground(at + t), Mathf.Atan2(-t.x, -t.z) * Mathf.Rad2Deg);
+                        ModelRegistry.Free_("flag_pirate", go.transform, Island.Ground(at + new Vector3(-3, 0, -2)));
+                        ModelRegistry.Free_("watchtower", go.transform, Island.Ground(at + new Vector3(11, 0, 9)), 200);
+                        Obstacles.Add(at + new Vector3(11, 0, 9), 2.2f);
+                        foreach (var c in new[] { new Vector3(-5, 0, -8), new Vector3(5, 0, -8) }) { ModelRegistry.Free_("cannon", go.transform, Island.Ground(at + c), 180); Obstacles.Add(at + c, 0.9f); }
+                        ModelRegistry.Free_("crate_bottles", go.transform, Island.Ground(at + new Vector3(4.5f, 0, -3)), 30);
+                        for (int i = 0; i < 4; i++) ModelRegistry.Free_("barrel", go.transform, Island.Ground(at + new Vector3(5.6f + (i % 2) * 0.9f, 0, -1.5f + i * 0.6f)));
+                        // A palisade around the back of the camp.
+                        for (int i = 0; i < 9; i++)
+                        {
+                            float a = Mathf.Lerp(20, 160, i / 8f) * Mathf.Deg2Rad;
+                            var pp = at + new Vector3(Mathf.Cos(a) * 15, 0, Mathf.Sin(a) * 15);
+                            ModelRegistry.Free_("palisade", go.transform, Island.Ground(pp), 90 - a * Mathf.Rad2Deg);
+                            Obstacles.Add(pp, 1.6f);
+                        }
+                    }
+                    else { go = Models.PirateCamp().ToObject("Pirate camp", world); go.transform.position = at; }
                     foreach (var t in Models.PirateTents) { Obstacles.Add(at + t, 2.0f); }
                     Take(at, 14f);
                     var fire = Flames.Create(go.transform, new Vector3(0, 0.1f, 0));
                     var l = new GameObject("Fire").AddComponent<Light>(); l.type = LightType.Point; l.range = 10; l.intensity = 2.5f; l.color = new Color(1f, 0.6f, 0.25f);
                     l.transform.SetParent(go.transform, false); l.transform.localPosition = Vector3.up * 1.2f;
                     Obstacles.Add(at, 1.2f);
+                    break;
+                }
+                case Biome.Ridge:
+                {
+                    // Ancient ruins in the pass: whoever lived here before the pirates.
+                    var r0 = Island.Ground(new Vector3(-6, 0, Island.Radius * 0.15f));
+                    ModelRegistry.Free_("statue_head", world, r0 + Vector3.down * 0.3f, 160);
+                    ModelRegistry.Free_("obelisk", world, Island.Ground(new Vector3(7, 0, Island.Radius * 0.12f)), 10);
+                    ModelRegistry.Free_("ruin_column", world, Island.Ground(new Vector3(3, 0, Island.Radius * 0.22f)), 70);
+                    ModelRegistry.Free_("ruin_column", world, Island.Ground(new Vector3(-12, 0, Island.Radius * 0.05f)), 200);
+                    Obstacles.Add(r0, 1.6f); Take(r0, 6f);
+                    break;
+                }
+                case Biome.Shore:
+                {
+                    for (int i = 0; i < 6; i++)
+                    {
+                        var p = Find(q => { float d = Island.Distance01(q.x, q.z); return d > 0.82f && d < 0.95f; }, 6f, Vector3.zero);
+                        ModelRegistry.Free_(i % 2 == 0 ? "rocks_sand_a" : "rocks_sand_b", world, Island.Ground(p), R() * 360);
+                        Take(p, 4f);
+                    }
+                    var c = Find(q => { float d = Island.Distance01(q.x, q.z); return d > 0.85f && d < 0.95f; }, 6f, Vector3.zero);
+                    ModelRegistry.Free_("canoe", world, Island.Ground(c), R() * 360);
                     break;
                 }
                 case Biome.Pier:
@@ -335,9 +386,15 @@ namespace LastTide.Game
             return Mathf.Abs(local.x) < 1.6f && local.z > -4f && local.z < PierLength;
         }
 
+        static readonly string[] Trees = { "tree_oak", "tree_fat", "tree_detailed" };
+        static readonly string[] Plants = { "bush_large", "bush_detailed", "bush_detailed", "flower_red", "flower_yellow", "flower_purple", "mushrooms", "log", "stump" };
+
         static void Jungle(Transform world, int count, float maxD)
         {
             var canopy = new MeshBuilder();
+            bool art = ModelRegistry.Has(ModelRegistry.Free, Trees[0]);
+            var holder = new GameObject("Jungle trees").transform;
+            holder.SetParent(world, false);
             int trees = 0;
             for (int i = 0; i < count * 15 && trees < count; i++)
             {
@@ -346,9 +403,13 @@ namespace LastTide.Game
                 if (d > maxD + 0.2f || Island.Slope(p.x, p.z) > 0.45f || !Free(p, 4.5f)) continue;
                 if (Vector3.Distance(p, Island.Camp) < Island.CampRadius + 6) continue;
                 var g = Island.Ground(p);
-                canopy.Push().Translate(g + Vector3.down * 0.2f).RotateY(R() * 360);
-                canopy.Append(Models.Jungle(trees + 300, 6f + R() * 4f));
-                canopy.Pop();
+                if (art) ModelRegistry.Free_(Trees[trees % Trees.Length], holder, g + Vector3.down * 0.1f, R() * 360, 0.8f + R() * 0.45f);
+                else
+                {
+                    canopy.Push().Translate(g + Vector3.down * 0.2f).RotateY(R() * 360);
+                    canopy.Append(Models.Jungle(trees + 300, 6f + R() * 4f));
+                    canopy.Pop();
+                }
                 Obstacles.Add(g, 0.5f);
                 Take(p, 4.5f);
                 trees++;
@@ -358,6 +419,24 @@ namespace LastTide.Game
 
         static void Undergrowth(Transform world, int count)
         {
+            // Kit plants scattered through the jungle: bushes, flowers, mushrooms, fallen logs and stumps.
+            if (ModelRegistry.Has(ModelRegistry.Free, Plants[0]))
+            {
+                var holder = new GameObject("Plants").transform;
+                holder.SetParent(world, false);
+                int made = 0;
+                for (int i = 0; i < count && made < count / 5; i++)
+                {
+                    var p = RandomOnIsland();
+                    float d = Island.Distance01(p.x, p.z);
+                    if (d > 0.76f || Island.Slope(p.x, p.z) > 0.4f || Near(p, 1.4f)) continue;
+                    if (Vector3.Distance(p, Island.Camp) < Island.CampRadius + 2) continue;
+                    var kind = Plants[(int)(R() * Plants.Length) % Plants.Length];
+                    ModelRegistry.Free_(kind, holder, Island.Ground(p), R() * 360, 0.8f + R() * 0.5f);
+                    if (kind == "log") Obstacles.Add(Island.Ground(p), 0.6f);
+                    made++;
+                }
+            }
             var decor = new MeshBuilder();
             for (int i = 0; i < count; i++)
             {

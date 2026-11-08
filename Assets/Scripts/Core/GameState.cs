@@ -97,6 +97,8 @@ namespace LastTide.Core
         public List<ItemCount> offers = new List<ItemCount>();   // offer id -> times bought
         public double offerStart;           // real time the current offer rotation started
         public float homeX, homeZ;          // where the castaway stood at home before leaving
+        public List<string> grantedTx = new List<string>();               // App Store transactions already rewarded
+        public List<PendingPurchase> pendingPurchases = new List<PendingPurchase>();
 
         public static GameState New()
         {
@@ -107,10 +109,10 @@ namespace LastTide.Core
         }
 
         /// <summary>Fills in anything an older or damaged save lacks.</summary>
-        public void Repair()
+        public void Repair(int backpackSize = Content.BackpackSlots)
         {
             if (backpack == null) backpack = new List<Slot>();
-            while (backpack.Count < Content.BackpackSlots) backpack.Add(new Slot());
+            while (backpack.Count < backpackSize) backpack.Add(new Slot());
             if (chest == null) chest = new List<Slot>();
             while (chest.Count < Content.ChestSlots) chest.Add(new Slot());
             if (nodes == null) nodes = new List<NodeState>();
@@ -119,6 +121,8 @@ namespace LastTide.Core
             if (flags == null) flags = new List<string>();
             if (visits == null) visits = new List<VisitState>();
             if (offers == null) offers = new List<ItemCount>();
+            if (grantedTx == null) grantedTx = new List<string>();
+            if (pendingPurchases == null) pendingPurchases = new List<PendingPurchase>();
             if (level < 1) level = 1;
             if (string.IsNullOrEmpty(location) || World.Location(location) == null) location = World.HomeId;
             if (travel != null && string.IsNullOrEmpty(travel.to)) travel = null;

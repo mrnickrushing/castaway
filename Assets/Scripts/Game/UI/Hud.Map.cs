@@ -17,6 +17,7 @@ namespace LastTide.Game
         RectTransform _lootMain, _lootMaybe, _runWalk, _bigButton, _playerPin;
         Image _bigButtonRing;
         LocationDef _selected;
+        RectTransform _rush;
         readonly Dictionary<string, RectTransform> _pins = new Dictionary<string, RectTransform>();
         public bool MapOpen { get { return GameRoot.Instance != null && GameRoot.Instance.OnMap; } }
 
@@ -64,7 +65,10 @@ namespace LastTide.Game
             coin.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -112), new Vector2(60, 60));
             _coinText = UIKit.Outlined(UIKit.Label("Coins", top, "0", 36, Color.white), 1.5f);
             _coinText.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(76, -118), new Vector2(200, 50));
-            var plus = UIKit.Button("Plus", top, "+", new Color(1, 1, 1, 0.12f), OpenOffers, 46);
+            var plus = UIKit.Button("Plus", top, "+", new Color(1, 1, 1, 0.12f), OpenShop, 46);
+            // Tap the energy bar to refill it with doubloons.
+            var refill = UIKit.Button("Refill", top, null, new Color(0, 0, 0, 0), () => Confirm("Refill energy?", "Fill your energy to " + World.EnergyMax + " now for " + Session.RefillEnergyCost + " doubloons.\nYou have " + G.Session.State.coins + ".", "REFILL", () => { if (G.Session.RefillEnergy()) Sfx.Play("coin"); }));
+            ((RectTransform)refill.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 0), new Vector2(450, 100));
             ((RectTransform)plus.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(230, -116), new Vector2(64, 56));
 
             // Current location, bottom bar.
@@ -76,8 +80,8 @@ namespace LastTide.Game
             cl.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(330, -24), new Vector2(600, 40));
             _hereName = UIKit.Label("Here", strip.transform, "", 64, Color.white, TextAnchor.UpperLeft);
             _hereName.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(328, -58), new Vector2(900, 80));
-            float bx = -780;
-            foreach (var (sym, act) in new (string, System.Action)[] { ("radio", OpenRadio), ("gift", OpenOffers), ("pack", () => { _bagOpen = !_bagOpen; _dirty = true; }) })
+            float bx = -1030;
+            foreach (var (sym, act) in new (string, System.Action)[] { ("radio", OpenRadio), ("gift", OpenOffers), ("coin", OpenShop), ("pack", () => { _bagOpen = !_bagOpen; _dirty = true; }), ("person", () => OpenHelp()) })
             {
                 var b = UIKit.Button(sym, strip.transform, null, new Color(1, 1, 1, 0.08f), act);
                 ((RectTransform)b.transform).Place(new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(bx, -24), new Vector2(104, 104));
@@ -98,6 +102,13 @@ namespace LastTide.Game
             _bigButtonSub = UIKit.Label("Sub", _bigButton, "", 26, new Color(1, 1, 1, 0.75f), TextAnchor.MiddleCenter, false);
             _bigButtonSub.rectTransform.Fill(); _bigButtonSub.rectTransform.offsetMax = new Vector2(0, -50);
 
+            var rushBtn = UIKit.Button("Rush", _mapUi, "", new Color(0.8f, 0.62f, 0.12f), () =>
+            {
+                var s = G.Session;
+                Confirm("Arrive now?", "Skip the rest of the journey for " + s.RushTravelCost + " doubloons.\nYou have " + s.State.coins + ".", "ARRIVE NOW", () => { if (s.RushTravel()) Sfx.Play("coin"); });
+            }, 28);
+            _rush = (RectTransform)rushBtn.transform;
+            _rush.Place(new Vector2(1, 0), new Vector2(0.5f, 0.5f), new Vector2(-150, 250), new Vector2(230, 60));
             _travelText = UIKit.Outlined(UIKit.Label("Travel", _mapUi, "", 38, Color.white, TextAnchor.MiddleCenter), 2f);
             _travelText.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-200, 180), new Vector2(900, 60));
             _lockBanner = UIKit.Outlined(UIKit.Label("Locked", _mapUi, "", 46, new Color(1f, 0.32f, 0.25f), TextAnchor.MiddleCenter), 2f);
@@ -315,6 +326,8 @@ namespace LastTide.Game
                 _bigButtonRing.color = there ? new Color(0.4f, 0.9f, 0.5f) : new Color(0.3f, 0.75f, 0.7f);
                 _bigButton.localScale = Vector3.one * (there ? 1 + 0.05f * Mathf.Sin(UnityEngine.Time.time * 6) : 1);
                 _travelText.text = there ? "" : "On the way to " + World.Location(tr.to).Name;
+                _rush.gameObject.SetActive(!there);
+                if (!there) _rush.GetComponentInChildren<Text>().text = "RUSH  " + s.RushTravelCost;
             }
             else
             {
@@ -325,6 +338,7 @@ namespace LastTide.Game
                 _bigButtonRing.color = new Color(0.3f, 0.75f, 0.7f);
                 _bigButton.localScale = Vector3.one;
                 _travelText.text = "";
+                _rush.gameObject.SetActive(false);
             }
             _lockBanner.gameObject.SetActive(_selected != null && !s.Unlocked(_selected));
             if (_selected != null) _lockBanner.text = "LEVEL " + _selected.Level + " REQUIRED";
@@ -332,7 +346,7 @@ namespace LastTide.Game
             // Taps on the map choose an island.
             Vector2 tap;
             bool overUi = OverUI(Input.touchCount > 0 ? Input.GetTouch(0).fingerId : -1);
-            if (map.UpdateInput(overUi || _radioOpen || _offersOpen, out tap))
+            if (map.UpdateInput(overUi || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null, out tap))
             {
                 LocationDef best = null;
                 float bd = 160 / Scale;

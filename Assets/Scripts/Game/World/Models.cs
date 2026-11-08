@@ -612,6 +612,32 @@ namespace LastTide.Game
 
         // ------------------------------------------------------------------ camp structures
 
+        /// <summary>A camp structure from the free kits (null when the art isn't there): the kit's campfire with a
+        /// roasting spit, its workbench with an anvil, a canvas tent with a bedroll for the shelter, the pirate chest.</summary>
+        public static GameObject StructureArt(string id, Transform parent)
+        {
+            (string art, Vector3 at, float yaw)[] parts;
+            switch (id)
+            {
+                case "campfire": parts = new[] { ("campfire", Vector3.zero, 0f), ("spit", Vector3.zero, 0f) }; break;
+                case "workbench": parts = new[] { ("workbench", Vector3.zero, 0f), ("anvil", new Vector3(1.9f, 0, 0.2f), 20f) }; break;
+                case "shelter": parts = new[] { ("tent_canvas", Vector3.zero, 180f), ("bedroll", new Vector3(0.2f, 0.02f, 0.3f), 90f) }; break;
+                case "chest": parts = new[] { ("chest", Vector3.zero, 0f), ("barrel", new Vector3(1.1f, 0, 0.3f), 0f) }; break;
+                default: return null;
+            }
+            if (!ModelRegistry.Has(ModelRegistry.Free, parts[0].art)) return null;
+            var holder = new GameObject("Built");
+            holder.transform.SetParent(parent, false);
+            foreach (var (art, at, yaw) in parts)
+            {
+                var go = ModelRegistry.Spawn(ModelRegistry.Free, art, holder.transform);
+                if (go == null) continue;
+                go.transform.localPosition = at;
+                go.transform.localRotation = Quaternion.Euler(0, yaw, 0) * go.transform.localRotation;
+            }
+            return holder;
+        }
+
         public static MeshBuilder Structure(string id)
         {
             var mb = new MeshBuilder();

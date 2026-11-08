@@ -19,7 +19,7 @@ namespace LastTide.Game
         Canvas _canvas;
         RectTransform _root, _worldLayer;
         public Vector2 Stick { get; private set; }
-        public bool Blocking { get { return _passOut > 0; } }
+        public bool Blocking { get { return _passOut > 0 || StoryPlaying; } }
 
         public static Hud Create()
         {
@@ -58,7 +58,10 @@ namespace LastTide.Game
             BuildPanels(safe);
             BuildRadio();
             BuildOffers();
+            BuildShop();
+            BuildHelp();
             BuildOverlays();
+            BuildStory();
             BuildSplash();
 
             var s = G.Session;
@@ -122,13 +125,20 @@ namespace LastTide.Game
 
         void BuildQuest(RectTransform safe)
         {
-            _questCard = UIKit.Rect("Quest", safe).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -22), new Vector2(720, 96));
+            _questCard = UIKit.Rect("Quest", safe).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -22), new Vector2(760, 96));
             _questBack = UIKit.Img("Back", _questCard, UIKit.Round, UIKit.Ink);
             _questBack.rectTransform.Fill();
             _questTitle = UIKit.Label("Title", _questCard, "SURVIVAL GUIDE", 22, UIKit.Amber, TextAnchor.UpperCenter);
             _questTitle.rectTransform.Fill(); _questTitle.rectTransform.offsetMax = new Vector2(0, -8);
             _questText = UIKit.Outlined(UIKit.Label("Text", _questCard, "", 34, Color.white, TextAnchor.LowerCenter), 1.5f);
             _questText.rectTransform.Fill(); _questText.rectTransform.offsetMin = new Vector2(16, 12); _questText.rectTransform.offsetMax = new Vector2(-16, 0);
+        }
+
+        static string ChapterTitle()
+        {
+            var s = G.Session;
+            var ch = Story.ChapterOf(s.State.quest);
+            return (Story.Chapters.IndexOf(ch) + 1) + ". " + ch.Title.ToUpper();
         }
 
         void UpdateQuest()
@@ -142,9 +152,9 @@ namespace LastTide.Game
                 float t = Mathf.Clamp01(_questFlash / 1.6f);
                 _questBack.color = Color.Lerp(UIKit.Ink, new Color(0.2f, 0.55f, 0.18f, 0.95f), t);
                 _questCard.localScale = Vector3.one * (1 + Mathf.Sin(t * Mathf.PI) * 0.06f);
-                _questTitle.text = t > 0.3f ? "DONE!" : "SURVIVAL GUIDE";
+                _questTitle.text = t > 0.3f ? "DONE!" : ChapterTitle();
             }
-            else { _questBack.color = UIKit.Ink; _questCard.localScale = Vector3.one; _questTitle.text = "SURVIVAL GUIDE"; }
+            else { _questBack.color = UIKit.Ink; _questCard.localScale = Vector3.one; _questTitle.text = ChapterTitle(); }
         }
 
         // ------------------------------------------------------------------ level, XP and doubloons
@@ -170,7 +180,9 @@ namespace LastTide.Game
             coin.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(538, -40), new Vector2(46, 46));
             _coinsIsland = UIKit.Outlined(UIKit.Label("Coins", parent, "0", 34, Color.white), 1.5f);
             _coinsIsland.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(592, -38), new Vector2(200, 50));
-            var b = UIKit.Button("Coins", parent, null, new Color(0, 0, 0, 0), OpenOffers);
+            var b = UIKit.Button("Coins", parent, null, new Color(0, 0, 0, 0), OpenShop);
+            var plus = UIKit.Label("Plus", b.transform, "+", 44, UIKit.Amber, TextAnchor.MiddleRight);
+            plus.rectTransform.Fill(); plus.rectTransform.offsetMax = new Vector2(-14, 0);
             ((RectTransform)b.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(530, -30), new Vector2(200, 64));
         }
 
@@ -212,7 +224,7 @@ namespace LastTide.Game
         {
             Vector2 pos = Vector2.zero;
             bool down = false, began = false;
-            if (MapOpen || _radioOpen || _offersOpen) { _finger = -2; Stick = Vector2.zero; return; }
+            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null) { _finger = -2; Stick = Vector2.zero; return; }
             if (Input.touchCount > 0)
             {
                 for (int i = 0; i < Input.touchCount; i++)
@@ -284,6 +296,7 @@ namespace LastTide.Game
             UpdateRadio();
             UpdateSay();
             UpdateSplash();
+            UpdateStory();
             if (_offersOpen && Time.frameCount % 30 == 0) RefreshOffers();
             _worldLayer.gameObject.SetActive(!MapOpen);
             UpdateWorldLabels();
@@ -299,6 +312,8 @@ namespace LastTide.Game
                 RefreshPanels();
                 RefreshRadio();
                 if (_offersOpen) RefreshOffers();
+                if (_shopOpen) RefreshShop(); else _shop.gameObject.SetActive(false);
+                if (_helpOpen) RefreshHelp(); else _help.gameObject.SetActive(false);
                 if (MapOpen) RefreshLocationPanel();
             }
         }

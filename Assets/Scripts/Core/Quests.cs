@@ -43,9 +43,13 @@ namespace LastTide.Core
             Q("radio", "Rebuild the ship's radio at camp", s => s.Built("radio"), build: "radio", reward: new[] { Content.I("doubloon", 10) }),
             Q("tune", "Tune the radio to the distress signal", s => s.Flag("heard_keeper"), build: "radio"),
             Q("keeper", "Bring 2 bandages to Old Tomas at Palm Grove", s => s.Flag("done_keeper"), node: "npc"),
-            Q("pier", "Reach level 6 and answer the next call", s => s.Flag("done_fisher")),
-            Q("captive", "Free the captive in Smuggler's Cave", s => s.Flag("done_captive")),
-            Q("free", "Survive. Red Jack's raiders still rule the Pirate Camp...", s => false),
+            Q("pier", "Reach level 6, then answer Mara's call from the pier", s => s.Flag("done_fisher"), node: "npc"),
+            Q("captive", "Free Ned from the Smuggler's Cave (level 10)", s => s.Flag("done_captive"), node: "npc"),
+            new Quest { Id = "powder", Text = "Gather gunpowder for Ned's plan", Need = 6, Have = s => s.Count("gunpowder"),
+                Done = s => s.Count("gunpowder") >= 6 || s.Flag("redjack_dead"), PointNode = "skeleton", Reward = new[] { Content.I("bandage", 3) } },
+            Q("redjack", "Defeat Red Jack at the Pirate Camp (level 12)", s => s.Flag("redjack_dead"), node: "redjack", reward: new[] { Content.I("doubloon", 50) }),
+            Q("sail", "Board Red Jack's ship and sail on the Last Tide", s => s.Flag("ending"), node: "ship"),
+            Q("free", "Captain of the islands: explore, build and survive", s => false),
         };
 
         static Quest Q(string id, string text, Func<Session, bool> done, string node = null, string build = null, ItemCount[] reward = null)

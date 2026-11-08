@@ -60,14 +60,15 @@ namespace LastTide.Game
             _flash = 0.15f;
             var push = transform.position - from; push.y = 0;
             if (push.sqrMagnitude > 0.001f) transform.position = Step(transform.position, push.normalized * 0.45f);
-            Burst.Hit(transform.position + Vector3.up * 0.7f, new Color(0.55f, 0.12f, 0.08f));
+            Burst.Hit(transform.position + Vector3.up * 0.7f, _def.Id == "skeleton" ? new Color(0.85f, 0.85f, 0.8f) : new Color(0.55f, 0.12f, 0.08f));
+            if (_health > 0) _body.Flinch();
             Sfx.Play("hit", transform.position);
             Hud.Instance.Damage(transform.position + Vector3.up * 1.6f, dmg);
             if (_health <= 0)
             {
                 _health = 0;
                 _dead = 0.001f;
-                Sfx.Play(_def.Id == "pirate" ? "pirate_die" : "boardie", transform.position);
+                Sfx.Play(_def.Id == "pirate" || _def.Id == "redjack" ? "pirate_die" : "boardie", transform.position);
                 G.Session.Killed(_def.Id);
             }
         }
@@ -91,7 +92,7 @@ namespace LastTide.Game
             bool alive = G.Session.State.health > 0;
             if (alive && (toPlayer < _def.Aggro || (_angry && toPlayer < _def.Aggro * 2.2f)) && Vector3.Distance(pos, _home) < 30f)
             {
-                if (!_angry) { Sfx.Play(_def.Id == "pirate" ? "pirate_shout" : _def.Id == "boar" ? "grunt" : "hiss", pos); _angry = true; }
+                if (!_angry) { Sfx.Play(_def.Id == "boar" ? "grunt" : "hiss", pos); _angry = true; }
                 goal = player.transform.position;
                 speed = _def.Speed;
             }
@@ -181,10 +182,12 @@ namespace LastTide.Game
                 Enemy b;
                 if (_boars.TryGetValue(i, out b) && b != null && b.Alive) continue;
                 if (b != null && !b.Alive) { _boars.Remove(i); _gone[i] = Time.time; continue; }
+                if (_kinds[i] == "redjack" && G.Session.Flag("redjack_dead")) continue; // the captain falls once
                 float since;
                 bool waited = !_gone.TryGetValue(i, out since) || Time.time - since > Respawn;
                 // Don't pop one into view right next to the player.
-                bool far = player == null || Vector3.Distance(player.transform.position, _dens[i]) > 26f;
+                bool first = !_gone.ContainsKey(i);
+                bool far = first || player == null || Vector3.Distance(player.transform.position, _dens[i]) > 26f;
                 if (waited && far) _boars[i] = Enemy.Spawn(transform, _kinds[i], _dens[i]);
             }
         }

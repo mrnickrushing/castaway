@@ -65,6 +65,17 @@ namespace LastTide.Game
             if (_held != null) Destroy(_held);
             _held = null;
             if (string.IsNullOrEmpty(id)) return;
+            string kit = id == "hatchet" ? "tool_axe" : id == "pickaxe" ? "tool_pickaxe" : id == "hammer" ? "tool_hammer" : null;
+            if (kit != null && ModelRegistry.Has(ModelRegistry.Free, kit))
+            {
+                // Kit tools lie along their length; stand them on end so the handle runs up +Y from the grip.
+                _held = new GameObject("Held " + id);
+                _held.transform.SetParent(transform.parent, false);
+                var t = ModelRegistry.Spawn(ModelRegistry.Free, kit, _held.transform);
+                var b = ModelRegistry.RendererBounds(t);
+                t.transform.localRotation = Quaternion.Euler(0, 0, 0) * t.transform.localRotation;
+                return;
+            }
             var mb = Models.Held(id);
             if (mb.VertexCount == 0) return;
             _held = mb.ToObject("Held " + id, transform.parent);

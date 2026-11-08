@@ -100,6 +100,24 @@ namespace LastTide.Game
         /// <summary>Drop-in art for a node kind (Resources/Models/Trees/palm...), turned and sized a little at random.</summary>
         static GameObject ArtFor(string kind, Transform parent, string key)
         {
+            float h0 = Noise2.Hash(key.GetHashCode(), 3);
+            string free = kind == "crate" ? "crate" : kind == "barrel" ? "barrel" : kind == "treasure" ? "chest"
+                : kind == "boulder" ? (h0 < 0.33f ? "rock_a" : h0 < 0.66f ? "rock_b" : "rock_c") : null;
+            if (free != null && ModelRegistry.Has(ModelRegistry.Free, free))
+            {
+                var holder2 = new GameObject("Model");
+                holder2.transform.SetParent(parent, false);
+                var art = ModelRegistry.Free_(free, holder2.transform, parent.position, h0 * 360, kind == "boulder" ? 0.85f + h0 * 0.4f : 1f);
+                if (kind == "treasure")
+                {
+                    // Gold spilling out of the chest.
+                    var gold = new MeshBuilder();
+                    gold.Mat(0.7f, 0.9f);
+                    for (int i = 0; i < 10; i++) gold.Cylinder(new Vector3(Mathf.Sin(i * 2.4f) * 0.7f, 0.02f, -0.6f - (i % 3) * 0.2f), new Vector3(Mathf.Sin(i * 2.4f) * 0.7f, 0.05f, -0.6f - (i % 3) * 0.2f), 0.08f, 8, Palette.Hex(0xE8B830));
+                    gold.ToObject("Gold", holder2.transform).transform.localPosition = Vector3.zero;
+                }
+                return holder2;
+            }
             if (kind != "palm") return null;
             var holder = new GameObject("Model");
             holder.transform.SetParent(parent, false);
@@ -211,14 +229,20 @@ namespace LastTide.Game
             var s = go.AddComponent<SiteSpot>();
             s.Id = id;
             s._visibleFrom = visibleFrom;
-            var mb = Models.Structure(id);
-            s._built = mb.ToObject("Built", go.transform);
-            s._ghost = mb.ToObject("Ghost", go.transform, false);
+            // Free kit models where there are some (campfire, workbench, tent, chest), else the procedural build.
+            s._built = Models.StructureArt(id, go.transform) ?? Models.Structure(id).ToObject("Built", go.transform);
+            s._built.name = "Built";
+            s._ghost = Object.Instantiate(s._built, go.transform);
+            s._ghost.name = "Ghost";
             s._ghostMat = new Material(Shader.Find("LastTide/Ghost"));
-            s._ghost.GetComponent<MeshRenderer>().sharedMaterial = s._ghostMat;
-            var b = s._built.GetComponent<MeshFilter>().sharedMesh.bounds;
+            foreach (var r in s._ghost.GetComponentsInChildren<Renderer>())
+            {
+                r.sharedMaterial = s._ghostMat;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            var b = ModelRegistry.RendererBounds(s._built);
             s._ghostMat.SetFloat("_MinY", pos.y);
-            s._ghostMat.SetFloat("_Height", Mathf.Max(0.5f, b.max.y));
+            s._ghostMat.SetFloat("_Height", Mathf.Max(0.5f, b.max.y - pos.y));
             s.MakeRing(ring);
             s._obstacle = obstacle;
             if (id == "campfire")
@@ -541,6 +565,7 @@ namespace LastTide.Game
     {
         LastTide.Core.SignalDef _sig;
         SurvivorRig _rig;
+        CharacterArt _art;
         float _t, _talk;
         public override string Kind { get { return "npc"; } }
         public override bool Active { get { var s = G.Session; return s.Heard(_sig) && !s.Rescued(_sig); } }
@@ -565,7 +590,9 @@ namespace LastTide.Game
             s._sig = sig;
             var look = new SurvivorRig.Look { Shirt = Palette.Hex(0x6A8AA8), Pants = Palette.Hex(0x5A4A3A), Hair = Palette.Hex(0xB8B0A0), Band = Palette.Hex(0x3A5A7A), Pack = false };
             if (sig.Npc == "Mara") { look.Beard = false; look.Hair = Palette.Hex(0x5A2E1A); look.Shirt = Palette.Hex(0xC8A24A); }
-            s._rig = SurvivorRig.Build(go.transform, look);
+            string model = sig.Npc == "Mara" ? "anne" : sig.Npc == "Ned Barlow" ? "mako" : "henry";
+            s._art = CharacterArt.TryCreate(model, go.transform);
+            if (s._art == null) s._rig = SurvivorRig.Build(go.transform, look);
             Obstacles.Add(pos, 0.5f, s);
             s.MakeRing(2.2f);
             return s;
@@ -578,7 +605,7 @@ namespace LastTide.Game
             if (_t >= 1.2f)
             {
                 _t = 0;
-                if (G.Session.Rescue(_sig)) { Sfx.Play("quest", Pos); Hud.Instance.Say(_sig.Npc, _sig.Thanks); _talk = 3; }
+                if (G.Session.Rescue(_sig)) { Sfx.Play("quest", Pos); Hud.Instance.Say(_sig.Npc, _sig.Thanks); _talk = 3; if (_art != null) _art.Once("Wave"); }
             }
             return Act.Gather;
         }
@@ -588,7 +615,8 @@ namespace LastTide.Game
             // Sitting hurt and waving until rescued; standing and cheering after.
             bool saved = G.Session.Rescued(_sig);
             _talk -= Time.deltaTime;
-            _rig.Pose(0, 0, saved ? Act.None : Act.Rest, Time.time, saved && _talk > 0 ? Mathf.Repeat(Time.time * 1.5f, 1f) : -1);
+            if (_art != null) _art.Loop(saved ? "Idle" : "Duck");
+            else _rig.Pose(0, 0, saved ? Act.None : Act.Rest, Time.time, saved && _talk > 0 ? Mathf.Repeat(Time.time * 1.5f, 1f) : -1);
             var pl = Player.Instance;
             if (pl != null)
             {
@@ -596,5 +624,58 @@ namespace LastTide.Game
                 if (d.sqrMagnitude < 100 && d.sqrMagnitude > 0.1f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(d), Time.deltaTime * 3);
             }
         }
+    }
+}
+
+namespace LastTide.Game
+{
+    /// <summary>A ship riding at anchor: a slow roll and pitch on the swell.</summary>
+    public sealed class Bob : MonoBehaviour
+    {
+        Vector3 _p; Quaternion _r;
+        void Start() { _p = transform.position; _r = transform.rotation; }
+        void Update()
+        {
+            float t = Time.time;
+            transform.position = _p + Vector3.up * Mathf.Sin(t * 0.7f) * 0.15f;
+            transform.rotation = _r * Quaternion.Euler(Mathf.Sin(t * 0.5f) * 1.5f, 0, Mathf.Sin(t * 0.63f) * 2.5f);
+        }
+    }
+
+    /// <summary>The beach below Red Jack's anchored ship: once he has fallen, stand here to sail on the Last Tide.</summary>
+    public sealed class ShipSpot : Spot
+    {
+        float _t;
+        public override string Kind { get { return "ship"; } }
+        public override bool Active { get { return G.Session.Flag("redjack_dead") && !G.Session.Flag("ending"); } }
+        public override string Label { get { return "Red Jack's Ship"; } }
+        public override string Detail { get { return "Sail on the Last Tide"; } }
+        public override float Fill { get { return Mathf.Clamp01(_t / 1.5f); } }
+
+        public static ShipSpot Create(Transform parent, Vector3 pos)
+        {
+            var go = new GameObject("Ship landing");
+            go.transform.SetParent(parent, false);
+            go.transform.position = pos;
+            var s = go.AddComponent<ShipSpot>();
+            ModelRegistry.Free_("rowboat", go.transform, pos + new Vector3(0, 0.05f, 1.5f), 20);
+            s.MakeRing(2.6f);
+            return s;
+        }
+
+        public override Act Work(Player p, float dt)
+        {
+            _t += dt;
+            if (_t >= 1.5f)
+            {
+                _t = 0;
+                G.Session.SetFlag("ending");
+                G.Session.CheckQuests();
+                Sfx.Play("levelup");
+            }
+            return Act.None;
+        }
+
+        public override void Leave() { _t = 0; }
     }
 }
