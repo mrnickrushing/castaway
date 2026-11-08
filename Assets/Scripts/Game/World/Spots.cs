@@ -80,7 +80,8 @@ namespace LastTide.Game
             go.transform.position = pos;
             var s = go.AddComponent<NodeSpot>();
             s.Key = key; s.NodeKind = kind;
-            s._model = model.ToObject("Model", go.transform);
+            var art = ArtFor(kind, go.transform, key);
+            s._model = art ?? model.ToObject("Model", go.transform);
             s._baseScale = s._model.transform.localScale;
             s.MakeRing(ring);
             if (obstacle > 0) Obstacles.Add(pos, obstacle, s);
@@ -94,6 +95,20 @@ namespace LastTide.Game
                 s._stump.SetActive(false);
             }
             return s;
+        }
+
+        /// <summary>Drop-in art for a node kind (Resources/Models/Trees/palm...), turned and sized a little at random.</summary>
+        static GameObject ArtFor(string kind, Transform parent, string key)
+        {
+            if (kind != "palm") return null;
+            var holder = new GameObject("Model");
+            holder.transform.SetParent(parent, false);
+            var go = ModelRegistry.Spawn("Trees", "palm", holder.transform);
+            if (go == null) { Destroy(holder); return null; }
+            float h = Noise2.Hash(key.GetHashCode(), 3);
+            go.transform.localRotation = Quaternion.Euler(0, h * 360, 0) * go.transform.localRotation;
+            go.transform.localScale *= 0.68f + Noise2.Hash(key.GetHashCode(), 9) * 0.32f;
+            return holder;
         }
 
         public override bool Active { get { return _standing && _fall <= 0; } }
@@ -325,6 +340,7 @@ namespace LastTide.Game
                 case "campfire":
                 case "workbench":
                 case "chest":
+                case "radio":
                     Hud.Instance.OpenStation(Id);
                     return Act.None;
             }
@@ -362,7 +378,7 @@ namespace LastTide.Game
     {
         float _t;
         public override string Kind { get { return "bag"; } }
-        public override bool Active { get { return G.Session.State.lostBag != null; } }
+        public override bool Active { get { var b = G.Session.State.lostBag; return b != null && (b.location ?? LastTide.Core.World.HomeId) == G.Session.State.location; } }
         public override string Label { get { return "Your lost backpack"; } }
         public override float Fill { get { return Mathf.Clamp01(_t / 0.8f); } }
 
@@ -389,7 +405,7 @@ namespace LastTide.Game
         void Update()
         {
             var bag = G.Session.State.lostBag;
-            bool on = bag != null;
+            bool on = Active;
             for (int i = 0; i < transform.childCount; i++) transform.GetChild(i).gameObject.SetActive(on || transform.GetChild(i).GetComponent<Ring>() != null);
             if (on) transform.position = Island.Ground(bag.x, bag.z);
         }
@@ -404,6 +420,21 @@ namespace LastTide.Game
         float _radius;
         Vector3 _builtAt = new Vector3(float.NaN, 0, 0);
         MeshFilter _mf;
+        /// <summary>A flat golden ring (the map's selection marker) that pulses by itself.</summary>
+        public bool Gold;
+
+        void Update()
+        {
+            if (!Gold) return;
+            _mat.SetColor("_Color", new Color(1f, 0.82f, 0.25f, 0.95f));
+            _mat.SetFloat("_Pulse", 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4));
+            _mat.SetFloat("_Fill", 0);
+            if (_mf.sharedMesh == null || float.IsNaN(_builtAt.x))
+            {
+                _builtAt = Vector3.zero;
+                _mf.sharedMesh = Annulus(Vector3.zero, _radius, Mathf.Max(0.32f, _radius * 0.08f), true);
+            }
+        }
 
         public static Ring Create(Transform parent, float radius)
         {
@@ -439,7 +470,7 @@ namespace LastTide.Game
         }
 
         /// <summary>A ring of quads lying on the terrain around <paramref name="c"/> (world space).</summary>
-        static Mesh Annulus(Vector3 c, float r, float width)
+        static Mesh Annulus(Vector3 c, float r, float width, bool flat = false)
         {
             const int seg = 48;
             var v = new List<Vector3>(); var uv = new List<Vector2>(); var t = new List<int>();
@@ -448,8 +479,8 @@ namespace LastTide.Game
                 float u = i / (float)seg, a = u * Mathf.PI * 2;
                 // Clockwise from the top of the screen (+Z).
                 var d = new Vector3(Mathf.Sin(a), 0, Mathf.Cos(a));
-                v.Add(OnGround(c + d * (r - width), c.y)); uv.Add(new Vector2(u, 0));
-                v.Add(OnGround(c + d * r, c.y)); uv.Add(new Vector2(u, 1));
+                v.Add(flat ? c + d * (r - width) : OnGround(c + d * (r - width), c.y)); uv.Add(new Vector2(u, 0));
+                v.Add(flat ? c + d * r : OnGround(c + d * r, c.y)); uv.Add(new Vector2(u, 1));
                 if (i < seg)
                 {
                     int k = i * 2;
@@ -467,6 +498,103 @@ namespace LastTide.Game
         static Vector3 OnGround(Vector3 p, float floor)
         {
             return new Vector3(p.x, Mathf.Max(Island.Height(p.x, p.z), Island.Sea, floor - 0.3f) + 0.09f, p.z);
+        }
+    }
+}
+
+namespace LastTide.Game
+{
+    /// <summary>The raft on the beach: stand in its ring to put to sea and open the map.</summary>
+    public sealed class ExitSpot : Spot
+    {
+        float _t;
+        public override string Kind { get { return "exit"; } }
+        public override bool Active { get { return true; } }
+        public override string Label { get { return "To the map"; } }
+        public override float Fill { get { return Mathf.Clamp01(_t / 0.8f); } }
+
+        public static ExitSpot Create(Transform parent, Vector3 pos, float yaw)
+        {
+            var go = new GameObject("Raft");
+            go.transform.SetParent(parent, false);
+            go.transform.position = pos;
+            go.transform.rotation = Quaternion.Euler(0, yaw, 0);
+            var s = go.AddComponent<ExitSpot>();
+            Models.Raft().ToObject("Raft", go.transform);
+            Obstacles.Add(pos, 1.2f, s);
+            s.MakeRing(3.0f);
+            return s;
+        }
+
+        public override Act Work(Player p, float dt)
+        {
+            _t += dt;
+            if (_t >= 0.8f) { _t = 0; Hud.Instance.OpenMap(); }
+            return Act.None;
+        }
+
+        public override void Leave() { _t = 0; }
+    }
+
+    /// <summary>A survivor the radio led the castaway to: hand over what they asked for to rescue them.</summary>
+    public sealed class NpcSpot : Spot
+    {
+        LastTide.Core.SignalDef _sig;
+        SurvivorRig _rig;
+        float _t, _talk;
+        public override string Kind { get { return "npc"; } }
+        public override bool Active { get { var s = G.Session; return s.Heard(_sig) && !s.Rescued(_sig); } }
+        public override bool Blocked { get { return !G.Session.CanRescue(_sig); } }
+        public override float Fill { get { return Mathf.Clamp01(_t / 1.2f); } }
+        public override string Label { get { return _sig.Npc; } }
+        public override string Detail
+        {
+            get
+            {
+                return "Needs: " + string.Join("   ", System.Linq.Enumerable.Select(_sig.Need, n => LastTide.Core.Content.NameOf(n.id) + " " + G.Session.Count(n.id) + "/" + n.n));
+            }
+        }
+
+        public static NpcSpot Create(Transform parent, LastTide.Core.SignalDef sig, Vector3 pos)
+        {
+            var go = new GameObject("Survivor " + sig.Npc);
+            go.transform.SetParent(parent, false);
+            go.transform.position = pos;
+            go.transform.rotation = Quaternion.Euler(0, 180, 0);
+            var s = go.AddComponent<NpcSpot>();
+            s._sig = sig;
+            var look = new SurvivorRig.Look { Shirt = Palette.Hex(0x6A8AA8), Pants = Palette.Hex(0x5A4A3A), Hair = Palette.Hex(0xB8B0A0), Band = Palette.Hex(0x3A5A7A), Pack = false };
+            if (sig.Npc == "Mara") { look.Beard = false; look.Hair = Palette.Hex(0x5A2E1A); look.Shirt = Palette.Hex(0xC8A24A); }
+            s._rig = SurvivorRig.Build(go.transform, look);
+            Obstacles.Add(pos, 0.5f, s);
+            s.MakeRing(2.2f);
+            return s;
+        }
+
+        public override Act Work(Player p, float dt)
+        {
+            if (!G.Session.CanRescue(_sig)) { _t = 0; return Act.None; }
+            _t += dt;
+            if (_t >= 1.2f)
+            {
+                _t = 0;
+                if (G.Session.Rescue(_sig)) { Sfx.Play("quest", Pos); Hud.Instance.Say(_sig.Npc, _sig.Thanks); _talk = 3; }
+            }
+            return Act.Gather;
+        }
+
+        void Update()
+        {
+            // Sitting hurt and waving until rescued; standing and cheering after.
+            bool saved = G.Session.Rescued(_sig);
+            _talk -= Time.deltaTime;
+            _rig.Pose(0, 0, saved ? Act.None : Act.Rest, Time.time, saved && _talk > 0 ? Mathf.Repeat(Time.time * 1.5f, 1f) : -1);
+            var pl = Player.Instance;
+            if (pl != null)
+            {
+                var d = pl.transform.position - transform.position; d.y = 0;
+                if (d.sqrMagnitude < 100 && d.sqrMagnitude > 0.1f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(d), Time.deltaTime * 3);
+            }
         }
     }
 }

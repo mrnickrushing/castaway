@@ -9,6 +9,7 @@ namespace LastTide.Core
         public string Id, Name;
         public int Health, Damage;
         public float Speed, AttackEvery, Aggro;
+        public int Xp;
         public ItemCount[] Drops;
     }
 
@@ -16,8 +17,14 @@ namespace LastTide.Core
     {
         public static readonly Dictionary<string, EnemyDef> All = new Dictionary<string, EnemyDef>
         {
-            { "boar", new EnemyDef { Id = "boar", Name = "Wild Boar", Health = 60, Damage = 9, Speed = 4.2f, AttackEvery = 1.3f, Aggro = 9f,
+            { "boar", new EnemyDef { Id = "boar", Name = "Wild Boar", Health = 60, Damage = 9, Speed = 4.2f, AttackEvery = 1.3f, Aggro = 9f, Xp = 10,
                 Drops = new[] { Content.I("raw_meat", 2), Content.I("hide", 1) } } },
+            { "crab", new EnemyDef { Id = "crab", Name = "Giant Crab", Health = 35, Damage = 6, Speed = 2.6f, AttackEvery = 1.2f, Aggro = 6f, Xp = 6,
+                Drops = new[] { Content.I("crab", 2) } } },
+            { "snake", new EnemyDef { Id = "snake", Name = "Island Viper", Health = 30, Damage = 11, Speed = 4.8f, AttackEvery = 1.0f, Aggro = 7f, Xp = 9,
+                Drops = new[] { Content.I("raw_meat", 1) } } },
+            { "pirate", new EnemyDef { Id = "pirate", Name = "Red Jack's Raider", Health = 130, Damage = 15, Speed = 4.6f, AttackEvery = 1.1f, Aggro = 11f, Xp = 30,
+                Drops = new[] { Content.I("rum", 1), Content.I("gunpowder", 1), Content.I("doubloon", 4) } } },
         };
     }
 
@@ -25,7 +32,7 @@ namespace LastTide.Core
     /// The survival rules: meters, gathering, building, crafting, combat damage and death. Pure logic over a
     /// <see cref="GameState"/>; the Unity side calls in and listens to the events.
     /// </summary>
-    public sealed class Session
+    public sealed partial class Session
     {
         public readonly GameState State;
         /// <summary>Short messages for the player ("+3 Wood", "Backpack full").</summary>
@@ -75,6 +82,7 @@ namespace LastTide.Core
         {
             if (dt <= 0) return;
             State.time += dt;
+            UpdateEnergy();
             State.hunger = Clamp(State.hunger - Content.HungerDecay * dt);
             State.thirst = Clamp(State.thirst - Content.ThirstDecay * dt);
             if (State.hunger <= 0 || State.thirst <= 0) Damage(Content.StarveDamage * dt * ((State.hunger <= 0 ? 1 : 0) + (State.thirst <= 0 ? 1 : 0)), "starving");
@@ -154,7 +162,8 @@ namespace LastTide.Core
             if (d.Needs == ToolUse.Chop && ToolFor(ToolUse.Chop) < 0) return "Needs a hatchet";
             if (d.Needs == ToolUse.Mine && ToolFor(ToolUse.Mine) < 0) return "Needs a pickaxe";
             if (d.ThirstPerHit > 0) return State.thirst >= 99.5f ? "Not thirsty" : null;
-            foreach (var y in d.Yield) if (Inventory.Room(State.backpack, y.id) <= 0) return "Backpack full";
+            if (d.Needs == ToolUse.Fish && ToolFor(ToolUse.Fish) < 0) return "Needs a fishing rod";
+            foreach (var y in d.Yield) if (y.id != "doubloon" && Inventory.Room(State.backpack, y.id) <= 0) return "Backpack full";
             return null;
         }
 
@@ -182,6 +191,8 @@ namespace LastTide.Core
                 n.respawnAt = d.Respawn < 0 ? 0 : Now + d.Respawn;
             }
             if (kind == "hatchet_pickup") SetFlag("got_hatchet");
+            RollPossibleLoot();
+            AddXp(2);
             if (d.Needs != ToolUse.None) Wear(ToolFor(d.Needs));
             Changed?.Invoke();
             CheckQuests();
@@ -191,6 +202,7 @@ namespace LastTide.Core
         /// <summary>Adds items to the backpack; whatever doesn't fit is lost with a warning.</summary>
         public int Give(string id, int n)
         {
+            if (id == "doubloon") { State.coins += n; Gained?.Invoke(id, n); Changed?.Invoke(); return n; }
             int got = Inventory.Add(State.backpack, id, n);
             if (got > 0) Gained?.Invoke(id, got);
             if (got < n) Toast?.Invoke("Backpack full");
@@ -272,6 +284,7 @@ namespace LastTide.Core
                 b.delivered.Clear();
                 b.stamp = Now;
                 Toast?.Invoke(Content.Builds[id].Name + " built!");
+                AddXp(20);
                 BuildFinished?.Invoke(id);
             }
             if (moved > 0) { Changed?.Invoke(); CheckQuests(); }
@@ -285,6 +298,7 @@ namespace LastTide.Core
         public string CraftBlocked(string recipe)
         {
             var r = Content.Recipes[recipe];
+            if (!Knows(recipe)) return "A survivor must teach you this";
             if (!IsBuilt(r.Station)) return "Build the " + Content.Builds[r.Station].Name.ToLower() + " first";
             if (Job(r.Station) != null) return "Busy";
             if (!Inventory.Has(State.backpack, r.Inputs)) return "Missing materials";
@@ -297,6 +311,7 @@ namespace LastTide.Core
             var r = Content.Recipes[recipe];
             foreach (var c in r.Inputs) Inventory.Remove(State.backpack, c.id, c.n);
             State.jobs.Add(new JobState { station = r.Station, recipe = recipe, doneAt = Now + r.Seconds, count = r.Count });
+            AddXp(4);
             Changed?.Invoke();
             return true;
         }
@@ -362,7 +377,9 @@ namespace LastTide.Core
         public void Killed(string enemy)
         {
             State.kills++;
+            if (enemy == "pirate") State.pirates++;
             foreach (var d in Enemies.All[enemy].Drops) Give(d.id, d.n);
+            AddXp(Enemies.All[enemy].Xp);
             Changed?.Invoke();
             CheckQuests();
         }
@@ -380,7 +397,7 @@ namespace LastTide.Core
         void Die()
         {
             State.deaths++;
-            var bag = new LostBag { x = State.px, z = State.pz };
+            var bag = new LostBag { x = State.px, z = State.pz, location = State.location };
             foreach (var s in State.backpack)
                 if (!s.Empty) { bag.slots.Add(new Slot { id = s.id, n = s.n, wear = s.wear }); s.Clear(); }
             State.lostBag = bag.slots.Count > 0 ? bag : State.lostBag;
@@ -483,6 +500,7 @@ namespace LastTide.Core
                 if (!q.Done(this)) break;
                 State.quest++;
                 foreach (var r in q.Reward) Give(r.id, r.n);
+                AddXp(15);
                 QuestDone?.Invoke(q);
             }
         }

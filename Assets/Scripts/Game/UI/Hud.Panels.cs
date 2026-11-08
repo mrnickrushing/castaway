@@ -29,6 +29,15 @@ namespace LastTide.Game
             var lbl = UIKit.Outlined(UIKit.Label("Label", bag.transform, "BAG", 26, Color.white, TextAnchor.LowerCenter), 1.5f);
             lbl.rectTransform.Fill(); lbl.rectTransform.offsetMin = new Vector2(0, -30);
 
+            // The map, top right.
+            var map = UIKit.Button("Map", safe, null, new Color(0.2f, 0.32f, 0.38f, 0.95f), OpenMap);
+            map.GetComponent<Image>().sprite = UIKit.Circle; map.GetComponent<Image>().type = Image.Type.Simple;
+            ((RectTransform)map.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-40, -30), new Vector2(130, 130));
+            var mi = UIKit.Img("Icon", map.transform, UIKit.Symbol("map"), UIKit.Sand);
+            mi.rectTransform.Fill(28);
+            var ml = UIKit.Outlined(UIKit.Label("Label", map.transform, "MAP", 26, Color.white, TextAnchor.LowerCenter), 1.5f);
+            ml.rectTransform.Fill(); ml.rectTransform.offsetMin = new Vector2(0, -30);
+
             _weaponSlot = UIKit.Img("Weapon", safe, UIKit.Circle, UIKit.Ink).rectTransform;
             _weaponSlot.Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-210, 50), new Vector2(110, 110));
         }
@@ -69,6 +78,7 @@ namespace LastTide.Game
 
         public void OpenStation(string id)
         {
+            if (id == "radio") { if (!_radioOpen && _station != "radio") { _station = "radio"; OpenRadio(); } return; }
             if (_station == id) return;
             _station = id;
             if (id == "chest") _bagOpen = true;
@@ -78,6 +88,7 @@ namespace LastTide.Game
         public void CloseStation(string id)
         {
             if (_station != id) return;
+            if (id == "radio") { _station = null; return; }
             if (id == "chest") _bagOpen = false;
             _station = null;
             _dirty = true;
@@ -101,13 +112,13 @@ namespace LastTide.Game
                     else if (s.Use(i)) Sfx.Play(Content.Item(s.State.backpack[i].id ?? "wood") != null ? "eat" : "click");
                 }, s.State.equipped);
             }
-            _stationPanel.gameObject.SetActive(_station != null);
-            if (_station != null)
+            _stationPanel.gameObject.SetActive(_station != null && _station != "radio");
+            if (_station != null && _station != "radio")
             {
                 bool chest = _station == "chest";
                 // Sits at the right edge, or beside the backpack when that's open; as tall as its contents.
                 int rows = 0;
-                foreach (var r in Content.Recipes.Values) if (r.Station == _station) rows++;
+                foreach (var r in Content.Recipes.Values) if (r.Station == _station && s.Knows(r.Id)) rows++;
                 float h = chest ? 700 : 110 + rows * 100;
                 _stationPanel.Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(_bagOpen ? -610 : -30, 60), new Vector2(620, h));
                 _stationTitle.text = Content.Builds[_station].Name.ToUpper();
@@ -168,7 +179,7 @@ namespace LastTide.Game
             int row = 0;
             foreach (var r in Content.Recipes.Values)
             {
-                if (r.Station != station) continue;
+                if (r.Station != station || !s.Knows(r.Id)) continue;
                 var rt = UIKit.Img("Recipe", _stationList, UIKit.Round, new Color(1, 1, 1, 0.08f)).rectTransform;
                 rt.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -row * 100), new Vector2(580, 92));
                 var icon = UIKit.Rect("Icon", rt).Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(76, 76));

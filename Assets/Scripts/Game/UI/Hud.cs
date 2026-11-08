@@ -47,12 +47,19 @@ namespace LastTide.Game
             safe.gameObject.AddComponent<SafeArea>();
             _worldLayer = UIKit.Rect("World", safe);
             _worldLayer.Fill();
-            BuildMeters(safe);
-            BuildQuest(safe);
+            _islandUi = UIKit.Rect("Island UI", safe);
+            _islandUi.Fill();
+            BuildMeters(_islandUi);
+            BuildLevel(_islandUi);
             BuildJoystick(safe);
-            BuildButtons(safe);
+            BuildButtons(_islandUi);
+            BuildMap(safe);
+            BuildQuest(safe);
             BuildPanels(safe);
+            BuildRadio();
+            BuildOffers();
             BuildOverlays();
+            BuildSplash();
 
             var s = G.Session;
             s.Toast += Toast;
@@ -60,6 +67,7 @@ namespace LastTide.Game
             s.QuestDone += q => { _questFlash = 1.6f; Sfx.Play("quest"); };
             s.Changed += () => _dirty = true;
             s.Died += PassOut;
+            s.LevelUp += l => { _levelFlash = 2f; Sfx.Play("levelup"); };
         }
 
         void OnDestroy()
@@ -139,6 +147,48 @@ namespace LastTide.Game
             else { _questBack.color = UIKit.Ink; _questCard.localScale = Vector3.one; _questTitle.text = "SURVIVAL GUIDE"; }
         }
 
+        // ------------------------------------------------------------------ level, XP and doubloons
+
+        Text _levelText, _coinsIsland;
+        Image _xpRing, _levelDisc;
+        float _levelFlash;
+
+        void BuildLevel(RectTransform parent)
+        {
+            // A round level badge with an XP ring, next to the meters; doubloons under it.
+            var badge = UIKit.Img("Level", parent, UIKit.Circle, UIKit.Ink).rectTransform;
+            badge.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(400, -26), new Vector2(120, 120));
+            _levelDisc = badge.GetComponent<Image>();
+            _xpRing = UIKit.Img("XP", badge, UIKit.RingSprite, UIKit.Green);
+            _xpRing.rectTransform.Fill(2);
+            _xpRing.type = Image.Type.Filled; _xpRing.fillMethod = Image.FillMethod.Radial360; _xpRing.fillOrigin = 2; _xpRing.fillClockwise = true;
+            var lv = UIKit.Label("LV", badge, "LEVEL", 20, UIKit.Sand, TextAnchor.UpperCenter);
+            lv.rectTransform.Fill(); lv.rectTransform.offsetMax = new Vector2(0, -22);
+            _levelText = UIKit.Outlined(UIKit.Label("N", badge, "1", 52, Color.white, TextAnchor.MiddleCenter), 1.5f);
+            _levelText.rectTransform.Fill(); _levelText.rectTransform.offsetMax = new Vector2(0, -14);
+            var coin = UIKit.Img("Coin", parent, UIKit.Symbol("coin"), new Color(1f, 0.82f, 0.3f));
+            coin.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(538, -40), new Vector2(46, 46));
+            _coinsIsland = UIKit.Outlined(UIKit.Label("Coins", parent, "0", 34, Color.white), 1.5f);
+            _coinsIsland.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(592, -38), new Vector2(200, 50));
+            var b = UIKit.Button("Coins", parent, null, new Color(0, 0, 0, 0), OpenOffers);
+            ((RectTransform)b.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(530, -30), new Vector2(200, 64));
+        }
+
+        void UpdateLevel()
+        {
+            var s = G.Session;
+            _levelText.text = s.State.level.ToString();
+            _xpRing.fillAmount = s.Xp01;
+            _coinsIsland.text = s.State.coins.ToString();
+            if (_levelFlash > 0)
+            {
+                _levelFlash -= Time.deltaTime;
+                float t = Mathf.Clamp01(_levelFlash / 2f);
+                _levelDisc.transform.localScale = Vector3.one * (1 + Mathf.Sin(t * Mathf.PI * 4) * 0.12f * t);
+                _levelDisc.color = Color.Lerp(UIKit.Ink, new Color(0.9f, 0.7f, 0.2f, 0.95f), t);
+            }
+        }
+
         // ------------------------------------------------------------------ joystick
 
         RectTransform _stickBase, _stickKnob;
@@ -162,6 +212,7 @@ namespace LastTide.Game
         {
             Vector2 pos = Vector2.zero;
             bool down = false, began = false;
+            if (MapOpen || _radioOpen || _offersOpen) { _finger = -2; Stick = Vector2.zero; return; }
             if (Input.touchCount > 0)
             {
                 for (int i = 0; i < Input.touchCount; i++)
@@ -228,6 +279,13 @@ namespace LastTide.Game
             SetMeter(_foodFill, _foodText, s.State.hunger);
             SetMeter(_waterFill, _waterText, s.State.thirst);
             UpdateQuest();
+            UpdateLevel();
+            UpdateMap();
+            UpdateRadio();
+            UpdateSay();
+            UpdateSplash();
+            if (_offersOpen && Time.frameCount % 30 == 0) RefreshOffers();
+            _worldLayer.gameObject.SetActive(!MapOpen);
             UpdateWorldLabels();
             UpdatePops();
             UpdateOverlays();
@@ -239,6 +297,9 @@ namespace LastTide.Game
                 _dirty = false;
                 _refresh = 0.2f;
                 RefreshPanels();
+                RefreshRadio();
+                if (_offersOpen) RefreshOffers();
+                if (MapOpen) RefreshLocationPanel();
             }
         }
 
@@ -285,7 +346,7 @@ namespace LastTide.Game
 
             // Health bars over hurt boars.
             int bars = 0;
-            foreach (var b in Boar.All)
+            foreach (var b in Enemy.All)
             {
                 if (!b.Alive || !b.Hurt) continue;
                 var c = ToCanvas(b.transform.position + Vector3.up * 1.5f);
@@ -394,6 +455,40 @@ namespace LastTide.Game
             _passText.rectTransform.Fill();
         }
 
+        // ------------------------------------------------------------------ title splash
+
+        Image _splash;
+        float _splashT = 2.6f;
+
+        /// <summary>The key art and the title for a moment at launch, fading into the island.</summary>
+        void BuildSplash()
+        {
+            var art = UIKit.Place("keyart");
+            _splash = UIKit.Img("Splash", _root, null, new Color(0.04f, 0.12f, 0.15f));
+            _splash.rectTransform.Fill();
+            _splash.raycastTarget = true;
+            if (art != null)
+            {
+                var im = UIKit.Img("Art", _splash.transform, art, Color.white);
+                var f = im.gameObject.AddComponent<AspectRatioFitter>();
+                f.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+                f.aspectRatio = art.rect.width / art.rect.height;
+            }
+            var t = UIKit.Outlined(UIKit.Label("Title", _splash.transform, "LAST TIDE", 150, new Color(1f, 0.93f, 0.78f), TextAnchor.UpperCenter), 4f);
+            t.rectTransform.Fill(); t.rectTransform.offsetMax = new Vector2(0, -90);
+            var sub = UIKit.Outlined(UIKit.Label("Sub", _splash.transform, "SHIPWRECK SURVIVAL", 44, new Color(1f, 0.8f, 0.45f), TextAnchor.UpperCenter), 2f);
+            sub.rectTransform.Fill(); sub.rectTransform.offsetMax = new Vector2(0, -260);
+        }
+
+        void UpdateSplash()
+        {
+            if (_splash == null) return;
+            _splashT -= Time.unscaledDeltaTime;
+            float a = Mathf.Clamp01(_splashT / 0.8f);
+            foreach (var g in _splash.GetComponentsInChildren<Graphic>()) { var c = g.color; c.a = g == _splash ? a : a; g.color = c; }
+            if (_splashT <= 0) { Destroy(_splash.gameObject); _splash = null; }
+        }
+
         public void Toast(string msg)
         {
             _toast.text = msg;
@@ -416,7 +511,7 @@ namespace LastTide.Game
             _toast.color = new Color(1, 1, 1, Mathf.Clamp01(_toastT * 2));
             _flashT -= Time.deltaTime;
             float low = G.Session.State.health < 25 ? 0.12f + 0.08f * Mathf.Sin(Time.time * 5) : 0;
-            _flash.color = new Color(0.75f, 0, 0, Mathf.Max(Mathf.Clamp01(_flashT) * 0.9f, low));
+            _flash.color = MapOpen ? Color.clear : new Color(0.75f, 0, 0, Mathf.Max(Mathf.Clamp01(_flashT) * 0.9f, low));
             if (_passOut > 0)
             {
                 _passOut -= Time.deltaTime;

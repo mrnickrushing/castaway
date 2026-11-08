@@ -48,7 +48,24 @@ namespace LastTide.Core
     public sealed class LostBag
     {
         public float x, z;
+        public string location;
         public List<Slot> slots = new List<Slot>();
+    }
+
+    /// <summary>A walk across the archipelago in progress.</summary>
+    [Serializable]
+    public sealed class TravelState
+    {
+        public string to, from;
+        public double leftAt, arriveAt;     // real unix seconds
+    }
+
+    /// <summary>When a location was last left (its loot grows back after a while).</summary>
+    [Serializable]
+    public sealed class VisitState
+    {
+        public string id;
+        public double leftAt;
     }
 
     [Serializable]
@@ -70,6 +87,16 @@ namespace LastTide.Core
         public int kills, deaths, days;
         public List<string> flags = new List<string>();
         public bool muted;
+        // Progress and the wider world (Session.World).
+        public int xp, level = 1, coins, pirates;
+        public float energy = World.EnergyMax;
+        public double energyStamp;          // real unix seconds when energy was last topped up
+        public string location = World.HomeId;
+        public TravelState travel;
+        public List<VisitState> visits = new List<VisitState>();
+        public List<ItemCount> offers = new List<ItemCount>();   // offer id -> times bought
+        public double offerStart;           // real time the current offer rotation started
+        public float homeX, homeZ;          // where the castaway stood at home before leaving
 
         public static GameState New()
         {
@@ -90,6 +117,11 @@ namespace LastTide.Core
             if (builds == null) builds = new List<BuildState>();
             if (jobs == null) jobs = new List<JobState>();
             if (flags == null) flags = new List<string>();
+            if (visits == null) visits = new List<VisitState>();
+            if (offers == null) offers = new List<ItemCount>();
+            if (level < 1) level = 1;
+            if (string.IsNullOrEmpty(location) || World.Location(location) == null) location = World.HomeId;
+            if (travel != null && string.IsNullOrEmpty(travel.to)) travel = null;
             foreach (var b in builds) if (b.delivered == null) b.delivered = new List<ItemCount>();
             if (equipped >= backpack.Count) equipped = -1;
         }

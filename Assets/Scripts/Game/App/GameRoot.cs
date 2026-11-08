@@ -93,15 +93,10 @@ namespace LastTide.Game
 
             var state = SaveSystem.Load() ?? GameState.New();
             G.Session = new Session(state);
-            Spot.All.Clear();
-            Boar.All.Clear();
-            Obstacles.Clear();
+            G.Session.UpdateEnergy();
 
             Lighting();
-            var world = new GameObject("World").transform;
-            Island.BuildTerrain(world);
-            Island.BuildSea(world);
-            WorldBuilder.Populate(world);
+            BuildWorld();
             var player = Player.Create(transform);
             if (!state.placed)
             {
@@ -112,10 +107,59 @@ namespace LastTide.Game
             CameraRig.Create(player.transform);
             if (FindFirstObjectByType<EventSystem>() == null)
                 new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            MapView.Create();
             Hud.Create();
             GuideArrow.Create(transform);
             Sfx.Init(transform);
             G.Session.CheckQuests();
+            // Closed the app mid-journey: open on the map to finish it.
+            if (state.travel != null) Hud.Instance.OpenMap();
+        }
+
+        Transform _world;
+
+        /// <summary>Builds the island the castaway is on (home or a location), replacing the one before.</summary>
+        void BuildWorld()
+        {
+            if (_world != null) { _world.gameObject.SetActive(false); Destroy(_world.gameObject); }
+            Spot.All.Clear();
+            Enemy.All.Clear();
+            Obstacles.Clear();
+            Island.Configure(G.Session.Here);
+            _world = new GameObject("World " + G.Session.Here.Id).transform;
+            Island.BuildTerrain(_world);
+            Island.BuildSea(_world);
+            WorldBuilder.Populate(_world);
+        }
+
+        /// <summary>True while the map is up (the island is hidden and survival pauses).</summary>
+        public bool OnMap { get; private set; }
+
+        public void ShowMap(bool on)
+        {
+            OnMap = on;
+            if (on && G.Session.AtHome) { G.Session.State.homeX = Player.Instance.transform.position.x; G.Session.State.homeZ = Player.Instance.transform.position.z; }
+            if (_world != null) _world.gameObject.SetActive(!on);
+            Player.Instance.gameObject.SetActive(!on);
+            CameraRig.Instance.gameObject.SetActive(!on);
+            RenderSettings.fog = !on;
+            if (on) MapView.Instance.Show(G.Session.State.travel != null ? LastTide.Core.World.Location(G.Session.State.travel.to) : G.Session.Here);
+            else MapView.Instance.Hide();
+            Save();
+        }
+
+        /// <summary>Steps ashore at the end of a journey: builds that island and puts the castaway on its landing.</summary>
+        public void EnterArrived()
+        {
+            var to = G.Session.Arrive();
+            if (to == null) return;
+            BuildWorld();
+            ShowMap(false);
+            var p = to.Home ? Island.Start + new Vector3(-9, 0, 0) : Island.Start;
+            Player.Instance.Place(p, 0);
+            G.Session.State.px = p.x; G.Session.State.pz = p.z;
+            Hud.Instance.Toast(to.Name);
+            Save();
         }
 
         void Lighting()
@@ -161,7 +205,8 @@ namespace LastTide.Game
         void Update()
         {
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
-            if (!Hud.Instance || !Hud.Instance.Blocking) G.Session.Tick(dt);
+            if ((!Hud.Instance || !Hud.Instance.Blocking) && !OnMap) G.Session.Tick(dt);
+            else G.Session.UpdateEnergy();
             _autosave -= Time.unscaledDeltaTime;
             if (_autosave <= 0) { _autosave = 15f; Save(); }
 #if UNITY_EDITOR
@@ -174,7 +219,7 @@ namespace LastTide.Game
         /// <summary>After passing out: wake at the shelter if there is one, else back on the beach.</summary>
         public void Respawn()
         {
-            var shelter = G.Session.IsBuilt("shelter");
+            var shelter = G.Session.AtHome && G.Session.IsBuilt("shelter");
             var p = shelter ? WorldBuilder.SitePosition("shelter") + new Vector3(0, 0, -2.6f) : Island.Start;
             Player.Instance.Place(p, 0);
             Save();

@@ -17,18 +17,18 @@ namespace LastTide.Game
         public Vector3 Velocity { get; private set; }
         public bool Working { get; private set; }
 
-        SurvivorRig _rig;
+        IRig _rig;
         float _walk, _move, _actPhase, _swing = -1, _cooldown, _hurt;
         bool _struck;
         Act _act;
-        Boar _target;
+        Enemy _target;
 
         public static Player Create(Transform parent)
         {
             var go = new GameObject("Player");
             go.transform.SetParent(parent, false);
             var p = go.AddComponent<Player>();
-            p._rig = SurvivorRig.Build(go.transform);
+            p._rig = (IRig)SurvivorArt.TryCreate(go.transform) ?? SurvivorRig.Build(go.transform);
             return p;
         }
 
@@ -72,7 +72,7 @@ namespace LastTide.Game
 
             // Fight first: anything hostile in reach gets hit.
             _cooldown -= dt;
-            _target = Boar.Nearest(pos, AttackRange);
+            _target = Enemy.Nearest(pos, AttackRange);
             if (_swing >= 0)
             {
                 _swing += dt / 0.45f;

@@ -13,6 +13,19 @@ setting only.
   (rings: `NodeSpot`, `SiteSpot`, `BagSpot`), `World/Models` (procedural models until drop-in art exists in
   `Resources/Models/<Category>/<id>`), `Actors/` (castaway rig and controls, boars), `UI/Hud*` (joystick, meters,
   guide card, labels over rings, backpack, crafting, chest).
+- The wider game (`Core/World.cs` content, `Core/Session.World.cs` rules): levels and XP, energy that refills in real
+  time (`World.EnergyMax`, `EnergyEvery`), doubloons, eight locations on the archipelago map (run for energy or walk
+  for free in real time; level gates; loot grows back `Refresh` seconds after leaving), radio distress calls that send
+  the castaway to rescue a survivor at a location (`SignalDef`), and the trading post (`OfferDef`, doubloons only, no
+  real-money purchases yet). Locations are their own islands: `Island.Configure(location)` reshapes the height
+  function by `Biome`, `WorldBuilder.PopulateZone` places the landmark, loot, survivor and enemy dens; harvest keys are
+  prefixed `<location>:`. `Map/MapView` is the 3D map (own camera at `MapView.Origin`), `UI/Hud.Map|Radio|Offers` its
+  screens. Enemies (`Actors/Enemy`, `EnemyBody`): boar, giant crab, viper, Red Jack's raiders.
+- Art: `Tools/art/ai_assets.py` (castaway: Higgsfield multi-image 3D with rigging, ~35 credits; boar and palm: Tripo,
+  12 each) then Blender import; the castaway's work poses are driven bone by bone in `Actors/ArtRigs.cs`.
+  `Tools/art/sheets.py` makes a whole grid of icons or postcards in one image (2.75 credits) and cuts it into
+  `Resources/UI/Items` and `Resources/UI/Places`. `Tools/art/audio.py` turns the takes in `art-src/audio` into
+  `Resources/Audio/*.ogg`. Credits are the user's money: ask before spending, check `higgsfield account transactions`.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

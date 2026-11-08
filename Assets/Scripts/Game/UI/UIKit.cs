@@ -98,11 +98,80 @@ namespace LastTide.Game
                 case "pack":
                     f = (u, v) => Mathf.Max(Box(u, v, 0.2f, 0.12f, 0.8f, 0.78f, 0.12f), 1 - Disc(u, v, 0.5f, 0.82f, 0.13f) < 0.5f && v > 0.7f ? Box(u, v, 0.35f, 0.7f, 0.65f, 0.95f, 0.08f) : 0);
                     break;
+                case "bolt":
+                    f = (u, v) => Poly(u, v, new[] { new Vector2(0.62f, 0.98f), new Vector2(0.18f, 0.45f), new Vector2(0.46f, 0.45f), new Vector2(0.36f, 0.02f), new Vector2(0.82f, 0.58f), new Vector2(0.54f, 0.58f) });
+                    break;
+                case "coin":
+                    f = (u, v) => Mathf.Max(Disc(u, v, 0.5f, 0.5f, 0.45f) * (1 - Disc(u, v, 0.5f, 0.5f, 0.34f) * 0.35f), 0);
+                    break;
+                case "pin":
+                    f = (u, v) => Mathf.Max(Disc(u, v, 0.5f, 0.64f, 0.34f), Poly(u, v, new[] { new Vector2(0.2f, 0.56f), new Vector2(0.5f, 0.02f), new Vector2(0.8f, 0.56f) })) * (1 - Disc(u, v, 0.5f, 0.66f, 0.13f));
+                    break;
+                case "home":
+                    f = (u, v) =>
+                    {
+                        float hex = Poly(u, v, new[] { new Vector2(0.5f, 0.98f), new Vector2(0.94f, 0.74f), new Vector2(0.94f, 0.26f), new Vector2(0.5f, 0.02f), new Vector2(0.06f, 0.26f), new Vector2(0.06f, 0.74f) });
+                        float house = Mathf.Max(Poly(u, v, new[] { new Vector2(0.24f, 0.52f), new Vector2(0.5f, 0.76f), new Vector2(0.76f, 0.52f) }), Box(u, v, 0.32f, 0.26f, 0.68f, 0.54f, 0.01f));
+                        return hex * (1 - house * 0.85f);
+                    };
+                    break;
+                case "person":
+                    f = (u, v) => Mathf.Max(Disc(u, v, 0.5f, 0.7f, 0.17f), Box(u, v, 0.25f, 0.12f, 0.75f, 0.5f, 0.2f));
+                    break;
+                case "gift":
+                    f = (u, v) => Mathf.Max(Box(u, v, 0.12f, 0.08f, 0.88f, 0.62f, 0.04f), Box(u, v, 0.06f, 0.6f, 0.94f, 0.76f, 0.04f)) * (1 - Box(u, v, 0.45f, 0f, 0.55f, 0.8f, 0.0f) * 0.6f);
+                    break;
+                case "radio":
+                    f = (u, v) => Mathf.Max(Mathf.Max(Box(u, v, 0.08f, 0.08f, 0.92f, 0.6f, 0.08f) * (1 - Disc(u, v, 0.32f, 0.34f, 0.14f) * 0.7f), Capsule(u, v, 0.7f, 0.6f, 0.86f, 0.95f, 0.03f)), 0);
+                    break;
+                case "map":
+                    f = (u, v) => Poly(u, v, new[] { new Vector2(0.08f, 0.18f), new Vector2(0.36f, 0.08f), new Vector2(0.64f, 0.2f), new Vector2(0.92f, 0.1f), new Vector2(0.92f, 0.82f), new Vector2(0.64f, 0.92f), new Vector2(0.36f, 0.8f), new Vector2(0.08f, 0.9f) }) * (1 - Capsule(u, v, 0.36f, 0.12f, 0.36f, 0.8f, 0.02f) * 0.5f) * (1 - Capsule(u, v, 0.64f, 0.2f, 0.64f, 0.9f, 0.02f) * 0.5f);
+                    break;
+                case "run":
+                    f = (u, v) => Mathf.Max(Mathf.Max(Disc(u, v, 0.62f, 0.82f, 0.1f), Capsule(u, v, 0.55f, 0.66f, 0.42f, 0.4f, 0.07f)), Mathf.Max(Mathf.Max(Capsule(u, v, 0.42f, 0.4f, 0.62f, 0.18f, 0.06f), Capsule(u, v, 0.42f, 0.4f, 0.2f, 0.25f, 0.06f)), Mathf.Max(Capsule(u, v, 0.54f, 0.62f, 0.78f, 0.52f, 0.05f), Capsule(u, v, 0.54f, 0.62f, 0.32f, 0.6f, 0.05f))));
+                    break;
+                case "walk":
+                    f = (u, v) => Mathf.Max(Mathf.Max(Disc(u, v, 0.52f, 0.84f, 0.1f), Capsule(u, v, 0.5f, 0.68f, 0.48f, 0.4f, 0.075f)), Mathf.Max(Mathf.Max(Capsule(u, v, 0.48f, 0.4f, 0.58f, 0.06f, 0.06f), Capsule(u, v, 0.48f, 0.4f, 0.4f, 0.06f, 0.06f)), Mathf.Max(Capsule(u, v, 0.5f, 0.64f, 0.62f, 0.44f, 0.05f), Capsule(u, v, 0.5f, 0.64f, 0.38f, 0.46f, 0.05f))));
+                    break;
                 default:
                     f = (u, v) => Disc(u, v, 0.5f, 0.5f, 0.45f);
                     break;
             }
             return _icons["sym_" + id] = Paint(id, 128, f);
+        }
+
+        /// <summary>Coverage of a convex or simple polygon (even-odd rule) with a soft edge.</summary>
+        static float Poly(float u, float v, Vector2[] pts)
+        {
+            bool inside = false;
+            float best = 1e9f;
+            for (int i = 0, j = pts.Length - 1; i < pts.Length; j = i++)
+            {
+                var a = pts[i]; var b = pts[j];
+                if ((a.y > v) != (b.y > v) && u < (b.x - a.x) * (v - a.y) / (b.y - a.y) + a.x) inside = !inside;
+                var p = new Vector2(u, v);
+                float t = Mathf.Clamp01(Vector2.Dot(p - a, b - a) / (b - a).sqrMagnitude);
+                best = Mathf.Min(best, Vector2.Distance(p, a + (b - a) * t));
+            }
+            float edge = Mathf.Clamp01(best * 128);
+            return inside ? Mathf.Lerp(0.5f, 1f, edge) : Mathf.Lerp(0.5f, 0f, edge);
+        }
+
+        /// <summary>A location's postcard (Resources/UI/Places/{id}), or null. <paramref name="band"/> crops a wide strip
+        /// through the middle for the location panel's header.</summary>
+        public static Sprite Place(string id, float band = 0)
+        {
+            Sprite s;
+            string key = "place_" + id + band;
+            if (_icons.TryGetValue(key, out s)) return s;
+            var tex = Resources.Load<Texture2D>("UI/Places/" + id);
+            if (tex != null)
+            {
+                float h = band > 0 ? tex.width / band : tex.height;
+                s = Sprite.Create(tex, new Rect(0, (tex.height - h) * 0.45f, tex.width, h), new Vector2(0.5f, 0.5f), 100);
+            }
+            _icons[key] = s;
+            return s;
         }
 
         static float Capsule(float u, float v, float ax, float ay, float bx, float by, float r)
