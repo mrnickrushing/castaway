@@ -133,6 +133,30 @@ namespace LastTide.Game
                 case "walk":
                     f = (u, v) => Mathf.Max(Mathf.Max(Disc(u, v, 0.52f, 0.84f, 0.1f), Capsule(u, v, 0.5f, 0.68f, 0.48f, 0.4f, 0.075f)), Mathf.Max(Mathf.Max(Capsule(u, v, 0.48f, 0.4f, 0.58f, 0.06f, 0.06f), Capsule(u, v, 0.48f, 0.4f, 0.4f, 0.06f, 0.06f)), Mathf.Max(Capsule(u, v, 0.5f, 0.64f, 0.62f, 0.44f, 0.05f), Capsule(u, v, 0.5f, 0.64f, 0.38f, 0.46f, 0.05f))));
                     break;
+                case "craft": // a rolled blueprint with a pencil
+                    f = (u, v) => Mathf.Max(Box(u, v, 0.12f, 0.22f, 0.78f, 0.82f, 0.04f) * (1 - (Mathf.Abs(Mathf.Repeat(v * 6, 1) - 0.5f) < 0.08f && u > 0.2f && u < 0.7f && v > 0.32f && v < 0.72f ? 0.6f : 0)), Capsule(u, v, 0.55f, 0.18f, 0.9f, 0.62f, 0.05f));
+                    break;
+                case "build": // a little house
+                    f = (u, v) => Mathf.Max(Poly(u, v, new[] { new Vector2(0.1f, 0.52f), new Vector2(0.5f, 0.9f), new Vector2(0.9f, 0.52f) }), Box(u, v, 0.2f, 0.1f, 0.8f, 0.55f, 0.02f) * (1 - Box(u, v, 0.42f, 0.1f, 0.58f, 0.36f, 0.01f)));
+                    break;
+                case "path": // a flag on a pole
+                    f = (u, v) => Mathf.Max(Capsule(u, v, 0.25f, 0.08f, 0.25f, 0.92f, 0.045f), Poly(u, v, new[] { new Vector2(0.27f, 0.9f), new Vector2(0.88f, 0.76f), new Vector2(0.27f, 0.56f) }));
+                    break;
+                case "rotate":
+                    f = (u, v) => { float d = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f)); float a = Mathf.Atan2(v - 0.5f, u - 0.5f); bool arc = d > 0.26f && d < 0.38f && a > -2.4f; return Mathf.Max(arc ? 1 : 0, Poly(u, v, new[] { new Vector2(0.06f, 0.42f), new Vector2(0.34f, 0.42f), new Vector2(0.2f, 0.66f) })); };
+                    break;
+                case "check":
+                    f = (u, v) => Mathf.Max(Capsule(u, v, 0.18f, 0.5f, 0.42f, 0.26f, 0.08f), Capsule(u, v, 0.42f, 0.26f, 0.84f, 0.74f, 0.08f));
+                    break;
+                case "x":
+                    f = (u, v) => Mathf.Max(Capsule(u, v, 0.22f, 0.22f, 0.78f, 0.78f, 0.08f), Capsule(u, v, 0.22f, 0.78f, 0.78f, 0.22f, 0.08f));
+                    break;
+                case "upgrade":
+                    f = (u, v) => Mathf.Max(Poly(u, v, new[] { new Vector2(0.15f, 0.5f), new Vector2(0.5f, 0.88f), new Vector2(0.85f, 0.5f) }), Mathf.Max(Box(u, v, 0.36f, 0.24f, 0.64f, 0.52f, 0.01f), Box(u, v, 0.28f, 0.08f, 0.72f, 0.16f, 0.01f)));
+                    break;
+                case "lock":
+                    f = (u, v) => Mathf.Max(Box(u, v, 0.2f, 0.08f, 0.8f, 0.55f, 0.06f), Mathf.Min(Disc(u, v, 0.5f, 0.6f, 0.26f), 1 - Disc(u, v, 0.5f, 0.6f, 0.16f)) * (v > 0.55f ? 1 : 0));
+                    break;
                 default:
                     f = (u, v) => Disc(u, v, 0.5f, 0.5f, 0.45f);
                     break;
@@ -310,7 +334,7 @@ namespace LastTide.Game
         /// <summary>An item picture: the art if there is some, else a coloured disc with the initial.</summary>
         public static void ItemIcon(Transform parent, string id, float size)
         {
-            var art = ItemArt(id);
+            var art = ItemArt(id) ?? ModelIcons.Item(id);
             if (art != null)
             {
                 var img = Img("Icon", parent, art, Color.white);

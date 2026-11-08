@@ -76,7 +76,8 @@ namespace LastTide.Game
             _line = 0;
             _typed = 0;
             CloseAll();
-            _radioOpen = _offersOpen = _shopOpen = _helpOpen = false;
+            _radioOpen = _offersOpen = _shopOpen = _helpOpen = _bpOpen = _pathOpen = false;
+            if (_building) ExitBuild();
             _story.gameObject.SetActive(true);
             int qi = Quests.All.FindIndex(q => q.Id == G.Session.CurrentQuest.Id);
             var ch = Story.ChapterOf(qi);

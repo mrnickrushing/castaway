@@ -30,6 +30,12 @@ setting only.
   ends with Red Jack (boss enemy `redjack` at the Pirate Camp) and sailing his ship (`ShipSpot`) on the Last Tide.
 - Purchases: see `docs/STORE.md`. Doubloon spends: refill energy, rush a journey or a craft, recover the lost backpack.
   Help and settings: `UI/Hud.Help.cs`.
+- Base (`Core/Content.Base.cs`, `Core/Session.Base.cs`): pockets (first 5 backpack slots, kept on passing out), clothes and
+  armour (`GearSlot`), split/sort/drop, station levels and upgrades, crafting several at once ("hand" recipes anywhere),
+  free building on the camp grid (`PieceDef`, `PieceState`; floors, edge walls, objects; storage boxes), the Survivor's
+  Path (step rewards claimed on the free track and the Ultra track). UI: `Hud.Panels` (inventory + station/storage),
+  `Hud.Blueprints`, `Hud.Build` (grid, ghost, rotate/confirm), `Hud.Path`. Piece models: `World/Pieces.cs`; icons for
+  things without painted art are rendered at runtime (`UI/ModelIcons.cs`).
 - Free models: `Tools/art/free_assets.py` (Kenney kits, Quaternius characters, CC0, see `CREDITS.md`) converts them
   with `Tools/blender/free_import.py` to vertex-coloured FBX in `Models/Free` and `Models/People`, drawn with
   `Materials.Kit` (VertexLit without the uv2 surface channel those meshes don't have). Prefer these over paid AI art.

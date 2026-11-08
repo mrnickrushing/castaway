@@ -8,9 +8,14 @@ namespace LastTide.Core
     /// <summary>What a tool is good for: chopping palms, breaking rock.</summary>
     public enum ToolUse { None, Chop, Mine, Fish }
 
+    /// <summary>Where a piece of clothing is worn.</summary>
+    public enum GearSlot { None, Head, Body, Legs, Feet }
+
     public sealed class ItemDef
     {
-        public string Id, Name;
+        public string Id, Name, Blurb;
+        public GearSlot Gear;                // clothing: which slot it goes in
+        public int Armor;                    // clothing: damage it soaks (see Session.ArmorFactor)
         public ItemKind Kind;
         public int Stack = 20;
         public int Food, Drink, Heal;        // restored when used
@@ -32,7 +37,8 @@ namespace LastTide.Core
     /// <summary>A crafting recipe (made at the workbench) or a cooking recipe (made at the campfire).</summary>
     public sealed class RecipeDef
     {
-        public string Id, Output, Station;
+        public string Id, Output, Station;    // station "hand" = made from the backpack anywhere
+        public int MinLevel = 1;              // station level needed
         public int Count = 1;
         public ItemCount[] Inputs;
         public float Seconds = 2f;
@@ -43,6 +49,9 @@ namespace LastTide.Core
     {
         public string Id, Name, Blurb;
         public ItemCount[] Cost;
+        /// <summary>Cost of each upgrade: Upgrades[0] takes it to level 2, and so on.</summary>
+        public ItemCount[][] Upgrades = new ItemCount[0][];
+        public string UpgradeBlurb;
     }
 
     /// <summary>Something on the island the player harvests by standing in its ring.</summary>
@@ -59,7 +68,7 @@ namespace LastTide.Core
     }
 
     /// <summary>All game content and tuning.</summary>
-    public static class Content
+    public static partial class Content
     {
         public static readonly Dictionary<string, ItemDef> Items = new Dictionary<string, ItemDef>();
         public static readonly Dictionary<string, RecipeDef> Recipes = new Dictionary<string, RecipeDef>();
@@ -72,7 +81,8 @@ namespace LastTide.Core
         public const float StarveDamage = 0.5f;     // health lost per second at 0 hunger or thirst
         public const float RegenRate = 0.35f;       // health regained per second when fed and watered
         public const float RegenAbove = 40f;        // hunger and thirst both above this to regenerate
-        public const int BackpackSlots = 16;
+        /// <summary>Pockets (the first slots: kept when you pass out) and the backpack proper.</summary>
+        public const int PocketSlots = 5, BackpackSlots = 20;
         public const int ChestSlots = 24;
         public const int FistDamage = 6;
         public const float RainSeconds = 45f;       // rain catcher fills one water flask
@@ -117,12 +127,12 @@ namespace LastTide.Core
             Tool("cutlass", "Pirate Cutlass", ToolUse.None, 38, 120);
 
             // Workbench recipes
-            Recipe("pickaxe", "workbench", 1, 3f, I("wood", 4), I("stone", 4), I("fiber", 3));
+            Recipe("pickaxe", "hand", 1, 3f, I("wood", 4), I("stone", 4), I("fiber", 3));
             Recipe("hatchet", "workbench", 1, 3f, I("wood", 3), I("stone", 3), I("scrap", 2));
-            Recipe("spear", "workbench", 1, 3f, I("wood", 5), I("stone", 2), I("fiber", 4));
+            Recipe("spear", "hand", 1, 3f, I("wood", 5), I("stone", 2), I("fiber", 4));
             Recipe("club", "workbench", 1, 4f, I("wood", 8), I("scrap", 4), I("rope", 2));
-            Recipe("rope", "workbench", 1, 2f, I("fiber", 4));
-            Recipe("bandage", "workbench", 1, 2f, I("fiber", 3), I("cloth", 1));
+            Recipe("rope", "hand", 1, 2f, I("fiber", 4));
+            Recipe("bandage", "hand", 1, 2f, I("fiber", 3), I("cloth", 1));
             Recipe("nails", "workbench", 4, 2f, I("scrap", 2));
             Recipe("rod", "workbench", 1, 3f, I("wood", 3), I("rope", 2), I("nails", 1));
             Recipe("harpoon", "workbench", 1, 4f, I("wood", 4), I("iron_ore", 3), I("rope", 2));
@@ -154,6 +164,7 @@ namespace LastTide.Core
             Node("fishspot", "Fishing Spot", ToolUse.Fish, 3.0f, 3, 240f, new[] { I("fish", 1) }, null);
             Node("treasure", "Smuggler's Chest", ToolUse.None, 3.0f, 1, 1800f, new[] { I("doubloon", 8), I("pearl", 1) }, null);
             Node("hatchet_pickup", "Hatchet", ToolUse.None, 0.6f, 1, -1f, new[] { I("hatchet", 1) }, null);
+            ExtendBase();
         }
 
         public static ItemCount I(string id, int n) { return new ItemCount(id, n); }
@@ -177,9 +188,11 @@ namespace LastTide.Core
             d.Use = use; d.Damage = damage; d.Durability = durability;
         }
 
-        static void Recipe(string output, string station, int count, float seconds, params ItemCount[] inputs)
+        static RecipeDef Recipe(string output, string station, int count, float seconds, params ItemCount[] inputs)
         {
-            Recipes[output] = new RecipeDef { Id = output, Output = output, Station = station, Count = count, Seconds = seconds, Inputs = inputs };
+            var r = new RecipeDef { Id = output, Output = output, Station = station, Count = count, Seconds = seconds, Inputs = inputs };
+            Recipes[output] = r;
+            return r;
         }
 
         static void Build(string id, string name, string blurb, params ItemCount[] cost)

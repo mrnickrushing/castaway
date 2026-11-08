@@ -49,6 +49,8 @@ STATIC = {
     "signpost": (S + "signpost.glb", 2.0),
     "palisade": (S + "fence-fortified.glb", 3.2),
     "bucket": (S + "bucket.glb", 0.6),
+    "box": (S + "box-large.glb", 1.3),
+    "bedframe": (S + "bedroll-frame.glb", 2.3),
     "tool_axe": (S + "tool-axe.glb", 0.75),
     "tool_pickaxe": (S + "tool-pickaxe.glb", 0.8),
     "tool_hammer": (S + "tool-hammer.glb", 0.55),

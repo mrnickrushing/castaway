@@ -47,6 +47,8 @@ namespace LastTide.Game
             BagSpot.Create(nodes);
             if (!Island.Location.Home) { PopulateZone(world, nodes); return; }
 
+            PieceViews.Create(world);
+
             // The raft on the beach that takes the castaway out to the rest of the archipelago.
             var raftAt = Island.Start + new Vector3(-12, 0, -4);
             ExitSpot.Create(nodes, Island.Ground(raftAt), 200);

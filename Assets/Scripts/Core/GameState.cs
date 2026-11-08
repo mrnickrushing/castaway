@@ -31,6 +31,7 @@ namespace LastTide.Core
         public List<ItemCount> delivered = new List<ItemCount>();
         public bool done;
         public double stamp;      // raincatcher: when it last filled a flask
+        public int level = 1;     // upgrades (campfire, workbench)
         public int stored;        // raincatcher: flasks waiting
     }
 
@@ -99,12 +100,15 @@ namespace LastTide.Core
         public float homeX, homeZ;          // where the castaway stood at home before leaving
         public List<string> grantedTx = new List<string>();               // App Store transactions already rewarded
         public List<PendingPurchase> pendingPurchases = new List<PendingPurchase>();
+        public List<Slot> gear = new List<Slot>();          // head, body, legs, feet
+        public List<PieceState> pieces = new List<PieceState>();
 
         public static GameState New()
         {
             var s = new GameState();
             for (int i = 0; i < Content.BackpackSlots; i++) s.backpack.Add(new Slot());
             for (int i = 0; i < Content.ChestSlots; i++) s.chest.Add(new Slot());
+            for (int i = 0; i < 4; i++) s.gear.Add(new Slot());
             return s;
         }
 
@@ -123,6 +127,10 @@ namespace LastTide.Core
             if (offers == null) offers = new List<ItemCount>();
             if (grantedTx == null) grantedTx = new List<string>();
             if (pendingPurchases == null) pendingPurchases = new List<PendingPurchase>();
+            if (gear == null) gear = new List<Slot>();
+            while (gear.Count < 4) gear.Add(new Slot());
+            if (pieces == null) pieces = new List<PieceState>();
+            foreach (var p in pieces) if (p.slots == null) p.slots = new List<Slot>();
             if (level < 1) level = 1;
             if (string.IsNullOrEmpty(location) || World.Location(location) == null) location = World.HomeId;
             if (travel != null && string.IsNullOrEmpty(travel.to)) travel = null;
