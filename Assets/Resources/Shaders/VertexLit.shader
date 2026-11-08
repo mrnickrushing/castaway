@@ -10,6 +10,7 @@ Shader "LastTide/VertexLit"
         _MainTex ("Detail (grayscale)", 2D) = "white" {}
         _DetailScale ("Detail Scale", Float) = 0
         _DetailStrength ("Detail Strength", Range(0,1)) = 0
+        _KitSurface ("Ignore uv2 surface (kit models)", Float) = 0
     }
 
     // ------------------------------------------------------------------ URP (Universal Render Pipeline)
@@ -25,6 +26,7 @@ Shader "LastTide/VertexLit"
             float4 _MainTex_ST;
             float _DetailScale;
             float _DetailStrength;
+            float _KitSurface;  // 1 = the mesh has no surface channel (free kit models): matte, no detail
         CBUFFER_END
         float _NightGlow;
         float4 _GlowColor;
@@ -83,7 +85,7 @@ Shader "LastTide/VertexLit"
                 o.positionWS = p.positionWS;
                 o.normalWS = TransformObjectToWorldNormal(v.normalOS);
                 o.color = v.color;
-                o.sm = v.uv1;
+                o.sm = _KitSurface > 0.5 ? float3(0.12, 0, 0) : v.uv1;
                 o.positionOS = v.positionOS.xyz;
                 o.normalOS = v.normalOS;
                 o.fogCoord = ComputeFogFactor(p.positionCS.z);

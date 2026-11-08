@@ -11,14 +11,45 @@ namespace LastTide.Game
         {
             switch (kind)
             {
+                case "pirate":
+                case "skeleton":
+                case "redjack":
+                {
+                    var person = CharacterArt.TryCreate(kind == "skeleton" ? "skeleton" : "sharky", parent, kind == "redjack" ? 1.3f : 1f);
+                    if (person != null) return new CharacterBody(person);
+                    return new PirateBody(parent);
+                }
                 case "crab": return new CrabBody(parent);
                 case "snake": return new SnakeBody(parent);
-                case "pirate": return new PirateBody(parent);
                 default:
-                    var art = BoarArt.TryCreate(parent);
-                    return art != null ? (EnemyBody)new BoarArtBody(art) : new BoarRigBody(BoarRig.Build(parent));
+                    var boar = BoarArt.TryCreate(parent);
+                    return boar != null ? (EnemyBody)new BoarArtBody(boar) : new BoarRigBody(BoarRig.Build(parent));
             }
         }
+
+        /// <summary>An animated pirate or drowned smuggler: walks and runs, strikes with the cutlass, flinches, falls.</summary>
+        sealed class CharacterBody : EnemyBody
+        {
+            readonly CharacterArt _a;
+            float _lastAttack = -1;
+            bool _dead;
+            public CharacterBody(CharacterArt a) { _a = a; }
+
+            public override void Pose(float gait, float speed, float attack, float dead)
+            {
+                if (dead > 0) { if (!_dead) { _dead = true; _a.Die(); } return; }
+                if (attack >= 0 && (_lastAttack < 0 || attack < _lastAttack)) _a.Once("Sword", 1.3f);
+                _lastAttack = attack;
+                if (speed > 3f) _a.Loop("Run", Mathf.Clamp(speed / 4.5f, 0.7f, 1.4f));
+                else if (speed > 0.2f) _a.Loop("Walk", Mathf.Clamp(speed / 1.6f, 0.6f, 1.4f));
+                else _a.Loop("Idle");
+            }
+
+            public override void Flinch() { _a.Once("HitReact", 1.4f); }
+        }
+
+        /// <summary>A short flinch when hit (animated characters only).</summary>
+        public virtual void Flinch() { }
 
         sealed class BoarArtBody : EnemyBody
         {

@@ -23,6 +23,8 @@ namespace LastTide.Game
         float _walk, _move, _phase, _swing = -1;
         Act _act;
         Vector3 _hipsRest;
+        /// <summary>Crouched, sneaking.</summary>
+        public bool Sneak;
 
         public static SurvivorArt TryCreate(Transform parent)
         {
@@ -65,6 +67,17 @@ namespace LastTide.Game
             if (_held != null) Destroy(_held);
             _held = null;
             if (string.IsNullOrEmpty(id)) return;
+            string kit = id == "hatchet" ? "tool_axe" : id == "pickaxe" ? "tool_pickaxe" : id == "hammer" ? "tool_hammer" : null;
+            if (kit != null && ModelRegistry.Has(ModelRegistry.Free, kit))
+            {
+                // Kit tools lie along their length; stand them on end so the handle runs up +Y from the grip.
+                _held = new GameObject("Held " + id);
+                _held.transform.SetParent(transform.parent, false);
+                var t = ModelRegistry.Spawn(ModelRegistry.Free, kit, _held.transform);
+                var b = ModelRegistry.RendererBounds(t);
+                t.transform.localRotation = Quaternion.Euler(0, 0, 0) * t.transform.localRotation;
+                return;
+            }
             var mb = Models.Held(id);
             if (mb.VertexCount == 0) return;
             _held = mb.ToObject("Held " + id, transform.parent);
@@ -84,6 +97,13 @@ namespace LastTide.Game
         {
             var root = transform.parent;
             _hips.localPosition = _hipsRest;
+            if (Sneak)
+            {
+                _hips.position += Vector3.down * 0.28f;
+                Twist(_spine, 0, 28);
+                Aim(_armR, _foreR, new Vector3(0.25f, -0.6f, 0.7f));
+                Aim(_armL, _foreL, new Vector3(-0.25f, -0.6f, 0.7f));
+            }
             float p = _phase;
             switch (_act)
             {

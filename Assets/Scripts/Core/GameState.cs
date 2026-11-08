@@ -21,6 +21,8 @@ namespace LastTide.Core
         public string key;        // world placement key, e.g. "palm#12"
         public int hitsUsed;
         public double respawnAt;  // 0 = standing
+        public List<Slot> slots;  // a loot bag's contents
+        public bool rolled;       // the bag's contents have been rolled
     }
 
     /// <summary>A camp structure: materials delivered so far, and whether it stands.</summary>
@@ -31,6 +33,7 @@ namespace LastTide.Core
         public List<ItemCount> delivered = new List<ItemCount>();
         public bool done;
         public double stamp;      // raincatcher: when it last filled a flask
+        public int level = 1;     // upgrades (campfire, workbench)
         public int stored;        // raincatcher: flasks waiting
     }
 
@@ -97,20 +100,32 @@ namespace LastTide.Core
         public List<ItemCount> offers = new List<ItemCount>();   // offer id -> times bought
         public double offerStart;           // real time the current offer rotation started
         public float homeX, homeZ;          // where the castaway stood at home before leaving
+        public List<string> grantedTx = new List<string>();               // App Store transactions already rewarded
+        public List<PendingPurchase> pendingPurchases = new List<PendingPurchase>();
+        public List<Slot> gear = new List<Slot>();          // head, body, legs, feet
+        public List<PieceState> pieces = new List<PieceState>();
+        public int levelsClaimed;           // level-up rewards taken
+        public string name;                 // what the castaway is called (settings)
+        // Season pass and events (Session.Season).
+        public int seasonNo, seasonPts, seasonPremium, takesDay, takes;
+        public List<int> seasonFree = new List<int>(), seasonPrem = new List<int>();
+        public List<EventProgress> events = new List<EventProgress>();
+        public string pet;                  // companion at heel
 
         public static GameState New()
         {
             var s = new GameState();
             for (int i = 0; i < Content.BackpackSlots; i++) s.backpack.Add(new Slot());
             for (int i = 0; i < Content.ChestSlots; i++) s.chest.Add(new Slot());
+            for (int i = 0; i < 4; i++) s.gear.Add(new Slot());
             return s;
         }
 
         /// <summary>Fills in anything an older or damaged save lacks.</summary>
-        public void Repair()
+        public void Repair(int backpackSize = Content.BackpackSlots)
         {
             if (backpack == null) backpack = new List<Slot>();
-            while (backpack.Count < Content.BackpackSlots) backpack.Add(new Slot());
+            while (backpack.Count < backpackSize) backpack.Add(new Slot());
             if (chest == null) chest = new List<Slot>();
             while (chest.Count < Content.ChestSlots) chest.Add(new Slot());
             if (nodes == null) nodes = new List<NodeState>();
@@ -119,6 +134,15 @@ namespace LastTide.Core
             if (flags == null) flags = new List<string>();
             if (visits == null) visits = new List<VisitState>();
             if (offers == null) offers = new List<ItemCount>();
+            if (grantedTx == null) grantedTx = new List<string>();
+            if (pendingPurchases == null) pendingPurchases = new List<PendingPurchase>();
+            if (gear == null) gear = new List<Slot>();
+            while (gear.Count < 4) gear.Add(new Slot());
+            if (pieces == null) pieces = new List<PieceState>();
+            if (seasonFree == null) seasonFree = new List<int>();
+            if (seasonPrem == null) seasonPrem = new List<int>();
+            if (events == null) events = new List<EventProgress>();
+            foreach (var p in pieces) if (p.slots == null) p.slots = new List<Slot>();
             if (level < 1) level = 1;
             if (string.IsNullOrEmpty(location) || World.Location(location) == null) location = World.HomeId;
             if (travel != null && string.IsNullOrEmpty(travel.to)) travel = null;

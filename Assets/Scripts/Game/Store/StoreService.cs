@@ -1,0 +1,262 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using LastTide.Core;
+using UnityEngine;
+
+namespace LastTide.Game
+{
+    public enum PurchaseOutcome { Paid, Cancelled, Failed }
+
+    /// <summary>Real-money store abstraction. The game only talks to this interface.</summary>
+    public interface IStore
+    {
+        bool Ready { get; }
+        /// <summary>Localized price ("$4.99", "4,99 €") or null if unknown.</summary>
+        string Price(string productId);
+        /// <summary>Calls back with the outcome and the transaction id (Paid, may be null) or a message.</summary>
+        void Purchase(string productId, Action<PurchaseOutcome, string> done);
+        void Restore(Action<int> done);
+        /// <summary>The account's one-time transactions, for <see cref="Session.ReconcilePurchases"/> (null if unavailable).</summary>
+        void Receipts(Action<List<StoreReceipt>> done);
+        /// <summary>Ties purchases to a signed-in account (Sign in with Apple user id), or null to go anonymous.</summary>
+        void Identify(string appUserId);
+    }
+
+    /// <summary>
+    /// Picks the store implementation:
+    ///  • RevenueCat (App Store) on device when the RevenueCat Unity SDK is installed (which defines
+    ///    LASTTIDE_REVENUECAT) and RevenueCatStore.ApiKey is set (see docs/STORE.md).
+    ///  • TestStore otherwise: instant fake purchases in the editor and development builds only.
+    ///    In a release build without RevenueCat, purchases are disabled, never free.
+    /// </summary>
+    public static class Store
+    {
+        static IStore _store;
+        public static IStore Current
+        {
+            get
+            {
+                if (_store != null) return _store;
+#if LASTTIDE_REVENUECAT
+                // The RevenueCat package is installed (Ironhorse.Game.asmdef versionDefines); it's used once the
+                // project's Apple SDK key is filled in, and on device only (the Editor has no StoreKit).
+                _store = RevenueCatStore.Configured && !Application.isEditor ? RevenueCatStore.Create() : (IStore)new TestStore();
+#else
+                _store = new TestStore();
+#endif
+                return _store;
+            }
+        }
+
+        public static string PriceOf(string productId)
+        {
+            var p = Current.Price(productId);
+            if (!string.IsNullOrEmpty(p)) return p;
+            var def = Catalog.Product(productId);
+            return def != null ? def.FallbackPrice : "?";
+        }
+
+        /// <summary>
+        /// Buys a product and grants it through the simulation (idempotent per transaction). A pending
+        /// marker is saved first, so a purchase charged while the app dies is delivered by <see cref="Reconcile"/>.
+        /// </summary>
+        public static void Buy(string productId, Action<bool, string> done = null)
+        {
+            G.Session.BeginPurchase(productId);
+            GameRoot.Instance.Save();
+            Current.Purchase(productId, (outcome, txOrMessage) =>
+            {
+                bool ok = false; string msg = null;
+                switch (outcome)
+                {
+                    case PurchaseOutcome.Paid:
+                        ok = G.Session.GrantPurchase(productId, txOrMessage);
+                        if (!ok) msg = "Already delivered.";
+                        break;
+                    case PurchaseOutcome.Cancelled:
+                        G.Session.EndPurchase(productId);
+                        msg = txOrMessage;
+                        break;
+                    default: // the store may still have charged (network drop, Ask to Buy): keep watching
+                        msg = txOrMessage;
+                        Reconcile();
+                        break;
+                }
+                GameRoot.Instance.Save(); // persist at once after a paid grant
+                done?.Invoke(ok, msg);
+            });
+        }
+
+        /// <summary>Delivers purchases this device started that never got their reward (crash, lost callback).</summary>
+        public static void Reconcile()
+        {
+            if (G.Session == null || !G.Session.HasPendingPurchases) return;
+            Current.Receipts(Deliver);
+        }
+
+        /// <summary>Matches the store's transactions against this device's pending purchases.</summary>
+        public static void Deliver(List<StoreReceipt> receipts)
+        {
+            if (G.Session == null || !G.Session.HasPendingPurchases || receipts == null) return;
+            var got = G.Session.ReconcilePurchases(receipts);
+            GameRoot.Instance.Save();
+            if (got.Count > 0 && Hud.Instance != null) Hud.Instance.Toast("Your purchase arrived: " + string.Join(", ", got));
+        }
+    }
+
+    public sealed class TestStore : IStore
+    {
+        static bool Allowed { get { return Application.isEditor || Debug.isDebugBuild; } }
+        public bool Ready { get { return Allowed; } }
+        public string Price(string productId) { return null; }
+
+        public void Purchase(string productId, Action<PurchaseOutcome, string> done)
+        {
+            if (!Allowed) { done(PurchaseOutcome.Failed, "The store isn't available yet."); return; }
+            Debug.Log("[TestStore] Simulated purchase of " + productId);
+            done(PurchaseOutcome.Paid, "test-" + Guid.NewGuid().ToString("N"));
+        }
+
+        public void Restore(Action<int> done) { done(0); }
+        public void Receipts(Action<List<StoreReceipt>> done) { done(new List<StoreReceipt>()); }
+        public void Identify(string appUserId) { }
+    }
+
+#if LASTTIDE_REVENUECAT
+    /// <summary>
+    /// App Store purchases via RevenueCat. Requires the RevenueCat Unity SDK (Purchases) and your
+    /// Apple public SDK key in <see cref="ApiKey"/>. Product ids must match Catalog.Products and
+    /// App Store Connect. Compiled only when LASTTIDE_REVENUECAT is defined.
+    /// </summary>
+    public sealed class RevenueCatStore : IStore
+    {
+        /// <summary>RevenueCat → Project → API keys → Apple App Store public key (appl_...).</summary>
+        public const string ApiKey = "appl_REPLACE_WITH_LAST_TIDE_KEY"; // public by design (ships in the app)
+        public static bool Configured { get { return ApiKey.StartsWith("appl_") && !ApiKey.Contains("REPLACE"); } }
+
+        Purchases _purchases;
+        bool _booted; // Purchases configures itself in its Start(); calls before that hit an unset native wrapper
+        string _pendingUser; bool _hasPendingUser; // Identify() before boot
+        readonly Dictionary<string, string> _prices = new Dictionary<string, string>();
+        public bool Ready { get; private set; }
+
+        sealed class Boot : MonoBehaviour
+        {
+            public RevenueCatStore Store;
+            System.Collections.IEnumerator Start()
+            {
+                yield return null;
+                Store._booted = true;
+                if (Store._hasPendingUser) Store.Identify(Store._pendingUser); // reconciles once logged in
+                else LastTide.Game.Store.Reconcile();
+                Store.LoadPrices();
+            }
+        }
+
+        /// <summary>RevenueCat reports transactions StoreKit re-delivers at launch (after a crash mid-purchase) here.</summary>
+        sealed class Listener : Purchases.UpdatedCustomerInfoListener
+        {
+            public override void CustomerInfoReceived(Purchases.CustomerInfo info)
+            {
+                if (G.Session != null && G.Session.HasPendingPurchases) LastTide.Game.Store.Deliver(ToReceipts(info));
+            }
+        }
+
+        static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        static List<StoreReceipt> ToReceipts(Purchases.CustomerInfo info)
+        {
+            if (info == null || info.NonSubscriptionTransactions == null) return null;
+            return info.NonSubscriptionTransactions.Where(t => t != null)
+                .Select(t => new StoreReceipt(t.ProductIdentifier, t.TransactionIdentifier, (t.PurchaseDate - Epoch).TotalSeconds)).ToList();
+        }
+
+        public static RevenueCatStore Create()
+        {
+            var s = new RevenueCatStore();
+            var go = new GameObject("RevenueCat");
+            UnityEngine.Object.DontDestroyOnLoad(go);
+            go.SetActive(false);
+            s._purchases = go.AddComponent<Purchases>();
+            s._purchases.revenueCatAPIKeyApple = ApiKey;
+            s._purchases.useRuntimeSetup = false;
+            s._purchases.productIdentifiers = Catalog.Products.Select(p => p.Id).ToArray();
+            s._purchases.listener = go.AddComponent<Listener>();
+            go.AddComponent<Boot>().Store = s; // load prices one frame after Purchases.Start has configured the SDK
+            go.SetActive(true);
+            return s;
+        }
+
+        void LoadPrices()
+        {
+            var ids = Catalog.Products.Select(p => p.Id).ToArray();
+            _purchases.GetProducts(ids, (products, error) =>
+            {
+                if (error != null) { Debug.LogWarning("[RevenueCat] " + error.Message); return; }
+                foreach (var p in products) _prices[p.Identifier] = p.PriceString;
+                Ready = true;
+            }, "inapp");
+        }
+
+        public string Price(string productId) { string p; return _prices.TryGetValue(productId, out p) ? p : null; }
+
+        public void Purchase(string productId, Action<PurchaseOutcome, string> done)
+        {
+            if (!_booted) { done(PurchaseOutcome.Cancelled, "The store is still loading. Try again in a moment."); return; }
+            _purchases.PurchaseProduct(productId, result =>
+            {
+                if (result.UserCancelled) { done(PurchaseOutcome.Cancelled, "Purchase cancelled."); return; }
+                if (result.Error != null) { done(PurchaseOutcome.Failed, result.Error.Message); return; }
+                var tx = result.StoreTransaction;
+                string id = tx != null ? tx.TransactionIdentifier : null;
+                if (string.IsNullOrEmpty(id)) // fall back to the account's newest transaction for this product
+                {
+                    var r = ToReceipts(result.CustomerInfo);
+                    if (r != null) id = r.Where(x => x.ProductId == productId).OrderByDescending(x => x.PurchasedAt).Select(x => x.TransactionId).FirstOrDefault();
+                }
+                done(PurchaseOutcome.Paid, id);
+            }, "inapp");
+        }
+
+        public void Receipts(Action<List<StoreReceipt>> done)
+        {
+            if (!_booted) { done(null); return; }
+            _purchases.GetCustomerInfo((info, error) =>
+            {
+                if (error != null) { Debug.LogWarning("[RevenueCat] customer info: " + error.Message); done(null); return; }
+                done(ToReceipts(info));
+            });
+        }
+
+        public void Identify(string appUserId)
+        {
+            if (!_booted) { _pendingUser = appUserId; _hasPendingUser = true; return; }
+            _hasPendingUser = false;
+            if (!string.IsNullOrEmpty(appUserId))
+                _purchases.LogIn(appUserId, (info, created, error) =>
+                {
+                    if (error != null) { Debug.LogWarning("[RevenueCat] log in: " + error.Message); return; }
+                    G.Session.RestoreNonConsumables(info.AllPurchasedProductIdentifiers); // one-time items follow the account
+                    LastTide.Game.Store.Deliver(ToReceipts(info));
+                });
+            else
+                _purchases.LogOut((info, error) =>
+                {
+                    if (error != null) { Debug.LogWarning("[RevenueCat] log out: " + error.Message); return; }
+                    LastTide.Game.Store.Deliver(ToReceipts(info));
+                });
+        }
+
+        public void Restore(Action<int> done)
+        {
+            if (!_booted) { done(0); return; }
+            _purchases.RestorePurchases((info, error) =>
+            {
+                if (error != null) { done(0); return; }
+                done(G.Session.RestoreNonConsumables(info.AllPurchasedProductIdentifiers));
+            });
+        }
+    }
+#endif
+}

@@ -12,6 +12,8 @@ namespace LastTide.Core
         public int Need;
         public string PointNode, PointBuild; // what the guide arrow points at
         public ItemCount[] Reward = new ItemCount[0];
+        /// <summary>The Ultra track's reward for this step (Survivor's Path).</summary>
+        public ItemCount[] Premium = new ItemCount[0];
 
         public string Label(Session s)
         {
@@ -33,20 +35,42 @@ namespace LastTide.Core
             Q("shelter", "Build a palm shelter", s => s.Built("shelter"), build: "shelter", reward: new[] { Content.I("bandage", 1) }),
             Count("scrap", "Salvage ship scrap from the wreck", "scrap", 4, "workbench", node: "crate"),
             Q("workbench", "Build a workbench", s => s.Built("workbench"), build: "workbench"),
-            Q("spear", "Craft a bamboo spear at the workbench", s => s.Has("spear") || s.Has("club") || s.State.kills > 0, build: "workbench"),
+            Q("spear", "Craft a bamboo spear (Blueprints)", s => s.Has("spear") || s.Has("club") || s.State.kills > 0, build: "workbench"),
             Q("hunt", "Hunt a wild boar in the jungle", s => s.State.kills > 0, node: "boar", reward: new[] { Content.I("bandage", 1) }),
             Q("cook", "Roast meat on the campfire", s => s.Flag("cooked"), build: "campfire"),
             Q("rain", "Build a rain catcher", s => s.Built("raincatcher"), build: "raincatcher", reward: new[] { Content.I("water", 2) }),
             Q("chest", "Build a sea chest for your supplies", s => s.Built("chest"), build: "chest"),
             Q("map", "Open the map and run to Palm Grove", s => s.Flag("visited_grove"), node: "exit", reward: new[] { Content.I("doubloon", 10) }),
             Q("level3", "Gather, build and hunt to reach level 3", s => s.State.level >= 3),
+            Q("dog", "Find the Gull's dog on Driftwood Shore", s => s.FoundBiscuit, node: "pet"),
             Q("radio", "Rebuild the ship's radio at camp", s => s.Built("radio"), build: "radio", reward: new[] { Content.I("doubloon", 10) }),
             Q("tune", "Tune the radio to the distress signal", s => s.Flag("heard_keeper"), build: "radio"),
             Q("keeper", "Bring 2 bandages to Old Tomas at Palm Grove", s => s.Flag("done_keeper"), node: "npc"),
-            Q("pier", "Reach level 6 and answer the next call", s => s.Flag("done_fisher")),
-            Q("captive", "Free the captive in Smuggler's Cave", s => s.Flag("done_captive")),
-            Q("free", "Survive. Red Jack's raiders still rule the Pirate Camp...", s => false),
+            Q("pier", "Reach level 6, then answer Mara's call from the pier", s => s.Flag("done_fisher"), node: "npc"),
+            Q("captive", "Free Ned from the Smuggler's Cave (level 10)", s => s.Flag("done_captive"), node: "npc"),
+            new Quest { Id = "powder", Text = "Gather gunpowder for Ned's plan", Need = 6, Have = s => s.Count("gunpowder"),
+                Done = s => s.Count("gunpowder") >= 6 || s.Flag("redjack_dead"), PointNode = "skeleton", Reward = new[] { Content.I("bandage", 3) } },
+            Q("redjack", "Defeat Red Jack at the Pirate Camp (level 12)", s => s.Flag("redjack_dead"), node: "redjack", reward: new[] { Content.I("doubloon", 50) }),
+            Q("sail", "Board Red Jack's ship and sail on the Last Tide", s => s.Flag("ending"), node: "ship"),
+            Q("free", "Captain of the islands: explore, build and survive", s => false),
         };
+
+        /// <summary>Every step pays something on the free track and more on the Ultra track.</summary>
+        static Quests()
+        {
+            var ultra = new[]
+            {
+                new[] { Content.I("meat", 3), Content.I("water", 3) }, new[] { Content.I("bandage", 2) }, new[] { Content.I("rope", 4) },
+                new[] { Content.I("doubloon", 25) }, new[] { Content.I("nails", 8) }, new[] { Content.I("iron_bar", 2) },
+                new[] { Content.I("hide_vest", 1) }, new[] { Content.I("doubloon", 40) }, new[] { Content.I("stew", 2) },
+            };
+            for (int i = 0; i < All.Count; i++)
+            {
+                var q = All[i];
+                if (q.Reward.Length == 0) q.Reward = new[] { Content.I("doubloon", 5 + i) };
+                q.Premium = ultra[i % ultra.Length];
+            }
+        }
 
         static Quest Q(string id, string text, Func<Session, bool> done, string node = null, string build = null, ItemCount[] reward = null)
         {

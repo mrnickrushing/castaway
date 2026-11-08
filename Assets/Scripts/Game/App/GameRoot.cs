@@ -92,7 +92,9 @@ namespace LastTide.Game
             foreach (var l in FindObjectsByType<Light>(FindObjectsSortMode.None)) Destroy(l.gameObject);
 
             var state = SaveSystem.Load() ?? GameState.New();
+            Session.UtcOffsetSeconds = (int)System.TimeZoneInfo.Local.GetUtcOffset(System.DateTime.Now).TotalSeconds;
             G.Session = new Session(state);
+            G.Session.PetChanged += OnPetChanged;
             G.Session.UpdateEnergy();
 
             Lighting();
@@ -105,12 +107,15 @@ namespace LastTide.Game
             }
             else player.Place(new Vector3(state.px, 0, state.pz), state.facing);
             CameraRig.Create(player.transform);
+            if (G.Session.HasPet) SpawnPet(player.transform.position - player.transform.forward * 2);
             if (FindFirstObjectByType<EventSystem>() == null)
                 new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             MapView.Create();
             Hud.Create();
             GuideArrow.Create(transform);
             Sfx.Init(transform);
+            Sfx.Muted = state.muted;
+            Store.Reconcile();
             G.Session.CheckQuests();
             // Closed the app mid-journey: open on the map to finish it.
             if (state.travel != null) Hud.Instance.OpenMap();
@@ -132,6 +137,27 @@ namespace LastTide.Game
             WorldBuilder.Populate(_world);
         }
 
+        public void SpawnPet(Vector3 at)
+        {
+            var want = G.Session.ActivePet;
+            if (Pet.Instance != null)
+            {
+                if (want != null && Pet.Instance.Model == want.Model) return;
+                at = Pet.Instance.transform.position;
+                Destroy(Pet.Instance.gameObject);
+            }
+            if (want == null) return;
+            Pet.Create(transform, want.Model).Place(at);
+        }
+
+        /// <summary>A new companion (season reward, or picked in settings): swap the one at heel.</summary>
+        void OnPetChanged()
+        {
+            if (OnMap || Player.Instance == null) return;
+            var p = Player.Instance.transform;
+            SpawnPet(p.position - p.forward * 2);
+        }
+
         /// <summary>True while the map is up (the island is hidden and survival pauses).</summary>
         public bool OnMap { get; private set; }
 
@@ -141,6 +167,7 @@ namespace LastTide.Game
             if (on && G.Session.AtHome) { G.Session.State.homeX = Player.Instance.transform.position.x; G.Session.State.homeZ = Player.Instance.transform.position.z; }
             if (_world != null) _world.gameObject.SetActive(!on);
             Player.Instance.gameObject.SetActive(!on);
+            if (Pet.Instance != null) Pet.Instance.gameObject.SetActive(!on);
             CameraRig.Instance.gameObject.SetActive(!on);
             RenderSettings.fog = !on;
             if (on) MapView.Instance.Show(G.Session.State.travel != null ? LastTide.Core.World.Location(G.Session.State.travel.to) : G.Session.Here);
@@ -158,6 +185,7 @@ namespace LastTide.Game
             var p = to.Home ? Island.Start + new Vector3(-9, 0, 0) : Island.Start;
             Player.Instance.Place(p, 0);
             G.Session.State.px = p.x; G.Session.State.pz = p.z;
+            if (Pet.Instance != null) Pet.Instance.Place(p + new Vector3(1.5f, 0, -1.5f));
             Hud.Instance.Toast(to.Name);
             Save();
         }
@@ -167,16 +195,25 @@ namespace LastTide.Game
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
             sun.color = new Color(1f, 0.95f, 0.84f);
-            sun.intensity = 1.35f;
+            sun.intensity = 1.6f;
             sun.shadows = LightShadows.Soft;
             sun.shadowStrength = 0.75f;
             sun.transform.rotation = Quaternion.Euler(52, -35, 0);
             sun.transform.SetParent(transform, false);
             RenderSettings.sun = sun;
+            DayNight.Create(sun);
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(0.62f, 0.74f, 0.86f);
             RenderSettings.ambientEquatorColor = new Color(0.58f, 0.62f, 0.55f);
             RenderSettings.ambientGroundColor = new Color(0.36f, 0.32f, 0.26f);
+            // Reflections of a real sky (Poly Haven HDRI) on the sea, wet rock, glass and metal.
+            var sky = Resources.Load<Cubemap>("Sky/sky_day");
+            if (sky != null)
+            {
+                RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
+                RenderSettings.customReflectionTexture = sky;
+                RenderSettings.reflectionIntensity = 0.85f;
+            }
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.fogColor = new Color(0.62f, 0.8f, 0.86f);
@@ -190,14 +227,24 @@ namespace LastTide.Game
             vol.isGlobal = true;
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             var tone = profile.Add<Tonemapping>(true);
-            tone.mode.Override(TonemappingMode.Neutral);
+            tone.mode.Override(TonemappingMode.ACES);
             var bloom = profile.Add<Bloom>(true);
-            bloom.intensity.Override(0.35f);
-            bloom.threshold.Override(1.05f);
+            bloom.intensity.Override(0.45f);
+            bloom.threshold.Override(1.0f);
+            bloom.scatter.Override(0.65f);
             var color = profile.Add<ColorAdjustments>(true);
-            color.saturation.Override(14f);
-            color.postExposure.Override(0.15f);
-            color.colorFilter.Override(new Color(1f, 0.98f, 0.94f));
+            color.saturation.Override(18f);
+            color.contrast.Override(14f);
+            color.postExposure.Override(0.45f);
+            color.colorFilter.Override(new Color(1f, 0.98f, 0.95f));
+            var wb = profile.Add<WhiteBalance>(true);
+            wb.temperature.Override(2f);
+            var lgg = profile.Add<LiftGammaGain>(true);
+            lgg.lift.Override(new Vector4(0.98f, 1f, 1.03f, 0f));       // cooler shadows (no darkening: it would crush the night)
+            lgg.gain.Override(new Vector4(1.02f, 1f, 0.98f, 0.02f));    // a little warmth in the highlights
+            var vig = profile.Add<Vignette>(true);
+            vig.intensity.Override(0.24f);
+            vig.smoothness.Override(0.45f);
             vol.profile = profile;
 #endif
         }
@@ -221,8 +268,31 @@ namespace LastTide.Game
         {
             var shelter = G.Session.AtHome && G.Session.IsBuilt("shelter");
             var p = shelter ? WorldBuilder.SitePosition("shelter") + new Vector3(0, 0, -2.6f) : Island.Start;
+            var bed = G.Session.AtHome ? G.Session.Bed : null;
+            if (bed != null) { Quaternion r; CampGrid.Pose(bed, out p, out r); p += r * new Vector3(1.6f, 0, 0); }
             Player.Instance.Place(p, 0);
             Save();
+            if (G.Session.State.lostBag != null)
+                Hud.Instance.Confirm("Recover your backpack?", "Everything you carried lies where you fell. Get it back right now for " + Session.RecoverBagCost + " doubloons, or walk back for it.", "RECOVER " + Session.RecoverBagCost,
+                    () => { if (G.Session.RecoverBag()) Sfx.Play("coin"); });
+        }
+
+        /// <summary>Starts again from a fresh save: tears the game down and boots it anew next frame.</summary>
+        public void Restart()
+        {
+            var boot = new GameObject("Restart").AddComponent<Restarter>();
+            if (Hud.Instance != null) Destroy(Hud.Instance.gameObject);
+            if (MapView.Instance != null) Destroy(MapView.Instance.gameObject);
+            if (CameraRig.Instance != null) Destroy(CameraRig.Instance.gameObject);
+            if (_world != null) Destroy(_world.gameObject);
+            Instance = null;
+            Destroy(gameObject);
+        }
+
+        sealed class Restarter : MonoBehaviour
+        {
+            int _frames;
+            void Update() { if (++_frames < 2) return; new GameObject("Last Tide").AddComponent<GameRoot>(); Destroy(gameObject); }
         }
 
         void OnApplicationPause(bool paused) { if (paused && G.Session != null) Save(); }

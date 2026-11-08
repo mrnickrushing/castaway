@@ -133,6 +133,54 @@ namespace LastTide.Game
                 case "walk":
                     f = (u, v) => Mathf.Max(Mathf.Max(Disc(u, v, 0.52f, 0.84f, 0.1f), Capsule(u, v, 0.5f, 0.68f, 0.48f, 0.4f, 0.075f)), Mathf.Max(Mathf.Max(Capsule(u, v, 0.48f, 0.4f, 0.58f, 0.06f, 0.06f), Capsule(u, v, 0.48f, 0.4f, 0.4f, 0.06f, 0.06f)), Mathf.Max(Capsule(u, v, 0.5f, 0.64f, 0.62f, 0.44f, 0.05f), Capsule(u, v, 0.5f, 0.64f, 0.38f, 0.46f, 0.05f))));
                     break;
+                case "craft": // a rolled blueprint with a pencil
+                    f = (u, v) => Mathf.Max(Box(u, v, 0.12f, 0.22f, 0.78f, 0.82f, 0.04f) * (1 - (Mathf.Abs(Mathf.Repeat(v * 6, 1) - 0.5f) < 0.08f && u > 0.2f && u < 0.7f && v > 0.32f && v < 0.72f ? 0.6f : 0)), Capsule(u, v, 0.55f, 0.18f, 0.9f, 0.62f, 0.05f));
+                    break;
+                case "build": // a little house
+                    f = (u, v) => Mathf.Max(Poly(u, v, new[] { new Vector2(0.1f, 0.52f), new Vector2(0.5f, 0.9f), new Vector2(0.9f, 0.52f) }), Box(u, v, 0.2f, 0.1f, 0.8f, 0.55f, 0.02f) * (1 - Box(u, v, 0.42f, 0.1f, 0.58f, 0.36f, 0.01f)));
+                    break;
+                case "path": // a flag on a pole
+                    f = (u, v) => Mathf.Max(Capsule(u, v, 0.25f, 0.08f, 0.25f, 0.92f, 0.045f), Poly(u, v, new[] { new Vector2(0.27f, 0.9f), new Vector2(0.88f, 0.76f), new Vector2(0.27f, 0.56f) }));
+                    break;
+                case "rotate":
+                    f = (u, v) => { float d = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f)); float a = Mathf.Atan2(v - 0.5f, u - 0.5f); bool arc = d > 0.26f && d < 0.38f && a > -2.4f; return Mathf.Max(arc ? 1 : 0, Poly(u, v, new[] { new Vector2(0.06f, 0.42f), new Vector2(0.34f, 0.42f), new Vector2(0.2f, 0.66f) })); };
+                    break;
+                case "check":
+                    f = (u, v) => Mathf.Max(Capsule(u, v, 0.18f, 0.5f, 0.42f, 0.26f, 0.08f), Capsule(u, v, 0.42f, 0.26f, 0.84f, 0.74f, 0.08f));
+                    break;
+                case "x":
+                    f = (u, v) => Mathf.Max(Capsule(u, v, 0.22f, 0.22f, 0.78f, 0.78f, 0.08f), Capsule(u, v, 0.22f, 0.78f, 0.78f, 0.22f, 0.08f));
+                    break;
+                case "upgrade":
+                    f = (u, v) => Mathf.Max(Poly(u, v, new[] { new Vector2(0.15f, 0.5f), new Vector2(0.5f, 0.88f), new Vector2(0.85f, 0.5f) }), Mathf.Max(Box(u, v, 0.36f, 0.24f, 0.64f, 0.52f, 0.01f), Box(u, v, 0.28f, 0.08f, 0.72f, 0.16f, 0.01f)));
+                    break;
+                case "hand": // an open palm
+                    f = (u, v) => Mathf.Max(Box(u, v, 0.28f, 0.1f, 0.74f, 0.55f, 0.12f), Mathf.Max(Mathf.Max(Capsule(u, v, 0.33f, 0.5f, 0.3f, 0.82f, 0.055f), Capsule(u, v, 0.45f, 0.52f, 0.45f, 0.9f, 0.055f)), Mathf.Max(Mathf.Max(Capsule(u, v, 0.57f, 0.52f, 0.59f, 0.86f, 0.055f), Capsule(u, v, 0.68f, 0.48f, 0.72f, 0.74f, 0.05f)), Capsule(u, v, 0.3f, 0.3f, 0.14f, 0.5f, 0.06f))));
+                    break;
+                case "target":
+                    f = (u, v) => { float d = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f)); float ring = d > 0.24f && d < 0.31f ? 1 : 0; float cross = (Mathf.Abs(u - 0.5f) < 0.03f || Mathf.Abs(v - 0.5f) < 0.03f) && (d > 0.12f && d < 0.44f) ? 1 : 0; return Mathf.Max(Mathf.Max(ring, cross), Disc(u, v, 0.5f, 0.5f, 0.05f)); };
+                    break;
+                case "sneak": // a crouched figure
+                    f = (u, v) => Mathf.Max(Mathf.Max(Disc(u, v, 0.55f, 0.72f, 0.1f), Capsule(u, v, 0.48f, 0.6f, 0.36f, 0.4f, 0.075f)), Mathf.Max(Capsule(u, v, 0.36f, 0.4f, 0.58f, 0.28f, 0.065f), Mathf.Max(Capsule(u, v, 0.58f, 0.28f, 0.6f, 0.1f, 0.06f), Capsule(u, v, 0.36f, 0.4f, 0.24f, 0.12f, 0.06f))));
+                    break;
+                case "auto":
+                    f = (u, v) => { float d = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.62f)); float a = Mathf.Atan2(v - 0.62f, u - 0.5f); bool arc = d > 0.16f && d < 0.23f && Mathf.Abs(a) > 0.5f; return Mathf.Max(arc ? 1 : 0, Poly(u, v, new[] { new Vector2(0.62f, 0.66f), new Vector2(0.8f, 0.66f), new Vector2(0.71f, 0.5f) })); };
+                    break;
+                case "gear":
+                    f = (u, v) => { float d = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f)); float a = Mathf.Atan2(v - 0.5f, u - 0.5f); float r = 0.32f + (Mathf.Cos(a * 8) > 0.2f ? 0.1f : 0); return d < r && d > 0.13f ? 1 : 0; };
+                    break;
+                case "arrow":
+                    f = (u, v) => Poly(u, v, new[] { new Vector2(0.5f, 0.95f), new Vector2(0.85f, 0.1f), new Vector2(0.5f, 0.3f), new Vector2(0.15f, 0.1f) });
+                    break;
+                case "season": // a shield with a star
+                    f = (u, v) => Poly(u, v, new[] { new Vector2(0.14f, 0.86f), new Vector2(0.5f, 0.95f), new Vector2(0.86f, 0.86f), new Vector2(0.82f, 0.4f), new Vector2(0.5f, 0.05f), new Vector2(0.18f, 0.4f) }) * (1 - Star(u, v, 0.5f, 0.52f, 0.24f, 0.1f) * 0.85f);
+                    break;
+                case "calendar":
+                    f = (u, v) => Mathf.Max(Box(u, v, 0.1f, 0.08f, 0.9f, 0.82f, 0.05f) * (1 - Box(u, v, 0.18f, 0.16f, 0.82f, 0.62f, 0.01f) * 0.85f) + Box(u, v, 0.28f, 0.44f, 0.72f, 0.5f, 0.0f) * 0.85f + Box(u, v, 0.28f, 0.28f, 0.6f, 0.34f, 0.0f) * 0.85f, Mathf.Max(Capsule(u, v, 0.3f, 0.76f, 0.3f, 0.94f, 0.05f), Capsule(u, v, 0.7f, 0.76f, 0.7f, 0.94f, 0.05f)));
+                    break;
+                case "lock":
+                    f = (u, v) => Mathf.Max(Box(u, v, 0.2f, 0.08f, 0.8f, 0.55f, 0.06f), Mathf.Min(Disc(u, v, 0.5f, 0.6f, 0.26f), 1 - Disc(u, v, 0.5f, 0.6f, 0.16f)) * (v > 0.55f ? 1 : 0));
+                    break;
                 default:
                     f = (u, v) => Disc(u, v, 0.5f, 0.5f, 0.45f);
                     break;
@@ -141,6 +189,14 @@ namespace LastTide.Game
         }
 
         /// <summary>Coverage of a convex or simple polygon (even-odd rule) with a soft edge.</summary>
+        /// <summary>A five-pointed star (outer and inner radius).</summary>
+        static float Star(float u, float v, float cx, float cy, float ro, float ri)
+        {
+            var pts = new Vector2[10];
+            for (int i = 0; i < 10; i++) { float a = Mathf.PI / 2 + i * Mathf.PI / 5, r = i % 2 == 0 ? ro : ri; pts[i] = new Vector2(cx + Mathf.Cos(a) * r, cy + Mathf.Sin(a) * r); }
+            return Poly(u, v, pts);
+        }
+
         static float Poly(float u, float v, Vector2[] pts)
         {
             bool inside = false;
@@ -310,7 +366,7 @@ namespace LastTide.Game
         /// <summary>An item picture: the art if there is some, else a coloured disc with the initial.</summary>
         public static void ItemIcon(Transform parent, string id, float size)
         {
-            var art = ItemArt(id);
+            var art = ItemArt(id) ?? ModelIcons.Item(id);
             if (art != null)
             {
                 var img = Img("Icon", parent, art, Color.white);

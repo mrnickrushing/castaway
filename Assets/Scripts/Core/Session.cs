@@ -10,6 +10,7 @@ namespace LastTide.Core
         public int Health, Damage;
         public float Speed, AttackEvery, Aggro;
         public int Xp;
+        public ItemCount? Rare;     // a one-in-four extra drop
         public ItemCount[] Drops;
     }
 
@@ -18,13 +19,17 @@ namespace LastTide.Core
         public static readonly Dictionary<string, EnemyDef> All = new Dictionary<string, EnemyDef>
         {
             { "boar", new EnemyDef { Id = "boar", Name = "Wild Boar", Health = 60, Damage = 9, Speed = 4.2f, AttackEvery = 1.3f, Aggro = 9f, Xp = 10,
-                Drops = new[] { Content.I("raw_meat", 2), Content.I("hide", 1) } } },
+                Drops = new[] { Content.I("raw_meat", 2), Content.I("hide", 1) }, Rare = Content.I("hide", 1) } },
             { "crab", new EnemyDef { Id = "crab", Name = "Giant Crab", Health = 35, Damage = 6, Speed = 2.6f, AttackEvery = 1.2f, Aggro = 6f, Xp = 6,
                 Drops = new[] { Content.I("crab", 2) } } },
             { "snake", new EnemyDef { Id = "snake", Name = "Island Viper", Health = 30, Damage = 11, Speed = 4.8f, AttackEvery = 1.0f, Aggro = 7f, Xp = 9,
                 Drops = new[] { Content.I("raw_meat", 1) } } },
+            { "skeleton", new EnemyDef { Id = "skeleton", Name = "Drowned Smuggler", Health = 110, Damage = 14, Speed = 3.6f, AttackEvery = 1.2f, Aggro = 10f, Xp = 26,
+                Drops = new[] { Content.I("gunpowder", 1), Content.I("doubloon", 3) } } },
+            { "redjack", new EnemyDef { Id = "redjack", Name = "Red Jack", Health = 650, Damage = 22, Speed = 4.4f, AttackEvery = 1.0f, Aggro = 14f, Xp = 300,
+                Drops = new[] { Content.I("doubloon", 120), Content.I("cutlass", 1), Content.I("pirate_coat", 1) } } },
             { "pirate", new EnemyDef { Id = "pirate", Name = "Red Jack's Raider", Health = 130, Damage = 15, Speed = 4.6f, AttackEvery = 1.1f, Aggro = 11f, Xp = 30,
-                Drops = new[] { Content.I("rum", 1), Content.I("gunpowder", 1), Content.I("doubloon", 4) } } },
+                Drops = new[] { Content.I("rum", 1), Content.I("gunpowder", 1), Content.I("doubloon", 4) }, Rare = Content.I("tricorn", 1) } },
         };
     }
 
@@ -48,6 +53,7 @@ namespace LastTide.Core
         {
             State = state ?? GameState.New();
             State.Repair();
+            State.Repair(BackpackSize);
         }
 
         public double Now { get { return State.time; } }
@@ -95,7 +101,7 @@ namespace LastTide.Core
                 if (Now < j.doneAt) continue;
                 var r = Content.Recipes[j.recipe];
                 int got = Inventory.Add(State.backpack, r.Output, j.count);
-                if (got > 0) { Gained?.Invoke(r.Output, got); if (r.Station == "campfire") SetFlag("cooked"); }
+                if (got > 0) { Gained?.Invoke(r.Output, got); Tally("craft", got); if (r.Station == "campfire") SetFlag("cooked"); }
                 j.count -= got;
                 if (j.count <= 0) { State.jobs.RemoveAt(i); Changed?.Invoke(); CheckQuests(); }
             }
@@ -113,7 +119,7 @@ namespace LastTide.Core
 
         // ------------------------------------------------------------------ gathering
 
-        NodeState Node(string key, bool create)
+        internal NodeState Node(string key, bool create)
         {
             foreach (var n in State.nodes) if (n.key == key) return n;
             if (!create) return null;
@@ -184,7 +190,7 @@ namespace LastTide.Core
                 Changed?.Invoke();
                 return true;
             }
-            foreach (var y in d.Yield) Give(y.id, y.n);
+            foreach (var y in d.Yield) { Give(y.id, y.n); Tally("gather:" + y.id, y.n); }
             if (n.hitsUsed >= d.Hits)
             {
                 if (d.Bonus != null) foreach (var b in d.Bonus) Give(b.id, b.n);
@@ -203,6 +209,7 @@ namespace LastTide.Core
         public int Give(string id, int n)
         {
             if (id == "doubloon") { State.coins += n; Gained?.Invoke(id, n); Changed?.Invoke(); return n; }
+            if (id.StartsWith("pet_")) { UnlockPet(id.Substring(4)); Changed?.Invoke(); return n; }
             int got = Inventory.Add(State.backpack, id, n);
             if (got > 0) Gained?.Invoke(id, got);
             if (got < n) Toast?.Invoke("Backpack full");
@@ -295,26 +302,9 @@ namespace LastTide.Core
 
         public JobState Job(string station) { return State.jobs.FirstOrDefault(j => j.station == station); }
 
-        public string CraftBlocked(string recipe)
-        {
-            var r = Content.Recipes[recipe];
-            if (!Knows(recipe)) return "A survivor must teach you this";
-            if (!IsBuilt(r.Station)) return "Build the " + Content.Builds[r.Station].Name.ToLower() + " first";
-            if (Job(r.Station) != null) return "Busy";
-            if (!Inventory.Has(State.backpack, r.Inputs)) return "Missing materials";
-            return null;
-        }
+        public string CraftBlocked(string recipe) { return CraftBlocked(recipe, 1); }
 
-        public bool Craft(string recipe)
-        {
-            if (CraftBlocked(recipe) != null) return false;
-            var r = Content.Recipes[recipe];
-            foreach (var c in r.Inputs) Inventory.Remove(State.backpack, c.id, c.n);
-            State.jobs.Add(new JobState { station = r.Station, recipe = recipe, doneAt = Now + r.Seconds, count = r.Count });
-            AddXp(4);
-            Changed?.Invoke();
-            return true;
-        }
+        public bool Craft(string recipe) { return Craft(recipe, 1); }
 
         // ------------------------------------------------------------------ using items
 
@@ -378,7 +368,13 @@ namespace LastTide.Core
         {
             State.kills++;
             if (enemy == "pirate") State.pirates++;
+            if (enemy == "redjack") SetFlag("redjack_dead");
+            Tally("kill:" + enemy);
+            if (enemy == "pirate" || enemy == "redjack") Tally("kill:raider");
+            if (IsNight) Tally("nightkill");
             foreach (var d in Enemies.All[enemy].Drops) Give(d.id, d.n);
+            var rare = Enemies.All[enemy].Rare;
+            if (rare != null && _rng.NextDouble() < 0.25) Give(rare.Value.id, rare.Value.n);
             AddXp(Enemies.All[enemy].Xp);
             Changed?.Invoke();
             CheckQuests();
@@ -389,6 +385,7 @@ namespace LastTide.Core
         public void Damage(float amount, string cause = null)
         {
             if (State.health <= 0) return;
+            if (cause != null && cause != "starving") { amount *= ArmorFactor; WearGear(); }
             State.health = Clamp(State.health - amount);
             if (State.health <= 0) Die();
         }
@@ -398,10 +395,14 @@ namespace LastTide.Core
         {
             State.deaths++;
             var bag = new LostBag { x = State.px, z = State.pz, location = State.location };
-            foreach (var s in State.backpack)
+            // Pockets stay with you; the backpack proper is left where you fell.
+            for (int i = Content.PocketSlots; i < State.backpack.Count; i++)
+            {
+                var s = State.backpack[i];
                 if (!s.Empty) { bag.slots.Add(new Slot { id = s.id, n = s.n, wear = s.wear }); s.Clear(); }
+            }
             State.lostBag = bag.slots.Count > 0 ? bag : State.lostBag;
-            State.equipped = -1;
+            if (State.equipped >= Content.PocketSlots) State.equipped = -1;
             State.health = 60;
             State.hunger = Math.Max(State.hunger, 50);
             State.thirst = Math.Max(State.thirst, 50);
@@ -499,7 +500,6 @@ namespace LastTide.Core
                 var q = Quests.All[State.quest];
                 if (!q.Done(this)) break;
                 State.quest++;
-                foreach (var r in q.Reward) Give(r.id, r.n);
                 AddXp(15);
                 QuestDone?.Invoke(q);
             }
