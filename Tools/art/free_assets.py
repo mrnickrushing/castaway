@@ -22,7 +22,7 @@ SRC = os.path.join(ROOT, "art-src", "free")
 UA = {"User-Agent": "Mozilla/5.0"}
 KITS = ["pirate-kit", "survival-kit", "nature-kit"]
 # Quaternius (CC0) on poly.pizza: model page id.
-CHARACTERS = {"shiba": "y4wdQpg767", "henry": "yEdSk8tRKc", "anne": "tZYaOQ4l94", "mako": "2urczqZ9Xf", "sharky": "iPV5YmAoIv", "skeleton": "yq5ATpujSt"}
+CHARACTERS = {"shiba": "y4wdQpg767", "husky": "wcWiuEqwzq", "fox": "Bc97C66HKi", "wolf": "P1gU3Qkr9r", "henry": "yEdSk8tRKc", "anne": "tZYaOQ4l94", "mako": "2urczqZ9Xf", "sharky": "iPV5YmAoIv", "skeleton": "yq5ATpujSt"}
 
 P, S, N = "pirate-kit/Models/GLB format/", "survival-kit/Models/GLB format/", "nature-kit/Models/GLTF format/"
 # id: (source, longest side in metres)
@@ -77,9 +77,13 @@ STATIC = {
     "ruin_column": (N + "statue_columnDamaged.glb", 3.4),
     "canoe": (N + "canoe.glb", 4.0),
     "lily": (N + "lily_large.glb", 1.2),
+    "chest_gold": ("chest_gold.glb", 1.3),
+    "chest_coins": ("chest_coins.glb", 1.3),
 }
+# Static Quaternius (CC0) models on poly.pizza: id -> page id (saved as <id>.glb).
+POLY_STATIC = {"chest_gold": "4jqKCGHpUO", "chest_coins": "haqf9qoiOG"}
 # Characters: height in metres.
-RIGGED = {"shiba": 0.62, "henry": 1.78, "anne": 1.68, "mako": 1.82, "sharky": 1.85, "skeleton": 1.8}
+RIGGED = {"shiba": 0.62, "husky": 0.8, "fox": 0.55, "wolf": 0.85, "henry": 1.78, "anne": 1.68, "mako": 1.82, "sharky": 1.85, "skeleton": 1.8}
 
 
 def get(url, path, headers=None):
@@ -107,7 +111,7 @@ def fetch():
             f.write(op.open(urllib.request.Request(link, headers=ref)).read())
         zipfile.ZipFile(z).extractall(os.path.join(SRC, kit))
         print("kit", kit)
-    for name, pid in CHARACTERS.items():
+    for name, pid in list(CHARACTERS.items()) + list(POLY_STATIC.items()):
         out = os.path.join(SRC, name + ".glb")
         if os.path.exists(out):
             continue

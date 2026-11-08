@@ -63,6 +63,7 @@ namespace LastTide.Game
             _cam.transform.rotation = rot;
             _cam.transform.position = b.center - rot * Vector3.forward * (r * 4);
             _cam.orthographicSize = r;
+            _cam.farClipPlane = r * 8 + 10;
             var rt = RenderTexture.GetTemporary(Size, Size, 24, RenderTextureFormat.ARGB32);
             rt.antiAliasing = 4;
             _cam.targetTexture = rt;
@@ -82,12 +83,34 @@ namespace LastTide.Game
         /// <summary>A small model of an item that has no painted icon.</summary>
         static GameObject ItemModel(string id)
         {
-            string kit = id == "iron_hatchet" ? "tool_axe" : id == "iron_pickaxe" ? "tool_pickaxe" : null;
+            string kit = id == "iron_hatchet" ? "tool_axe" : id == "iron_pickaxe" ? "tool_pickaxe" : id == "supply_crate" ? "crate" : id == "gold_chest" ? "chest_coins" : null;
+            if (id.StartsWith("pet_"))
+            {
+                // Companions: the animal itself, standing side-on.
+                var pet = LastTide.Core.Season.Pet(id.Substring(4));
+                if (pet == null || !ModelRegistry.Has(ModelRegistry.People, pet.Model)) return null;
+                var holder = new GameObject(id);
+                var t = ModelRegistry.Spawn(ModelRegistry.People, pet.Model, holder.transform);
+                t.transform.localRotation = Quaternion.Euler(0, 95, 0) * t.transform.localRotation;
+                // A skinned mesh isn't skinned yet when the icon camera renders: bake it into a plain mesh.
+                foreach (var smr in holder.GetComponentsInChildren<SkinnedMeshRenderer>())
+                {
+                    var baked = new Mesh();
+                    smr.BakeMesh(baked);
+                    var bk = new GameObject("Baked");
+                    bk.transform.SetParent(smr.transform, false);
+                    bk.AddComponent<MeshFilter>().sharedMesh = baked;
+                    bk.AddComponent<MeshRenderer>().sharedMaterials = smr.sharedMaterials;
+                    Object.DestroyImmediate(smr);
+                }
+                foreach (var an in holder.GetComponentsInChildren<Animation>()) an.enabled = false;
+                return holder;
+            }
             if (kit != null && ModelRegistry.Has(ModelRegistry.Free, kit))
             {
                 var holder = new GameObject(id);
                 var t = ModelRegistry.Spawn(ModelRegistry.Free, kit, holder.transform);
-                t.transform.localRotation = Quaternion.Euler(0, 0, 45) * t.transform.localRotation;
+                if (id.StartsWith("iron_")) t.transform.localRotation = Quaternion.Euler(0, 0, 45) * t.transform.localRotation;
                 return holder;
             }
             var mb = new MeshBuilder();
@@ -135,6 +158,11 @@ namespace LastTide.Game
                         mb.Box(new Vector3(x, 0.3f, 0), new Vector3(0.26f, 0.6f, 0.28f), hide);
                         mb.Box(new Vector3(x, 0.08f, 0.16f), new Vector3(0.27f, 0.16f, 0.6f), dark);
                     }
+                    break;
+                case "plank":
+                    for (int i = 0; i < 3; i++)
+                        for (int j = 0; j < 2 - (i == 2 ? 1 : 0); j++)
+                            mb.Box(new Vector3((j - (i == 2 ? 0 : 0.5f)) * 0.42f, 0.09f + i * 0.17f, 0), new Vector3(0.4f, 0.15f, 1.5f), MeshBuilder.Darken(Palette.WoodPale, 1 - 0.06f * ((i + j) % 2)));
                     break;
                 case "stew":
                     mb.Cylinder(Vector3.zero, new Vector3(0, 0.55f, 0), 0.5f, 0.6f, 14, Tropic.Iron);

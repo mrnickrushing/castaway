@@ -31,6 +31,12 @@ namespace LastTide.Core
             Item("iron_bar", "Iron Bar", ItemKind.Resource, 30);
             Item("plank", "Wooden Plank", ItemKind.Resource, 30).Blurb = "Sawn and planed at the workbench. Better building, better boxes.";
             Recipe("plank", "workbench", 1, 15f, I("wood", 5));
+            // Season and event rewards: crates opened from the backpack, and companions.
+            Item("supply_crate", "Supply Crate", ItemKind.Resource, 10).Blurb = "Washed up from a supply ship. Open it for useful things.";
+            Item("gold_chest", "Captain's Gold Chest", ItemKind.Resource, 5).Blurb = "Heavy, locked and clinking. Doubloons and something rare.";
+            Item("pet_husky", "Nanook the Husky", ItemKind.Resource, 1).Blurb = "A companion: follows you and fights at your side.";
+            Item("pet_fox", "Ember the Fox", ItemKind.Resource, 1).Blurb = "A companion: follows you and fights at your side.";
+            Item("pet_wolf", "Grey the Wolf", ItemKind.Resource, 1).Blurb = "A companion: follows you and fights at your side.";
             Node("lootbag", "Sailor's Bag", ToolUse.None, 0.8f, 1, 900f, new ItemCount[0], null);
             Tool("iron_hatchet", "Iron Hatchet", ToolUse.Chop, 16, 160);
             Tool("iron_pickaxe", "Iron Pickaxe", ToolUse.Mine, 15, 160);

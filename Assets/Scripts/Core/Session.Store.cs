@@ -43,6 +43,8 @@ namespace LastTide.Core
             new ProductDef { Id = "lasttide.bigpack", Name = "Sailor's Big Backpack", Blurb = "10 more backpack slots, for good.", FallbackPrice = "$2.99", Consumable = false, Perk = "bigpack", Art = "pack" },
             new ProductDef { Id = "lasttide.ultra", Name = "Survivor's Path: Ultra", Blurb = "Unlocks the golden Ultra rewards on every step of the Survivor's Path, past and future.", FallbackPrice = "$4.99",
                 Consumable = false, Perk = "ultra", Art = "keyart" },
+            new ProductDef { Id = Season.PremiumProduct, Name = "Season Pass: Premium", Blurb = "Unlocks the premium reward on every level of this season, including the companions.", FallbackPrice = "$4.99",
+                Perk = "season", Art = "keyart" },
             new ProductDef { Id = "lasttide.captain", Name = "Captain's Chest", Blurb = "3,500 doubloons, a pirate cutlass and an iron harpoon.", FallbackPrice = "$19.99",
                 Coins = 3500, Energy = 200, Art = "offer_builder", Items = new[] { Content.I("cutlass", 1), Content.I("harpoon", 1) } },
         };
@@ -95,6 +97,7 @@ namespace LastTide.Core
             if (p.Energy > 0) State.energy = Math.Min(World.EnergyMax, State.energy + p.Energy);
             foreach (var i in p.Items) Give(i.id, i.n);
             if (p.Perk == "bigpack") State.Repair(BackpackSize);
+            if (p.Perk == "season") GrantSeasonPremium();
         }
 
         /// <summary>Total backpack slots (more with the big backpack).</summary>

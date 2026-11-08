@@ -101,7 +101,7 @@ namespace LastTide.Core
                 if (Now < j.doneAt) continue;
                 var r = Content.Recipes[j.recipe];
                 int got = Inventory.Add(State.backpack, r.Output, j.count);
-                if (got > 0) { Gained?.Invoke(r.Output, got); if (r.Station == "campfire") SetFlag("cooked"); }
+                if (got > 0) { Gained?.Invoke(r.Output, got); Tally("craft", got); if (r.Station == "campfire") SetFlag("cooked"); }
                 j.count -= got;
                 if (j.count <= 0) { State.jobs.RemoveAt(i); Changed?.Invoke(); CheckQuests(); }
             }
@@ -190,7 +190,7 @@ namespace LastTide.Core
                 Changed?.Invoke();
                 return true;
             }
-            foreach (var y in d.Yield) Give(y.id, y.n);
+            foreach (var y in d.Yield) { Give(y.id, y.n); Tally("gather:" + y.id, y.n); }
             if (n.hitsUsed >= d.Hits)
             {
                 if (d.Bonus != null) foreach (var b in d.Bonus) Give(b.id, b.n);
@@ -209,6 +209,7 @@ namespace LastTide.Core
         public int Give(string id, int n)
         {
             if (id == "doubloon") { State.coins += n; Gained?.Invoke(id, n); Changed?.Invoke(); return n; }
+            if (id.StartsWith("pet_")) { UnlockPet(id.Substring(4)); Changed?.Invoke(); return n; }
             int got = Inventory.Add(State.backpack, id, n);
             if (got > 0) Gained?.Invoke(id, got);
             if (got < n) Toast?.Invoke("Backpack full");
@@ -368,6 +369,9 @@ namespace LastTide.Core
             State.kills++;
             if (enemy == "pirate") State.pirates++;
             if (enemy == "redjack") SetFlag("redjack_dead");
+            Tally("kill:" + enemy);
+            if (enemy == "pirate" || enemy == "redjack") Tally("kill:raider");
+            if (IsNight) Tally("nightkill");
             foreach (var d in Enemies.All[enemy].Drops) Give(d.id, d.n);
             var rare = Enemies.All[enemy].Rare;
             if (rare != null && _rng.NextDouble() < 0.25) Give(rare.Value.id, rare.Value.n);

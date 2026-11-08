@@ -25,6 +25,7 @@ namespace LastTide.Core
         public void AddXp(int n)
         {
             if (n <= 0) return;
+            AddSeasonPoints(n);
             State.xp += n;
             while (State.xp >= XpToNext(State.level))
             {
