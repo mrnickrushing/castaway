@@ -87,15 +87,34 @@ namespace LastTide.Game
         {
             // Water out to a ragged edge; past it the parchment of the uncharted map shows through.
             var mb = new MeshBuilder();
-            const float step = 10;
+            const float step = 8;
+            // Charted water only near the islands; past it the old paper chart shows through. The edge is cut
+            // smoothly through each cell (clipped where the field crosses zero) so it doesn't step.
+            float F(float px, float pz) { return Coast(px, pz) - 48 - Mathf.PerlinNoise(px * 0.012f + 3, pz * 0.012f) * 30; }
+            Color C(Vector3 v) { float c = Coast(v.x, v.z); return new Color(Mathf.Clamp01((c + 4) / 26f), 0, 0); }
+            var poly = new System.Collections.Generic.List<Vector3>(8);
             for (float z = -Reach; z < Reach; z += step)
                 for (float x = -Reach; x < Reach; x += step)
                 {
-                    float edge = Reach - 30 - Mathf.PerlinNoise(x * 0.01f, z * 0.01f) * 60;
-                    if (Mathf.Abs(x) > edge || Mathf.Abs(z) > edge) continue;
-                    Color C(float px, float pz) { float c = Coast(px, pz); return new Color(Mathf.Clamp01((c + 4) / 26f), 0, 0); }
-                    mb.QuadSmooth(new Vector3(x, 0, z), new Vector3(x, 0, z + step), new Vector3(x + step, 0, z + step), new Vector3(x + step, 0, z),
-                        Vector3.up, Vector3.up, Vector3.up, Vector3.up, C(x, z), C(x, z + step), C(x + step, z + step), C(x + step, z));
+                    var q = new[] { new Vector3(x, 0, z), new Vector3(x, 0, z + step), new Vector3(x + step, 0, z + step), new Vector3(x + step, 0, z) };
+                    var f = new float[4];
+                    int inside = 0;
+                    for (int i = 0; i < 4; i++) { f[i] = F(q[i].x, q[i].z); if (f[i] <= 0) inside++; }
+                    if (inside == 0) continue;
+                    if (inside == 4)
+                    {
+                        mb.QuadSmooth(q[0], q[1], q[2], q[3], Vector3.up, Vector3.up, Vector3.up, Vector3.up, C(q[0]), C(q[1]), C(q[2]), C(q[3]));
+                        continue;
+                    }
+                    poly.Clear();
+                    for (int i = 0; i < 4; i++)
+                    {
+                        int j = (i + 1) % 4;
+                        if (f[i] <= 0) poly.Add(q[i]);
+                        if ((f[i] <= 0) != (f[j] <= 0)) poly.Add(Vector3.Lerp(q[i], q[j], f[i] / (f[i] - f[j])));
+                    }
+                    for (int i = 1; i + 1 < poly.Count; i++)
+                        mb.QuadSmooth(poly[0], poly[i], poly[i + 1], poly[i + 1], Vector3.up, Vector3.up, Vector3.up, Vector3.up, C(poly[0]), C(poly[i]), C(poly[i + 1]), C(poly[i + 1]));
                 }
             var go = mb.ToObject("Sea", transform, false);
             go.transform.position = Origin;
@@ -107,20 +126,21 @@ namespace LastTide.Game
 
         void BuildParchment()
         {
-            // Old chart paper with faint contour lines and a compass rose.
-            const int n = 512;
+            // Old chart paper with faint contour lines, and the mapmaker's ink sketches: palms, waves, rocks, a dashed
+            // trail and a compass rose.
+            const int n = 1024;
             var tex = new Texture2D(n, n, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat };
             var px = new Color32[n * n];
             for (int y = 0; y < n; y++)
                 for (int x = 0; x < n; x++)
                 {
-                    float u = x / (float)n, v = y / (float)n;
                     float g = Noise2.Tileable(x, y, n, 6) * 0.6f + Noise2.Tileable(x, y, n, 40) * 0.4f;
-                    var c = Color.Lerp(new Color(0.78f, 0.69f, 0.5f), new Color(0.92f, 0.85f, 0.68f), g);
-                    float contour = Mathf.Abs(Mathf.Sin(Noise2.Tileable(x, y, n, 4) * 40f));
-                    if (contour < 0.06f) c = Color.Lerp(c, new Color(0.45f, 0.36f, 0.24f), 0.5f);
+                    var c = Color.Lerp(new Color(0.76f, 0.66f, 0.47f), new Color(0.9f, 0.82f, 0.64f), g);
+                    float contour = Mathf.Abs(Mathf.Sin(Noise2.Tileable(x, y, n, 4) * 36f));
+                    if (contour < 0.035f) c = Color.Lerp(c, new Color(0.45f, 0.36f, 0.24f), 0.45f);
                     px[y * n + x] = c;
                 }
+            Sketch(px, n);
             tex.SetPixels32(px); tex.Apply(true);
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
             Destroy(go.GetComponent<Collider>());
@@ -131,9 +151,92 @@ namespace LastTide.Game
             go.transform.localScale = new Vector3(2400, 2400, 1);
             var mat = new Material(Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Texture"));
             mat.mainTexture = tex;
-            mat.mainTextureScale = new Vector2(6, 6);
-            if (mat.HasProperty("_BaseMap")) { mat.SetTexture("_BaseMap", tex); mat.SetTextureScale("_BaseMap", new Vector2(6, 6)); }
+            mat.mainTextureScale = new Vector2(3, 3);
+            if (mat.HasProperty("_BaseMap")) { mat.SetTexture("_BaseMap", tex); mat.SetTextureScale("_BaseMap", new Vector2(3, 3)); }
             go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+        }
+
+        static readonly Color32 Ink = new Color32(92, 66, 40, 255);
+
+        static void Plot(Color32[] px, int n, int x, int y, float a = 0.85f)
+        {
+            x = ((x % n) + n) % n; y = ((y % n) + n) % n;
+            var c = px[y * n + x];
+            px[y * n + x] = Color32.Lerp(c, Ink, a);
+        }
+
+        static void Line(Color32[] px, int n, Vector2 a, Vector2 b, float w = 1.6f)
+        {
+            int steps = Mathf.CeilToInt(Vector2.Distance(a, b) * 1.5f) + 1;
+            for (int i = 0; i <= steps; i++)
+            {
+                var p = Vector2.Lerp(a, b, i / (float)steps);
+                for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)
+                    if (dx * dx + dy * dy <= w * w) Plot(px, n, Mathf.RoundToInt(p.x) + dx, Mathf.RoundToInt(p.y) + dy, dx == 0 && dy == 0 ? 0.85f : 0.35f);
+            }
+        }
+
+        /// <summary>Ink drawings scattered over the chart, like a mapmaker's margins.</summary>
+        static void Sketch(Color32[] px, int n)
+        {
+            var rng = new System.Random(77);
+            float R() { return (float)rng.NextDouble(); }
+            // Palm sketches: a curved trunk and a burst of drooping fronds.
+            for (int k = 0; k < 40; k++)
+            {
+                var b = new Vector2(R() * n, R() * n);
+                float h = 26 + R() * 18, lean = (R() - 0.5f) * 16;
+                Vector2 prev = b;
+                for (int i = 1; i <= 6; i++) { var p = b + new Vector2(lean * i * i / 36f, h * i / 6f); Line(px, n, prev, p, 1.2f); prev = p; }
+                for (int f = 0; f < 6; f++)
+                {
+                    float a = f * Mathf.PI / 3 + R() * 0.4f;
+                    var mid = prev + new Vector2(Mathf.Cos(a) * 9, Mathf.Sin(a) * 5 + 3);
+                    var tip = prev + new Vector2(Mathf.Cos(a) * 17, Mathf.Sin(a) * 6 - 6);
+                    Line(px, n, prev, mid, 1.1f); Line(px, n, mid, tip, 1.1f);
+                }
+            }
+            // Waves: little arcs in rows.
+            for (int k = 0; k < 160; k++)
+            {
+                var c = new Vector2(R() * n, R() * n);
+                for (int j = 0; j < 2; j++)
+                {
+                    var o = c + new Vector2(j * 16, 0);
+                    Vector2 prev = o;
+                    for (int i = 1; i <= 8; i++) { var p = o + new Vector2(i * 1.6f, Mathf.Sin(i / 8f * Mathf.PI) * 4); Line(px, n, prev, p, 1f); prev = p; }
+                }
+            }
+            // Rock clusters: angular outlines.
+            for (int k = 0; k < 18; k++)
+            {
+                var c = new Vector2(R() * n, R() * n);
+                for (int r = 0; r < 5; r++)
+                {
+                    var o = c + new Vector2(R() * 50 - 25, R() * 30 - 15);
+                    float s = 7 + R() * 9;
+                    var pts = new[] { o + new Vector2(-s, 0), o + new Vector2(-s * 0.5f, s * 1.3f), o + new Vector2(s * 0.6f, s), o + new Vector2(s, 0) };
+                    for (int i = 0; i < pts.Length - 1; i++) Line(px, n, pts[i], pts[i + 1], 1.2f);
+                    Line(px, n, pts[0], pts[3], 1.2f);
+                }
+            }
+            // A winding dashed trail.
+            Vector2 at = new Vector2(R() * n, 0); float dir = 1.2f;
+            for (int i = 0; i < 260; i++)
+            {
+                dir += (R() - 0.5f) * 0.35f;
+                var next = at + new Vector2(Mathf.Cos(dir), Mathf.Sin(dir)) * 6;
+                if (i % 3 != 2) Line(px, n, at, next, 1.6f);
+                at = next;
+            }
+            // A compass rose.
+            var cr = new Vector2(n * 0.72f, n * 0.28f);
+            for (int a = 0; a < 8; a++)
+            {
+                float ang = a * Mathf.PI / 4, len = a % 2 == 0 ? 60 : 32;
+                Line(px, n, cr, cr + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * len, 1.6f);
+            }
+            for (int i = 0; i < 64; i++) { float a = i / 64f * Mathf.PI * 2; Plot(px, n, Mathf.RoundToInt(cr.x + Mathf.Cos(a) * 24), Mathf.RoundToInt(cr.y + Mathf.Sin(a) * 24)); }
         }
 
         void BuildIsland(LocationDef l)

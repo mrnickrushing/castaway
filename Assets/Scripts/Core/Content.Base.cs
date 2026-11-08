@@ -29,6 +29,9 @@ namespace LastTide.Core
         {
             // Iron and clothes.
             Item("iron_bar", "Iron Bar", ItemKind.Resource, 30);
+            Item("plank", "Wooden Plank", ItemKind.Resource, 30).Blurb = "Sawn and planed at the workbench. Better building, better boxes.";
+            Recipe("plank", "workbench", 1, 15f, I("wood", 5));
+            Node("lootbag", "Sailor's Bag", ToolUse.None, 0.8f, 1, 900f, new ItemCount[0], null);
             Tool("iron_hatchet", "Iron Hatchet", ToolUse.Chop, 16, 160);
             Tool("iron_pickaxe", "Iron Pickaxe", ToolUse.Mine, 15, 160);
             Gear("palm_hat", "Palm-Leaf Hat", GearSlot.Head, 2, "Woven from palm leaves. Keeps the sun off and a little of the blows.");
@@ -61,9 +64,10 @@ namespace LastTide.Core
             Piece("doorway", "Doorway", "Building", PieceKind.Edge, "A wall with a way through.", 0, null, false, I("wood", 4), I("fiber", 2));
             Piece("window", "Window", "Building", PieceKind.Edge, "A wall with a shuttered window.", 0, null, true, I("wood", 4), I("fiber", 3));
             Piece("small_box", "Small Box", "Storage", PieceKind.Object, "Eight more slots of storage.", 8, null, true, I("wood", 10), I("fiber", 5));
-            Piece("storage_chest", "Storage Chest", "Storage", PieceKind.Object, "A big iron-bound chest: 16 slots.", 16, null, true, I("wood", 16), I("nails", 6), I("rope", 2)).Level = 4;
+            Piece("storage_chest", "Storage Chest", "Storage", PieceKind.Object, "A big iron-bound chest: 16 slots.", 16, null, true, I("plank", 6), I("nails", 6), I("rope", 2)).Level = 4;
             Piece("furnace", "Furnace", "Workbenches", PieceKind.Object, "Smelts iron ore into bars.", 0, "furnace", true, I("stone", 20), I("wood", 10)).Level = 4;
-            Piece("bed", "Bed", "Furniture", PieceKind.Object, "Rest here to heal. You wake here after passing out.", 0, null, true, I("wood", 10), I("cloth", 4), I("fiber", 6));
+            Piece("bed", "Bed", "Furniture", PieceKind.Object, "Rest here to heal. You wake here after passing out.", 0, null, true, I("plank", 3), I("cloth", 4), I("fiber", 6));
+            Piece("doghouse", "Dog House", "Furniture", PieceKind.Object, "A kennel for Biscuit to curl up in.", 0, null, true, I("plank", 4), I("cloth", 2));
             Piece("table", "Table", "Furniture", PieceKind.Object, "A rough plank table.", 0, null, true, I("wood", 8));
             Piece("chair", "Chair", "Furniture", PieceKind.Object, "Somewhere to sit at last.", 0, null, false, I("wood", 4));
             Piece("torch", "Torch", "Furniture", PieceKind.Object, "Lights up the camp.", 0, null, false, I("wood", 2), I("cloth", 1));

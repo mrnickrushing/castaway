@@ -86,34 +86,46 @@ namespace LastTide.Game
         Image _healthFill, _foodFill, _waterFill;
         Text _healthText, _foodText, _waterText;
 
+        /// <summary>Top left: the castaway's name and health (number box and bar), food and water below.</summary>
         void BuildMeters(RectTransform safe)
         {
-            var box = UIKit.Rect("Meters", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -24), new Vector2(380, 190));
-            Meter(box, 0, "heart", UIKit.Red, out _healthFill, out _healthText);
-            Meter(box, 1, "food", new Color(0.95f, 0.6f, 0.2f), out _foodFill, out _foodText);
-            Meter(box, 2, "water", new Color(0.3f, 0.68f, 1f), out _waterFill, out _waterText);
+            var box = UIKit.Rect("Meters", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -20), new Vector2(420, 140));
+            var name = UIKit.Outlined(UIKit.Label("Name", box, "Castaway", 36, Color.white, TextAnchor.MiddleLeft, false), 1.5f);
+            name.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), Vector2.zero, new Vector2(300, 52));
+            _playerName = name;
+            var hb = UIKit.Img("HP", box, null, new Color(0.2f, 0.55f, 0.2f, 0.95f));
+            hb.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(300, -4), new Vector2(100, 46));
+            _healthText = UIKit.Label("N", hb.transform, "100", 34, Color.white, TextAnchor.MiddleRight, false);
+            _healthText.rectTransform.Fill(); _healthText.rectTransform.offsetMax = new Vector2(-10, 0);
+            var bar = UIKit.Img("Bar", box, null, new Color(0, 0, 0, 0.45f));
+            bar.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -56), new Vector2(400, 12));
+            _healthFill = UIKit.Img("Fill", bar.transform, null, new Color(0.35f, 0.85f, 0.3f));
+            _healthFill.rectTransform.anchorMin = Vector2.zero; _healthFill.rectTransform.anchorMax = Vector2.one;
+            _healthFill.rectTransform.offsetMin = _healthFill.rectTransform.offsetMax = Vector2.zero;
+            Small(box, 0, "food", new Color(0.95f, 0.6f, 0.2f), out _foodFill, out _foodText);
+            Small(box, 1, "water", new Color(0.3f, 0.68f, 1f), out _waterFill, out _waterText);
         }
 
-        void Meter(RectTransform box, int row, string icon, Color c, out Image fill, out Text text)
+        Text _playerName;
+
+        void Small(RectTransform box, int col, string icon, Color c, out Image fill, out Text text)
         {
-            var r = UIKit.Rect("Meter " + icon, box).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -row * 60), new Vector2(380, 52));
-            var bg = UIKit.Img("Back", r, UIKit.Round, UIKit.Ink);
-            bg.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(30, 0), new Vector2(320, 30));
-            fill = UIKit.Img("Fill", bg.transform, UIKit.Round, c);
-            fill.rectTransform.anchorMin = new Vector2(0, 0); fill.rectTransform.anchorMax = new Vector2(1, 1);
-            fill.rectTransform.offsetMin = new Vector2(4, 4); fill.rectTransform.offsetMax = new Vector2(-4, -4);
-            text = UIKit.Outlined(UIKit.Label("Value", bg.transform, "100", 24, Color.white, TextAnchor.MiddleRight), 1.5f);
-            text.rectTransform.Fill(); text.rectTransform.offsetMax = new Vector2(-12, 0);
-            var disc = UIKit.Img("Disc", r, UIKit.Circle, UIKit.Ink);
-            disc.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(52, 52));
-            var ic = UIKit.Img("Icon", disc.transform, UIKit.Symbol(icon), c);
-            ic.rectTransform.Fill(9);
+            var r = UIKit.Rect("Small " + icon, box).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(col * 205, -82), new Vector2(195, 44));
+            var ic = UIKit.Img("Icon", r, UIKit.Symbol(icon), c);
+            ic.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(40, 40));
+            var bg = UIKit.Img("Back", r, null, new Color(0, 0, 0, 0.45f));
+            bg.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(48, 0), new Vector2(140, 12));
+            fill = UIKit.Img("Fill", bg.transform, null, c);
+            fill.rectTransform.anchorMin = Vector2.zero; fill.rectTransform.anchorMax = Vector2.one;
+            fill.rectTransform.offsetMin = fill.rectTransform.offsetMax = Vector2.zero;
+            text = UIKit.Outlined(UIKit.Label("V", r, "", 22, Color.white, TextAnchor.UpperRight, false), 1.2f);
+            text.rectTransform.Fill(); text.rectTransform.offsetMax = new Vector2(-6, 14);
         }
 
         void SetMeter(Image fill, Text text, float v)
         {
             var rt = fill.rectTransform;
-            rt.anchorMax = new Vector2(Mathf.Max(0.04f, v / 100f), 1);
+            rt.anchorMax = new Vector2(Mathf.Max(0.02f, v / 100f), 1);
             text.text = Mathf.CeilToInt(v).ToString();
             var c = fill.color;
             fill.color = new Color(c.r, c.g, c.b, v < 25 ? 0.6f + 0.4f * Mathf.Abs(Mathf.Sin(Time.time * 6)) : 1);
@@ -121,87 +133,122 @@ namespace LastTide.Game
 
         // ------------------------------------------------------------------ guide card
 
-        RectTransform _questCard;
+        RectTransform _questCard, _levelUp;
         Text _questText, _questTitle;
         Image _questBack;
         float _questFlash;
+        bool _questFolded;
 
+        /// <summary>The guide on the left: the chapter in amber, the step under it; folds away with the arrows.</summary>
         void BuildQuest(RectTransform safe)
         {
-            _questCard = UIKit.Rect("Quest", safe).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -22), new Vector2(760, 96));
-            _questBack = UIKit.Img("Back", _questCard, UIKit.Round, UIKit.Ink);
+            _questCard = UIKit.Rect("Quest", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -170), new Vector2(620, 110));
+            _questBack = UIKit.Img("Back", _questCard, Fade(), new Color(0.08f, 0.1f, 0.1f, 0.85f));
             _questBack.rectTransform.Fill();
-            _questTitle = UIKit.Label("Title", _questCard, "SURVIVAL GUIDE", 22, UIKit.Amber, TextAnchor.UpperCenter);
-            _questTitle.rectTransform.Fill(); _questTitle.rectTransform.offsetMax = new Vector2(0, -8);
-            _questText = UIKit.Outlined(UIKit.Label("Text", _questCard, "", 34, Color.white, TextAnchor.LowerCenter), 1.5f);
-            _questText.rectTransform.Fill(); _questText.rectTransform.offsetMin = new Vector2(16, 12); _questText.rectTransform.offsetMax = new Vector2(-16, 0);
+            _questTitle = UIKit.Label("Title", _questCard, "", 32, UIKit.Amber, TextAnchor.UpperLeft, false);
+            _questTitle.rectTransform.Fill(); _questTitle.rectTransform.offsetMin = new Vector2(40, 0); _questTitle.rectTransform.offsetMax = new Vector2(-60, -10);
+            _questText = UIKit.Outlined(UIKit.Label("Text", _questCard, "", 30, Color.white, TextAnchor.LowerLeft, false), 1.2f);
+            _questText.supportRichText = true;
+            _questText.rectTransform.Fill(); _questText.rectTransform.offsetMin = new Vector2(40, 12); _questText.rectTransform.offsetMax = new Vector2(-60, 0);
+            var fold = UIKit.Button("Fold", _questCard, "<<", new Color(0, 0, 0, 0), () => { _questFolded = !_questFolded; }, 40);
+            ((RectTransform)fold.transform).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(70, 100));
+            fold.GetComponentInChildren<Text>().color = new Color(1, 1, 1, 0.6f);
+            // LEVEL UP!: waits until tapped, then pays the level's reward.
+            _levelUp = UIKit.Rect("Level up", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -290), new Vector2(420, 90));
+            var lbg = UIKit.Img("Back", _levelUp, Fade(), new Color(0.08f, 0.1f, 0.1f, 0.85f)); lbg.rectTransform.Fill();
+            var lb = UIKit.Button("Up", _levelUp, null, new Color(0.85f, 0.62f, 0.1f), ClaimLevelUp);
+            lb.GetComponent<Image>().sprite = UIKit.Circle; lb.GetComponent<Image>().type = Image.Type.Simple;
+            ((RectTransform)lb.transform).Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(40, 0), new Vector2(76, 76));
+            var la = UIKit.Img("Arrow", lb.transform, UIKit.Symbol("upgrade"), Color.white); la.rectTransform.Fill(14);
+            var lt = UIKit.Outlined(UIKit.Label("T", _levelUp, "LEVEL UP!", 36, UIKit.Amber, TextAnchor.MiddleLeft, false), 1.2f);
+            lt.rectTransform.Fill(); lt.rectTransform.offsetMin = new Vector2(134, 0);
+            var tap = UIKit.Button("Tap", _levelUp, null, new Color(0, 0, 0, 0), ClaimLevelUp);
+            ((RectTransform)tap.transform).Fill();
+            _levelUp.gameObject.SetActive(false);
+        }
+
+        void ClaimLevelUp()
+        {
+            var got = G.Session.ClaimLevelRewards();
+            if (got.Count == 0) return;
+            Sfx.Play("levelup");
+            var parts = new System.Collections.Generic.List<string>();
+            foreach (var lv in got) foreach (var r in Session.LevelReward(lv)) parts.Add("+" + r.n + " " + Content.NameOf(r.id));
+            Say("Level " + got[got.Count - 1] + "!", string.Join("   ", parts) + "   +20 energy each level");
+        }
+
+        static Sprite _fade;
+        /// <summary>A panel that fades out to the right, like a banner on the screen's edge.</summary>
+        static Sprite Fade()
+        {
+            if (_fade != null) return _fade;
+            var t = new Texture2D(64, 4, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            for (int x = 0; x < 64; x++) for (int y = 0; y < 4; y++) t.SetPixel(x, y, new Color(1, 1, 1, Mathf.Clamp01(1.3f - x / 63f * 1.2f)));
+            t.Apply();
+            return _fade = Sprite.Create(t, new Rect(0, 0, 64, 4), new Vector2(0.5f, 0.5f));
         }
 
         static string ChapterTitle()
         {
             var s = G.Session;
             var ch = Story.ChapterOf(s.State.quest);
-            return (Story.Chapters.IndexOf(ch) + 1) + ". " + ch.Title.ToUpper();
+            return ch.Title;
         }
 
         void UpdateQuest()
         {
             var s = G.Session;
             var q = s.CurrentQuest;
-            _questText.text = q.Label(s);
+            _questText.text = "<color=#FFC24A>\u2022</color>  " + q.Label(s);
+            _questText.gameObject.SetActive(!_questFolded);
+            _questCard.anchoredPosition = new Vector2(_questFolded ? -540 : 0, MapOpen ? -215 : -170);
             if (_questFlash > 0)
             {
                 _questFlash -= Time.deltaTime;
                 float t = Mathf.Clamp01(_questFlash / 1.6f);
-                _questBack.color = Color.Lerp(UIKit.Ink, new Color(0.2f, 0.55f, 0.18f, 0.95f), t);
-                _questCard.localScale = Vector3.one * (1 + Mathf.Sin(t * Mathf.PI) * 0.06f);
-                _questTitle.text = t > 0.3f ? "DONE!" : ChapterTitle();
+                _questBack.color = Color.Lerp(new Color(0.08f, 0.1f, 0.1f, 0.85f), new Color(0.2f, 0.55f, 0.18f, 0.95f), t);
+                _questTitle.text = t > 0.3f ? "Done!" : ChapterTitle();
             }
-            else { _questBack.color = UIKit.Ink; _questCard.localScale = Vector3.one; _questTitle.text = ChapterTitle(); }
+            else { _questBack.color = new Color(0.08f, 0.1f, 0.1f, 0.85f); _questTitle.text = ChapterTitle(); }
+            _levelUp.gameObject.SetActive(s.LevelRewardsWaiting > 0 && !MapOpen);
+            if (_levelUp.gameObject.activeSelf) _levelUp.GetChild(1).localScale = Vector3.one * (1 + 0.08f * Mathf.Sin(Time.time * 6));
         }
 
         // ------------------------------------------------------------------ level, XP and doubloons
 
         Text _levelText, _coinsIsland;
-        Image _xpRing, _levelDisc;
+        Image _xpRing;
         float _levelFlash;
 
+        /// <summary>The XP bar along the bottom edge, and doubloons by the minimap.</summary>
         void BuildLevel(RectTransform parent)
         {
-            // A round level badge with an XP ring, next to the meters; doubloons under it.
-            var badge = UIKit.Img("Level", parent, UIKit.Circle, UIKit.Ink).rectTransform;
-            badge.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(400, -26), new Vector2(120, 120));
-            _levelDisc = badge.GetComponent<Image>();
-            _xpRing = UIKit.Img("XP", badge, UIKit.RingSprite, UIKit.Green);
-            _xpRing.rectTransform.Fill(2);
-            _xpRing.type = Image.Type.Filled; _xpRing.fillMethod = Image.FillMethod.Radial360; _xpRing.fillOrigin = 2; _xpRing.fillClockwise = true;
-            var lv = UIKit.Label("LV", badge, "LEVEL", 20, UIKit.Sand, TextAnchor.UpperCenter);
-            lv.rectTransform.Fill(); lv.rectTransform.offsetMax = new Vector2(0, -22);
-            _levelText = UIKit.Outlined(UIKit.Label("N", badge, "1", 52, Color.white, TextAnchor.MiddleCenter), 1.5f);
-            _levelText.rectTransform.Fill(); _levelText.rectTransform.offsetMax = new Vector2(0, -14);
-            var coin = UIKit.Img("Coin", parent, UIKit.Symbol("coin"), new Color(1f, 0.82f, 0.3f));
-            coin.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(538, -40), new Vector2(46, 46));
-            _coinsIsland = UIKit.Outlined(UIKit.Label("Coins", parent, "0", 34, Color.white), 1.5f);
-            _coinsIsland.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(592, -38), new Vector2(200, 50));
-            var b = UIKit.Button("Coins", parent, null, new Color(0, 0, 0, 0), OpenShop);
-            var plus = UIKit.Label("Plus", b.transform, "+", 44, UIKit.Amber, TextAnchor.MiddleRight);
-            plus.rectTransform.Fill(); plus.rectTransform.offsetMax = new Vector2(-14, 0);
-            ((RectTransform)b.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(530, -30), new Vector2(200, 64));
+            var bar = UIKit.Img("XP", parent, null, new Color(0, 0, 0, 0.45f));
+            bar.rectTransform.anchorMin = new Vector2(0, 0); bar.rectTransform.anchorMax = new Vector2(1, 0);
+            bar.rectTransform.offsetMin = new Vector2(380, 6); bar.rectTransform.offsetMax = new Vector2(-260, 16);
+            _xpRing = UIKit.Img("Fill", bar.transform, null, new Color(0.2f, 0.7f, 0.7f));
+            _xpRing.rectTransform.anchorMin = Vector2.zero; _xpRing.rectTransform.anchorMax = new Vector2(0, 1);
+            _xpRing.rectTransform.offsetMin = _xpRing.rectTransform.offsetMax = Vector2.zero;
+            _levelText = UIKit.Outlined(UIKit.Label("Lv", parent, "Level 1", 28, Color.white, TextAnchor.LowerRight, false), 1.2f);
+            _levelText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(370, 0), new Vector2(200, 34));
+            var coins = UIKit.Img("Coins", parent, null, new Color(0, 0, 0, 0.35f)).rectTransform;
+            coins.Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-40, -330), new Vector2(240, 56));
+            UIKit.ItemIcon(UIKit.Rect("Coin", coins).Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(56, 56)), "doubloon", 56);
+            _coinsIsland = UIKit.Outlined(UIKit.Label("N", coins, "0", 32, Color.white, TextAnchor.MiddleLeft, false), 1.2f);
+            _coinsIsland.rectTransform.Fill(); _coinsIsland.rectTransform.offsetMin = new Vector2(66, 0);
+            var plus = UIKit.Button("Plus", coins, "+", new Color(0, 0, 0, 0), OpenShop, 46);
+            ((RectTransform)plus.transform).Fill();
+            plus.GetComponentInChildren<Text>().alignment = TextAnchor.MiddleRight;
+            plus.GetComponentInChildren<Text>().color = new Color(0.3f, 0.85f, 0.8f);
         }
 
         void UpdateLevel()
         {
             var s = G.Session;
-            _levelText.text = s.State.level.ToString();
-            _xpRing.fillAmount = s.Xp01;
+            _levelText.text = "Level " + s.State.level;
+            _xpRing.rectTransform.anchorMax = new Vector2(s.Xp01, 1);
             _coinsIsland.text = s.State.coins.ToString();
-            if (_levelFlash > 0)
-            {
-                _levelFlash -= Time.deltaTime;
-                float t = Mathf.Clamp01(_levelFlash / 2f);
-                _levelDisc.transform.localScale = Vector3.one * (1 + Mathf.Sin(t * Mathf.PI * 4) * 0.12f * t);
-                _levelDisc.color = Color.Lerp(UIKit.Ink, new Color(0.9f, 0.7f, 0.2f, 0.95f), t);
-            }
+            if (_playerName != null) _playerName.text = string.IsNullOrEmpty(s.State.name) ? "Castaway" : s.State.name;
         }
 
         // ------------------------------------------------------------------ joystick
@@ -227,7 +274,7 @@ namespace LastTide.Game
         {
             Vector2 pos = Vector2.zero;
             bool down = false, began = false;
-            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _building || (InvOpen && _station != "radio" && _bagOpen)) { _finger = -2; Stick = Vector2.zero; return; }
+            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _building || (InvOpen && _station != "radio")) { _finger = -2; Stick = Vector2.zero; return; }
             if (Input.touchCount > 0)
             {
                 for (int i = 0; i < Input.touchCount; i++)
@@ -291,6 +338,7 @@ namespace LastTide.Game
             var s = G.Session;
             UpdateJoystick();
             SetMeter(_healthFill, _healthText, s.State.health);
+            _healthFill.color = s.State.health < 30 ? UIKit.Red : new Color(0.35f, 0.85f, 0.3f);
             SetMeter(_foodFill, _foodText, s.State.hunger);
             SetMeter(_waterFill, _waterText, s.State.thirst);
             UpdateQuest();
@@ -301,6 +349,8 @@ namespace LastTide.Game
             UpdateSplash();
             UpdateStory();
             UpdateBuild();
+            UpdateActions();
+            UpdateMinimap();
             if (_offersOpen && Time.frameCount % 30 == 0) RefreshOffers();
             _worldLayer.gameObject.SetActive(!MapOpen);
             UpdateWorldLabels();

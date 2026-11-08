@@ -23,6 +23,8 @@ namespace LastTide.Game
         float _walk, _move, _phase, _swing = -1;
         Act _act;
         Vector3 _hipsRest;
+        /// <summary>Crouched, sneaking.</summary>
+        public bool Sneak;
 
         public static SurvivorArt TryCreate(Transform parent)
         {
@@ -95,6 +97,13 @@ namespace LastTide.Game
         {
             var root = transform.parent;
             _hips.localPosition = _hipsRest;
+            if (Sneak)
+            {
+                _hips.position += Vector3.down * 0.28f;
+                Twist(_spine, 0, 28);
+                Aim(_armR, _foreR, new Vector3(0.25f, -0.6f, 0.7f));
+                Aim(_armL, _foreL, new Vector3(-0.25f, -0.6f, 0.7f));
+            }
             float p = _phase;
             switch (_act)
             {

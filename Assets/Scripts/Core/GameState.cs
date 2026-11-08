@@ -21,6 +21,8 @@ namespace LastTide.Core
         public string key;        // world placement key, e.g. "palm#12"
         public int hitsUsed;
         public double respawnAt;  // 0 = standing
+        public List<Slot> slots;  // a loot bag's contents
+        public bool rolled;       // the bag's contents have been rolled
     }
 
     /// <summary>A camp structure: materials delivered so far, and whether it stands.</summary>
@@ -102,6 +104,8 @@ namespace LastTide.Core
         public List<PendingPurchase> pendingPurchases = new List<PendingPurchase>();
         public List<Slot> gear = new List<Slot>();          // head, body, legs, feet
         public List<PieceState> pieces = new List<PieceState>();
+        public int levelsClaimed;           // level-up rewards taken
+        public string name;                 // what the castaway is called (settings)
 
         public static GameState New()
         {

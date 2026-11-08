@@ -90,7 +90,8 @@ namespace LastTide.Game
             float speed = 1.4f;
             float toPlayer = player != null ? Vector3.Distance(player.transform.position, pos) : 999;
             bool alive = G.Session.State.health > 0;
-            if (alive && (toPlayer < _def.Aggro || (_angry && toPlayer < _def.Aggro * 2.2f)) && Vector3.Distance(pos, _home) < 30f)
+            float aggro = _def.Aggro * G.Session.AggroScale(player != null && player.Sneaking);
+            if (alive && (toPlayer < aggro || (_angry && toPlayer < _def.Aggro * 2.2f)) && Vector3.Distance(pos, _home) < 30f)
             {
                 if (!_angry) { Sfx.Play(_def.Id == "boar" ? "grunt" : "hiss", pos); _angry = true; }
                 goal = player.transform.position;

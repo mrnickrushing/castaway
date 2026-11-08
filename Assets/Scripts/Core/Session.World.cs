@@ -30,8 +30,6 @@ namespace LastTide.Core
             {
                 State.xp -= XpToNext(State.level);
                 State.level++;
-                State.coins += 5;
-                State.energy = Math.Min(World.EnergyMax, State.energy + 20);
                 Toast?.Invoke("Level " + State.level + "!");
                 LevelUp?.Invoke(State.level);
                 CheckQuests();

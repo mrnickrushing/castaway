@@ -39,6 +39,14 @@ setting only.
 - Free models: `Tools/art/free_assets.py` (Kenney kits, Quaternius characters, CC0, see `CREDITS.md`) converts them
   with `Tools/blender/free_import.py` to vertex-coloured FBX in `Models/Free` and `Models/People`, drawn with
   `Materials.Kit` (VertexLit without the uv2 surface channel those meshes don't have). Prefer these over paid AI art.
+- Night and the field HUD (`Core/Session.Night.cs`, `App/DayNight.cs`): a 12-minute day (`Session.DayLength`, the last
+  third is night); `DayNight` drives sun/moon, ambient, fog, `_NightGlow` and a night colour-grading Volume (the map is
+  always drawn by day). At night and while sneaking, enemy aggro range scales by `AggroScale`. Sailors' bags
+  (`LootSpot`, node `lootbag`) roll 2-4 items from the location loot into a loot window (`Hud.OpenLoot`). Biscuit the dog
+  (`Actors/Pet.cs`, quest step `dog`, `PetSpot` on Driftwood Shore) follows and bites (`Session.PetDamage`). Level
+  rewards wait until claimed from LEVEL UP! (`ClaimLevelRewards`). HUD (LDoE style): name/health top-left, quest card
+  with fold, radar minimap (`Hud.Minimap`), hand/weapon/target/sneak/AUTO buttons (`Hud.Panels`), XP bar at the bottom.
+  The map is a parchment chart with ink sketches; water is cut smoothly where it ends (`MapView.BuildSea`).
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

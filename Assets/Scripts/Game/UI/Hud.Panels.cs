@@ -28,22 +28,78 @@ namespace LastTide.Game
 
         bool InvOpen { get { return _bagOpen || _station != null; } }
 
+        /// <summary>
+        /// Bottom right: the hand (do the nearest job), the weapon (strike; its ring is the cooldown), target lock and
+        /// sneak; a row of small menu buttons along the bottom; AUTO beside the stick. Top right: gift and settings by
+        /// the minimap, the map under it.
+        /// </summary>
         void BuildButtons(RectTransform safe)
         {
-            // Backpack button, bottom right, with the held weapon and the other screens beside it.
-            RoundButton(safe, "pack", "BAG", new Color(0.24f, 0.3f, 0.2f, 0.95f), ToggleBag, new Vector2(-40, 40), 150);
-            _weaponSlot = UIKit.Img("Weapon", safe, UIKit.Circle, UIKit.Ink).rectTransform;
-            _weaponSlot.Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-210, 50), new Vector2(110, 110));
-            RoundButton(safe, "craft", "CRAFT", new Color(0.22f, 0.32f, 0.42f, 0.95f), () => OpenBlueprints(), new Vector2(-350, 50), 110);
-            _buildButton = RoundButton(safe, "build", "BUILD", new Color(0.42f, 0.3f, 0.18f, 0.95f), () => EnterBuild(), new Vector2(-490, 50), 110);
-            var path = RoundButton(safe, "path", "PATH", new Color(0.3f, 0.36f, 0.2f, 0.95f), () => OpenPath(), new Vector2(-630, 50), 110);
-            _pathBadge = Badge(path);
+            ActionButton(safe, "hand", new Vector2(-190, 70), 180, () => Player.Instance.Interact(), new Color(0.08f, 0.24f, 0.26f, 0.9f));
+            _weaponSlot = ActionButton(safe, null, new Vector2(-120, 290), 160, () => Player.Instance.Attack(), new Color(0.08f, 0.1f, 0.1f, 0.6f));
+            _weaponRing = UIKit.Img("Cooldown", _weaponSlot, UIKit.RingSprite, new Color(1, 1, 1, 0.8f));
+            _weaponRing.rectTransform.Fill(-4);
+            _weaponRing.type = Image.Type.Filled; _weaponRing.fillMethod = Image.FillMethod.Radial360; _weaponRing.fillOrigin = 2;
+            _targetBtn = ActionButton(safe, "target", new Vector2(-320, 320), 110, () => { Player.Instance.CycleTarget(); Sfx.Play("click"); }, new Color(0.08f, 0.1f, 0.1f, 0.6f));
+            _sneakBtn = ActionButton(safe, "sneak", new Vector2(-30, 80), 110, () => { Player.Instance.Sneaking = !Player.Instance.Sneaking; Sfx.Play("click"); }, new Color(0.08f, 0.1f, 0.1f, 0.6f));
+            _autoBtn = ActionButton(safe, "auto", new Vector2(0, 0), 120, () => { Player.Instance.AutoAttack = !Player.Instance.AutoAttack; Toast(Player.Instance.AutoAttack ? "Auto attack on" : "Auto attack off: use the weapon button"); }, new Color(0.08f, 0.1f, 0.1f, 0.6f));
+            _autoBtn.anchorMin = _autoBtn.anchorMax = new Vector2(0, 0); _autoBtn.pivot = new Vector2(0, 0); _autoBtn.anchoredPosition = new Vector2(40, 30);
+            var al = UIKit.Label("AUTO", _autoBtn, "AUTO", 26, Color.white, TextAnchor.LowerCenter, false); al.rectTransform.Fill(10);
 
-            // The map and help, top right.
-            RoundButton(safe, "map", "MAP", new Color(0.2f, 0.32f, 0.38f, 0.95f), OpenMap, new Vector2(-40, -30), 130, top: true);
-            var help = UIKit.Button("Help", safe, "?", new Color(0.2f, 0.32f, 0.38f, 0.95f), () => OpenHelp(), 60);
-            help.GetComponent<Image>().sprite = UIKit.Circle; help.GetComponent<Image>().type = Image.Type.Simple;
-            ((RectTransform)help.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-190, -40), new Vector2(100, 100));
+            // Menu row along the bottom.
+            float x = -420;
+            foreach (var (sym, label, act) in new (string, string, System.Action)[] { ("pack", "BAG", ToggleBag), ("craft", "CRAFT", () => OpenBlueprints()), ("build", "BUILD", () => EnterBuild()), ("path", "PATH", () => OpenPath()) })
+            {
+                var b = UIKit.Button(label, safe, null, new Color(0, 0, 0, 0), act);
+                var rt = (RectTransform)b.transform;
+                rt.Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(x, 22), new Vector2(96, 96));
+                var ic = UIKit.Img("Icon", b.transform, UIKit.Symbol(sym), new Color(0.88f, 0.9f, 0.88f)); ic.rectTransform.Fill(18);
+                if (label == "BUILD") _buildButton = rt;
+                if (label == "PATH") _pathBadge = Badge(rt);
+                x -= 104;
+            }
+
+            // Top right: gift, settings and the map.
+            var gift = UIKit.Button("Gift", safe, null, new Color(0, 0, 0, 0), OpenOffers);
+            ((RectTransform)gift.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-330, -20), new Vector2(80, 80));
+            var gi = UIKit.Img("I", gift.transform, UIKit.Symbol("gift"), Color.white); gi.rectTransform.Fill(8);
+            var gear = UIKit.Button("Settings", safe, null, new Color(0, 0, 0, 0), () => OpenHelp(2));
+            ((RectTransform)gear.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-330, -110), new Vector2(80, 80));
+            var ge = UIKit.Img("I", gear.transform, UIKit.Symbol("gear"), Color.white); ge.rectTransform.Fill(8);
+            var help = UIKit.Button("Help", safe, "?", new Color(0, 0, 0, 0), () => OpenHelp(), 56);
+            ((RectTransform)help.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-330, -200), new Vector2(80, 80));
+            RoundButton(safe, "map", "MAP", new Color(0.2f, 0.32f, 0.38f, 0.95f), OpenMap, new Vector2(-40, -400), 110, top: true);
+            BuildMinimap(safe);
+        }
+
+        Image _weaponRing;
+        RectTransform _targetBtn, _sneakBtn, _autoBtn;
+
+        RectTransform ActionButton(RectTransform parent, string sym, Vector2 pos, float size, System.Action act, Color c)
+        {
+            var b = UIKit.Button("Action", parent, null, c, act);
+            b.GetComponent<Image>().sprite = UIKit.Circle; b.GetComponent<Image>().type = Image.Type.Simple;
+            var rt = (RectTransform)b.transform;
+            rt.Place(new Vector2(1, 0), new Vector2(1, 0), pos, new Vector2(size, size));
+            var ring = UIKit.Img("Ring", rt, UIKit.RingSprite, new Color(0.3f, 0.75f, 0.72f, 0.9f)); ring.rectTransform.Fill(2);
+            if (sym != null) { var ic = UIKit.Img("Icon", rt, UIKit.Symbol(sym), Color.white); ic.rectTransform.Fill(size * 0.22f); }
+            return rt;
+        }
+
+        void UpdateActions()
+        {
+            var p = Player.Instance;
+            if (p == null) return;
+            _weaponRing.fillAmount = 1 - p.Cooldown01;
+            Tint(_sneakBtn, p.Sneaking);
+            Tint(_targetBtn, p.Locked != null);
+            Tint(_autoBtn, p.AutoAttack);
+        }
+
+        static void Tint(RectTransform b, bool on)
+        {
+            var ring = b.Find("Ring").GetComponent<Image>();
+            ring.color = on ? new Color(1f, 0.8f, 0.3f, 1f) : new Color(0.3f, 0.75f, 0.72f, 0.6f);
         }
 
         RectTransform _buildButton;
@@ -113,6 +169,7 @@ namespace LastTide.Game
 
         public void OpenStation(string id)
         {
+            if (Equals(_dismissed, id)) return;
             if (id == "radio") { if (!_radioOpen && _station != "radio") { _station = "radio"; OpenRadio(); } return; }
             if (_station == id && _storage == null) return;
             _station = id;
@@ -125,6 +182,7 @@ namespace LastTide.Game
 
         public void CloseStation(string id)
         {
+            if (Equals(_dismissed, id)) _dismissed = null;
             if (_station != id) return;
             _station = null;
             _dirty = true;
@@ -132,15 +190,63 @@ namespace LastTide.Game
 
         public void OpenStorage(PieceState box)
         {
+            if (_dismissed == box) return;
             if (_storage == box) return;
             _storage = box;
             _station = "storage";
             _dirty = true;
         }
 
-        public void CloseStorage(PieceState box) { if (_storage == box) { _storage = null; _station = null; _dirty = true; } }
+        string _lootKey;
 
-        void CloseAll() { _station = null; _storage = null; _bagOpen = false; _sel = -1; _dirty = true; }
+        /// <summary>A sailor's bag: its contents in the side panel, with TAKE ALL.</summary>
+        public void OpenLoot(string key)
+        {
+            if (Equals(_dismissed, key)) return;
+            if (_lootKey == key) return;
+            _lootKey = key;
+            _storage = null;
+            _station = "loot";
+            Sfx.Play("gather");
+            _dirty = true;
+        }
+
+        public void CloseLoot(string key) { if (Equals(_dismissed, key)) _dismissed = null; if (_lootKey == key) { _lootKey = null; _station = null; _dirty = true; } }
+
+        void LootPanel()
+        {
+            var s = G.Session;
+            var bag = s.Loot(_lootKey, "lootbag");
+            if (bag == null) { _lootKey = null; _station = null; _dirty = true; return; }
+            var t = UIKit.Label("Title", _invSide, "SAILOR'S BAG", 42, UIKit.Sand, TextAnchor.UpperLeft);
+            t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(30, 0); t.rectTransform.offsetMax = new Vector2(0, -20);
+            var grid = UIKit.Rect("Grid", _invSide).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -110), new Vector2(4 * 140, 300));
+            for (int i = 0; i < bag.Count; i++)
+            {
+                int idx = i;
+                string key = _lootKey;
+                SlotCell(grid, bag[i], new Vector2((i % 4) * 140, -(i / 4) * 140), 132, false, false, () => { if (s.TakeLoot(key, "lootbag", idx) > 0) Sfx.Play("gather"); });
+            }
+            string k2 = _lootKey;
+            var all = UIKit.Button("All", _invSide, "TAKE ALL", new Color(0.8f, 0.62f, 0.12f), () =>
+            {
+                if (s.TakeLoot(k2, "lootbag", -1) > 0) Sfx.Play("gather");
+                if (!s.Standing(k2, "lootbag")) { _lootKey = null; _station = null; }
+                _dirty = true;
+            }, 38);
+            ((RectTransform)all.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 26), new Vector2(380, 84));
+        }
+
+        public void CloseStorage(PieceState box) { if (_dismissed == box) _dismissed = null; if (_storage == box) { _storage = null; _station = null; _dirty = true; } }
+
+        /// <summary>What the castaway closed while still standing at it: it doesn't pop open again until they walk away.</summary>
+        object _dismissed;
+
+        void CloseAll()
+        {
+            _dismissed = (object)_storage ?? (object)_lootKey ?? _station;
+            _station = null; _storage = null; _lootKey = null; _bagOpen = false; _sel = -1; _dirty = true;
+        }
 
         List<Slot> OpenStorageSlots { get { return _storage != null ? _storage.slots : _station == "chest" ? G.Session.State.chest : null; } }
 
@@ -174,7 +280,8 @@ namespace LastTide.Game
                 InvGrid();
                 InvGear();
                 Clear(_invSide);
-                if (_station == "storage" || _station == "chest") StoragePanel();
+                if (_station == "loot") LootPanel();
+                else if (_station == "storage" || _station == "chest") StoragePanel();
                 else if (_station != null) StationPanel(_station);
                 else ItemPanel();
             }
@@ -183,9 +290,11 @@ namespace LastTide.Game
             if (w != _weaponShown)
             {
                 _weaponShown = w;
-                for (int i = _weaponSlot.childCount - 1; i >= 0; i--) Destroy(_weaponSlot.GetChild(i).gameObject);
-                if (w != null) UIKit.ItemIcon(_weaponSlot, w, 84);
-                else { var f = UIKit.Label("Fists", _weaponSlot, "FISTS", 24, UIKit.Sand, TextAnchor.MiddleCenter); f.rectTransform.Fill(); }
+                var holder = _weaponSlot.Find("WIcon") as RectTransform;
+                if (holder == null) { holder = UIKit.Rect("WIcon", _weaponSlot); holder.Fill(); }
+                for (int i = holder.childCount - 1; i >= 0; i--) Destroy(holder.GetChild(i).gameObject);
+                if (w != null) UIKit.ItemIcon(holder, w, 120);
+                else { var f = UIKit.Label("Fists", holder, "FISTS", 28, UIKit.Sand, TextAnchor.MiddleCenter); f.rectTransform.Fill(); }
             }
             _buildButton.gameObject.SetActive(s.AtHome);
             int claim = s.Claimable;

@@ -105,6 +105,7 @@ namespace LastTide.Game
             }
             else player.Place(new Vector3(state.px, 0, state.pz), state.facing);
             CameraRig.Create(player.transform);
+            if (state.flags.Contains("pet")) SpawnPet(player.transform.position - player.transform.forward * 2);
             if (FindFirstObjectByType<EventSystem>() == null)
                 new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             MapView.Create();
@@ -134,6 +135,12 @@ namespace LastTide.Game
             WorldBuilder.Populate(_world);
         }
 
+        public void SpawnPet(Vector3 at)
+        {
+            if (Pet.Instance != null) return;
+            Pet.Create(transform).Place(at);
+        }
+
         /// <summary>True while the map is up (the island is hidden and survival pauses).</summary>
         public bool OnMap { get; private set; }
 
@@ -143,6 +150,7 @@ namespace LastTide.Game
             if (on && G.Session.AtHome) { G.Session.State.homeX = Player.Instance.transform.position.x; G.Session.State.homeZ = Player.Instance.transform.position.z; }
             if (_world != null) _world.gameObject.SetActive(!on);
             Player.Instance.gameObject.SetActive(!on);
+            if (Pet.Instance != null) Pet.Instance.gameObject.SetActive(!on);
             CameraRig.Instance.gameObject.SetActive(!on);
             RenderSettings.fog = !on;
             if (on) MapView.Instance.Show(G.Session.State.travel != null ? LastTide.Core.World.Location(G.Session.State.travel.to) : G.Session.Here);
@@ -160,6 +168,7 @@ namespace LastTide.Game
             var p = to.Home ? Island.Start + new Vector3(-9, 0, 0) : Island.Start;
             Player.Instance.Place(p, 0);
             G.Session.State.px = p.x; G.Session.State.pz = p.z;
+            if (Pet.Instance != null) Pet.Instance.Place(p + new Vector3(1.5f, 0, -1.5f));
             Hud.Instance.Toast(to.Name);
             Save();
         }
@@ -175,6 +184,7 @@ namespace LastTide.Game
             sun.transform.rotation = Quaternion.Euler(52, -35, 0);
             sun.transform.SetParent(transform, false);
             RenderSettings.sun = sun;
+            DayNight.Create(sun);
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(0.62f, 0.74f, 0.86f);
             RenderSettings.ambientEquatorColor = new Color(0.58f, 0.62f, 0.55f);

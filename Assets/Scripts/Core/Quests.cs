@@ -42,6 +42,7 @@ namespace LastTide.Core
             Q("chest", "Build a sea chest for your supplies", s => s.Built("chest"), build: "chest"),
             Q("map", "Open the map and run to Palm Grove", s => s.Flag("visited_grove"), node: "exit", reward: new[] { Content.I("doubloon", 10) }),
             Q("level3", "Gather, build and hunt to reach level 3", s => s.State.level >= 3),
+            Q("dog", "Find the Gull's dog on Driftwood Shore", s => s.HasPet, node: "pet"),
             Q("radio", "Rebuild the ship's radio at camp", s => s.Built("radio"), build: "radio", reward: new[] { Content.I("doubloon", 10) }),
             Q("tune", "Tune the radio to the distress signal", s => s.Flag("heard_keeper"), build: "radio"),
             Q("keeper", "Bring 2 bandages to Old Tomas at Palm Grove", s => s.Flag("done_keeper"), node: "npc"),

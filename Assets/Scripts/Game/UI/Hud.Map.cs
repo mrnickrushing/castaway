@@ -17,7 +17,7 @@ namespace LastTide.Game
         RectTransform _lootMain, _lootMaybe, _runWalk, _bigButton, _playerPin;
         Image _bigButtonRing;
         LocationDef _selected;
-        RectTransform _rush;
+        RectTransform _rush, _enterBox;
         readonly Dictionary<string, RectTransform> _pins = new Dictionary<string, RectTransform>();
         public bool MapOpen { get { return GameRoot.Instance != null && GameRoot.Instance.OnMap; } }
 
@@ -117,6 +117,18 @@ namespace LastTide.Game
             stripes.rectTransform.Fill(); stripes.transform.SetAsFirstSibling();
 
             BuildLocationPanel();
+            // ENTER, in brackets under the island you're at (or have just reached).
+            _enterBox = UIKit.Rect("Enter", _pinLayer).Place(Vector2.zero, new Vector2(0.5f, 1), Vector2.zero, new Vector2(240, 84));
+            var eb = UIKit.Button("Enter", _enterBox, "ENTER", new Color(0.12f, 0.2f, 0.2f, 0.75f), OnBigButton, 40);
+            ((RectTransform)eb.transform).Fill();
+            eb.GetComponentInChildren<Text>().color = new Color(0.4f, 0.95f, 0.85f);
+            foreach (var corner in new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) })
+            {
+                var c = UIKit.Img("Corner", _enterBox, null, new Color(0.85f, 0.95f, 0.92f));
+                c.rectTransform.Place(corner, corner, Vector2.zero, new Vector2(26, 4));
+                var c2 = UIKit.Img("Corner", _enterBox, null, new Color(0.85f, 0.95f, 0.92f));
+                c2.rectTransform.Place(corner, corner, Vector2.zero, new Vector2(4, 26));
+            }
             _playerPin = UIKit.Img("You", _pinLayer, UIKit.Symbol("person"), Color.white).rectTransform;
             _playerPin.Place(Vector2.zero, new Vector2(0.5f, 0), Vector2.zero, new Vector2(70, 84));
             var pbg = UIKit.Img("Back", _playerPin, UIKit.Symbol("pin"), new Color(0.15f, 0.17f, 0.18f, 0.95f));
@@ -339,6 +351,15 @@ namespace LastTide.Game
                 _bigButton.localScale = Vector3.one;
                 _travelText.text = "";
                 _rush.gameObject.SetActive(false);
+            }
+            // ENTER under the island you can step onto now.
+            var enterAt = tr != null ? (s.Arrived ? World.Location(tr.to) : null) : s.Here;
+            _enterBox.gameObject.SetActive(enterAt != null);
+            if (enterAt != null)
+            {
+                var ec = MapToCanvas(MapView.World(enterAt) - new Vector3(0, 0, MapView.IslandRadius(enterAt) * 0.6f));
+                _enterBox.anchoredPosition = ec;
+                _enterBox.localScale = Vector3.one * (tr != null ? 1 + 0.05f * Mathf.Sin(UnityEngine.Time.time * 6) : 1);
             }
             _lockBanner.gameObject.SetActive(_selected != null && !s.Unlocked(_selected));
             if (_selected != null) _lockBanner.text = "LEVEL " + _selected.Level + " REQUIRED";

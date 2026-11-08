@@ -169,7 +169,7 @@ namespace LastTide.Core
 
         public static ItemCount I(string id, int n) { return new ItemCount(id, n); }
 
-        static ItemDef Item(string id, string name, ItemKind kind, int stack)
+        internal static ItemDef Item(string id, string name, ItemKind kind, int stack)
         {
             var d = new ItemDef { Id = id, Name = name, Kind = kind, Stack = stack };
             Items[id] = d;
@@ -200,7 +200,7 @@ namespace LastTide.Core
             Builds[id] = new BuildDef { Id = id, Name = name, Blurb = blurb, Cost = cost };
         }
 
-        static NodeDef Node(string id, string name, ToolUse needs, float seconds, int hits, float respawn, ItemCount[] yield, ItemCount[] bonus)
+        internal static NodeDef Node(string id, string name, ToolUse needs, float seconds, int hits, float respawn, ItemCount[] yield, ItemCount[] bonus)
         {
             var d = new NodeDef { Id = id, Name = name, Needs = needs, Seconds = seconds, Hits = hits, Respawn = respawn, Yield = yield, Bonus = bonus };
             Nodes[id] = d;
