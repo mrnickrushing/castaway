@@ -156,14 +156,10 @@ namespace LastTide.Game
             switch (_quest)
             {
                 case "spear":
-                    if (s.Has("spear")) break;
-                    if (s.Job("workbench") == null)
-                    {
-                        string why = s.CraftBlocked("spear");
-                        if (why != null) { foreach (var c in Content.Recipes["spear"].Inputs) Need(c.id, c.n, "spear: " + why); }
-                        if (s.Craft("spear")) Log("crafting a spear at the workbench");
-                        else Log("craft spear failed: " + s.CraftBlocked("spear"));
-                    }
+                    // Gather what the card asks for (the arrow leads there), then tap CRAFT like a player.
+                    if (s.Has("spear") || s.Job("hand") != null) break;
+                    if (s.CraftBlocked("spear") == null) { if (s.Craft("spear")) Log("crafted a spear from CRAFT"); return; }
+                    if (_questT > 120) foreach (var c in Content.Recipes["spear"].Inputs) Need(c.id, c.n, "spear ingredients too slow");
                     break;
                 case "cook":
                     if (s.Job("campfire") == null)
@@ -197,8 +193,18 @@ namespace LastTide.Game
                     break;
             }
 
-            // Build sites: the guide arrow leads to the missing materials; only hand them over if that stalls.
             var q = s.CurrentQuest;
+            // A blueprint short of something crafted (rope, nails): craft it as the quest card says, once the
+            // ingredients are in the pack (the guide arrow fetches those).
+            if (q.PointBuild != null && Content.Builds.ContainsKey(q.PointBuild) && !s.Built(q.PointBuild))
+                foreach (var c in s.Remaining(q.PointBuild))
+                {
+                    var r = GuideArrow.RecipeFor(c.id);
+                    if (r == null || GuideArrow.Gatherable(c.id) || s.Count(c.id) >= c.n) continue;
+                    if (r.Station != "hand" && s.Job(r.Station) != null) continue;
+                    if (s.CraftBlocked(r.Id) == null && s.Craft(r.Id)) Log("crafted " + r.Output + " for the " + q.PointBuild);
+                }
+            // Build sites: the guide arrow leads to the missing materials; only hand them over if that stalls.
             if (q.PointBuild != null && Content.Builds.ContainsKey(q.PointBuild) && !s.Built(q.PointBuild) && !s.CanDeliver(q.PointBuild) && _questT > 90)
                 foreach (var c in s.Remaining(q.PointBuild)) Need(c.id, c.n, "build " + q.PointBuild);
 
@@ -211,8 +217,24 @@ namespace LastTide.Game
             var d = World.Signals.First(x => x.Id == sig);
             if (s.State.level < d.Level) LevelTo(d.Level, "signal " + sig);
             if (!s.Heard(d)) { s.Tune(d); Log("tuned the radio to " + d.Npc); }
-            foreach (var c in d.Need) Need(c.id, c.n, d.Npc + " needs it");
-            return Be(d.Location);
+            var missing = GuideArrow.RescueMissing(s.CurrentQuest);
+            if (missing.Count == 0) return Be(d.Location);
+            if (_questT > 150) { foreach (var c in d.Need) Need(c.id, c.n, d.Npc + " needs it (gathering too slow)"); return false; }
+            // Craft what can be crafted now (bandages, rope, nails), as the quest card says.
+            foreach (var c in missing)
+            {
+                var r = GuideArrow.RecipeFor(c.id);
+                if (r == null || GuideArrow.Gatherable(c.id) || (r.Station != "hand" && s.Level(r.Station) == 0)) continue;
+                if (s.Job(r.Station) != null) return false;
+                if (s.CraftBlocked(r.Id) == null && s.Craft(r.Id)) { Log("crafted " + r.Output + " for " + d.Npc); return false; }
+            }
+            // Gather on this island if the arrow knows where; otherwise home has crates, bushes and the workbench, and
+            // the survivor's own island has what it is known for (Mara's pier has the fish).
+            var goal = GuideArrow.GoalPosition(Player.Instance.transform.position);
+            if (goal.HasValue && (s.State.location == "home" || s.State.location == d.Location)) { Walk(goal); return false; }
+            if (missing.Exists(c => c.id == "fish" || c.id == "rum")) { if (Be(d.Location)) Walk(goal); return false; }
+            if (Be("home")) Walk(goal);
+            return false;
         }
 
         List<Vector3> _path;
@@ -226,6 +248,9 @@ namespace LastTide.Game
             var to = goal.Value - p.transform.position; to.y = 0;
             float dist = to.magnitude;
             if (dist < 1.0f || p.Working) return; // in the ring: the work happens
+            if (_blockedT > 0) { _blockedT -= Time.deltaTime; return; }
+            // Something hostile in reach: let go of the stick so auto-attack swings, as a player would.
+            if (Enemy.Nearest(p.transform.position, 2.2f) != null) return;
             // Standing in the goal's ring already (its centre is often blocked by the thing itself): let go of the stick.
             if (p.Current != null && Flat(p.Current.Pos - goal.Value) < 0.5f && !p.Current.Blocked) return;
             if (dist < _bestDist - 0.5f) { _bestDist = dist; _stuckT = 0; }
@@ -249,13 +274,23 @@ namespace LastTide.Game
             if (d.sqrMagnitude < 0.01f) return;
             d.Normalize();
             Player.BotStick = new Vector2(d.x, d.z);
+            // Pushing but not moving (a wall the planner missed): stop, log it, think again in a moment.
+            if (new Vector2(p.Velocity.x, p.Velocity.z).magnitude < 0.3f) _pushT += Time.deltaTime; else _pushT = 0;
+            if (_pushT > 2f) { _pushT = 0; _blockedT = 1.5f; _path = null; Log("blocked at " + p.transform.position.ToString("0") + " heading for " + goal.Value.ToString("0")); }
         }
+        float _pushT, _blockedT;
 
         static float Flat(Vector3 v) { v.y = 0; return v.magnitude; }
 
         static bool Open(float x, float z)
         {
+            // The cell and a ring half a metre out: thin steep strips (rock outcrops) fall between 1 m samples.
             if (!Island.Walkable(x, z)) return false;
+            for (int k = 0; k < 8; k++)
+            {
+                float a = k * Mathf.PI / 4;
+                if (!Island.Walkable(x + Mathf.Cos(a) * 0.55f, z + Mathf.Sin(a) * 0.55f)) return false;
+            }
             var q = new Vector3(x, 0, z);
             return Flat(Obstacles.Resolve(q, Player.BodyRadius) - q) < 0.05f;
         }

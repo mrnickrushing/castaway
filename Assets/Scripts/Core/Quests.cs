@@ -11,6 +11,10 @@ namespace LastTide.Core
         public Func<Session, int> Have;     // progress shown as (have/need); null = no counter
         public int Need;
         public string PointNode, PointBuild; // what the guide arrow points at
+        /// <summary>A crafting step: the recipe to make (the guide fetches its ingredients, then sends you to CRAFT).</summary>
+        public string Craft;
+        /// <summary>A rescue step: the radio signal whose survivor needs things brought.</summary>
+        public string Signal;
         public ItemCount[] Reward = new ItemCount[0];
         /// <summary>The Ultra track's reward for this step (Survivor's Path).</summary>
         public ItemCount[] Premium = new ItemCount[0];
@@ -35,7 +39,7 @@ namespace LastTide.Core
             Q("shelter", "Build a palm shelter", s => s.Built("shelter"), build: "shelter", reward: new[] { Content.I("bandage", 1) }),
             Count("scrap", "Salvage ship scrap from the wreck", "scrap", 4, "workbench", node: "crate"),
             Q("workbench", "Build a workbench", s => s.Built("workbench"), build: "workbench"),
-            Q("spear", "Craft a bamboo spear (Blueprints)", s => s.Has("spear") || s.Has("club") || s.State.kills > 0, build: "workbench"),
+            new Quest { Id = "spear", Text = "Craft a bamboo spear (CRAFT)", Done = s => s.Has("spear") || s.Has("club") || s.State.kills > 0, Craft = "spear" },
             Q("hunt", "Hunt a wild boar in the jungle", s => s.State.kills > 0, node: "boar", reward: new[] { Content.I("bandage", 1) }),
             Q("cook", "Roast meat on the campfire", s => s.Flag("cooked"), build: "campfire"),
             Q("rain", "Build a rain catcher", s => s.Built("raincatcher"), build: "raincatcher", reward: new[] { Content.I("water", 2) }),
@@ -58,6 +62,9 @@ namespace LastTide.Core
         /// <summary>Every step pays something on the free track and more on the Ultra track.</summary>
         static Quests()
         {
+            All.Find(q => q.Id == "keeper").Signal = "keeper";
+            All.Find(q => q.Id == "pier").Signal = "fisher";
+            All.Find(q => q.Id == "captive").Signal = "captive";
             var ultra = new[]
             {
                 new[] { Content.I("meat", 3), Content.I("water", 3) }, new[] { Content.I("bandage", 2) }, new[] { Content.I("rope", 4) },

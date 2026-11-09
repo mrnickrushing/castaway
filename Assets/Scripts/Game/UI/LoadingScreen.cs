@@ -31,10 +31,12 @@ namespace LastTide.Game
         Text _status;
         CanvasGroup _group;
         float _shown, _min;
+        bool _finishing;
 
         public static LoadingScreen Show(string status, float minSeconds = 2.4f)
         {
-            if (Current != null) { Current.SetProgress(0, status); return Current; }
+            // Reuse one that's still up, unless it's already fading out (it's about to destroy itself).
+            if (Current != null && !Current._finishing) { Current.SetProgress(0, status); return Current; }
             var go = new GameObject("Loading Screen", typeof(RectTransform));
             var canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -139,6 +141,8 @@ namespace LastTide.Game
         {
             SetProgress(1, status);
             while (Time.realtimeSinceStartup - _shown < _min) yield return null;
+            _finishing = true;
+            if (Current == this) Current = null;
             for (float t = 1; t > 0; t -= Time.unscaledDeltaTime * 2.2f)
             {
                 _group.alpha = t;

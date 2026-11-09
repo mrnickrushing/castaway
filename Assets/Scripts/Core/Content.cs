@@ -156,8 +156,8 @@ namespace LastTide.Core
             Node("boulder", "Boulder", ToolUse.Mine, 1.8f, 4, 200f, new[] { I("stone", 4) }, new[] { I("scrap", 1) });
             Node("bush", "Fern Bush", ToolUse.None, 1.2f, 2, 90f, new[] { I("fiber", 3) }, null);
             Node("berrybush", "Berry Bush", ToolUse.None, 1.2f, 2, 150f, new[] { I("berries", 2), I("fiber", 1) }, null);
-            Node("crate", "Wreck Crate", ToolUse.None, 2.2f, 1, 420f, new[] { I("scrap", 3), I("cloth", 2) }, null);
-            Node("barrel", "Ship Barrel", ToolUse.None, 2.0f, 1, 420f, new[] { I("water", 1), I("scrap", 1) }, null);
+            Node("crate", "Wreck Crate", ToolUse.None, 2.2f, 1, 240f, new[] { I("scrap", 3), I("cloth", 2) }, null);
+            Node("barrel", "Ship Barrel", ToolUse.None, 2.0f, 1, 240f, new[] { I("water", 1), I("scrap", 1) }, null);
             Node("tidepool", "Tide Pool", ToolUse.None, 2.0f, 2, 160f, new[] { I("crab", 1) }, null);
             Node("spring", "Fresh Spring", ToolUse.None, 1.2f, 99, 1f, new ItemCount[0], null).ThirstPerHit = 25;
             Node("ironvein", "Iron Vein", ToolUse.Mine, 2.2f, 3, 300f, new[] { I("iron_ore", 1), I("stone", 1) }, new[] { I("iron_ore", 1) });

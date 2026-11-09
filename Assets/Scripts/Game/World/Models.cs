@@ -856,13 +856,13 @@ namespace LastTide.Game
             for (int i = 0; i < 9; i++)
             {
                 float a0 = Mathf.Lerp(20, 160, i / 8f) * Mathf.Deg2Rad;
-                for (int j = 0; j < 7; j++)
+                for (int j = 0; j < 5; j++)
                 {
-                    float a = a0 + (j - 3) * 0.0285f; // ~0.43 m apart: logs shoulder to shoulder
+                    float a = a0 + (j - 2) * 0.04f; // ~0.6 m apart: thick logs shoulder to shoulder
                     var pp = new Vector3(Mathf.Cos(a) * 15, 0, Mathf.Sin(a) * 15);
                     float y = Island.Ground(at + pp).y - at.y;
-                    float hgt = 2.6f + ((i * 7 + j) * 37 % 10) * 0.05f;
-                    Stake(t, new Vector3(pp.x, y - 0.3f, pp.z), new Vector3(pp.x, y + hgt, pp.z), 5.5f);
+                    float hgt = 2.6f + ((i * 5 + j) * 37 % 10) * 0.05f;
+                    Stake(t, new Vector3(pp.x, y - 0.3f, pp.z), new Vector3(pp.x, y + hgt, pp.z), 7.5f);
                 }
             }
             return go;

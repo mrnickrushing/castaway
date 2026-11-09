@@ -253,7 +253,7 @@ namespace LastTide.Game
                 var shore = Island.Landmark;
                 for (float z = Island.Landmark.z; z < Island.Radius * 1.5f; z += 1) { shore = new Vector3(Island.Radius * 0.35f, 0, z); if (Island.Distance01(shore.x, shore.z) > 0.9f) break; }
                 var ship = ModelRegistry.Free_("pirate_ship", world, new Vector3(shore.x + 6, -0.6f, shore.z + 20), 70);
-                if (ship != null) ship.AddComponent<Bob>();
+                if (ship != null) { ship.AddComponent<Bob>(); ModelRegistry.BlackSails(ship); }
                 ShipSpot.Create(nodes, Island.Ground(shore));
             }
         }
@@ -630,7 +630,59 @@ namespace LastTide.Game
         public static Vector3? GoalPosition(Vector3 from) { return Target(from); }
 
         /// <summary>The nearest node the castaway can work right now that yields one of <paramref name="need"/>.</summary>
+        /// <summary>The recipe that makes <paramref name="item"/>, or null.</summary>
+        public static RecipeDef RecipeFor(string item)
+        {
+            foreach (var r in Content.Recipes.Values) if (r.Output == item) return r;
+            return null;
+        }
+
+        /// <summary>
+        /// What the castaway should go and get for <paramref name="need"/>: things a node yields as they are, and for
+        /// crafted things (rope, nails, planks) the ingredients the backpack is short of. Crafted things the castaway
+        /// can make right now at a station point at that station.
+        /// </summary>
         static Vector3? SourceFor(List<ItemCount> need, Vector3 from)
+        {
+            var s = G.Session;
+            var expanded = new List<ItemCount>();
+            foreach (var c in need)
+            {
+                var r = RecipeFor(c.id);
+                if (r == null || NodeYields(c.id)) { expanded.Add(c); continue; }
+                int batches = Mathf.CeilToInt(c.n / (float)Mathf.Max(1, r.Count));
+                bool short_ = false;
+                foreach (var inp in r.Inputs)
+                {
+                    int want = inp.n * batches - s.Count(inp.id);
+                    if (want > 0) { expanded.Add(new ItemCount(inp.id, want)); short_ = true; }
+                }
+                // Ingredients in hand: a station recipe is made at the station (hand recipes from CRAFT anywhere).
+                if (!short_ && r.Station != "hand")
+                    foreach (var sp in Spot.All) if (sp.Kind == r.Station && sp.Active) return sp.Pos;
+            }
+            return NearestYielding(expanded, from);
+        }
+
+        public static bool Gatherable(string item) { return NodeYields(item); }
+
+        /// <summary>What the survivor of a rescue step still needs that the backpack doesn't hold.</summary>
+        public static List<ItemCount> RescueMissing(Quest q)
+        {
+            var list = new List<ItemCount>();
+            var sig = q.Signal != null ? World.Signal(q.Signal) : null;
+            if (sig == null) return list;
+            foreach (var c in sig.Need) { int have = G.Session.Count(c.id); if (have < c.n) list.Add(new ItemCount(c.id, c.n - have)); }
+            return list;
+        }
+
+        static bool NodeYields(string item)
+        {
+            foreach (var d in Content.Nodes.Values) foreach (var y in d.Yield) if (y.id == item) return true;
+            return false;
+        }
+
+        static Vector3? NearestYielding(List<ItemCount> need, Vector3 from)
         {
             Spot best = null;
             float bd = float.MaxValue;
@@ -641,6 +693,9 @@ namespace LastTide.Game
                 var def = Content.Nodes[n.NodeKind];
                 bool useful = false;
                 foreach (var y in def.Yield) foreach (var c in need) if (y.id == c.id) useful = true;
+                // The cave's and the pirate camp's barrels hold rum (Session.Harvest).
+                if (n.NodeKind == "barrel" && !G.Session.Here.Home && System.Array.IndexOf(G.Session.Here.MainLoot, "rum") >= 0)
+                    foreach (var c in need) if (c.id == "rum") useful = true;
                 if (!useful) continue;
                 float d = Vector3.Distance(n.Pos, from);
                 if (d < bd) { bd = d; best = n; }
@@ -656,7 +711,34 @@ namespace LastTide.Game
             {
                 Enemy b = null; float eb = 400;
                 foreach (var e in Enemy.All) { if (!e.Alive || e.Kind != q.PointNode) continue; float d = Vector3.Distance(e.transform.position, from); if (d < eb) { eb = d; b = e; } }
-                return b != null ? b.transform.position : (Vector3?)null;
+                if (b != null) return b.transform.position;
+                // None up right now: lead toward where the next one rises, stopping short so it can (dens only refill
+                // when the castaway is over 26 m away).
+                var den = Dens.Instance != null ? Dens.Instance.NextDen(q.PointNode, from) : null;
+                if (den.HasValue)
+                {
+                    var away = from - den.Value; away.y = 0;
+                    if (away.magnitude < 30f) return null;   // close enough: wait here
+                    return den.Value;                        // walk toward it; the arrow stops at 30 m
+                }
+                return null;
+            }
+            // A rescue: fetch what the survivor needs first (on this island), then go to them.
+            if (q.Signal != null)
+            {
+                var missing = RescueMissing(q);
+                if (missing.Count > 0) { var src = SourceFor(missing, from); if (src.HasValue) return src; }
+            }
+            // A crafting step: fetch what the recipe is short of, then the station (hand recipes: open CRAFT, no arrow).
+            if (q.Craft != null && Content.Recipes.ContainsKey(q.Craft))
+            {
+                var r = Content.Recipes[q.Craft];
+                var shortOf = new List<ItemCount>();
+                foreach (var c in r.Inputs) if (G.Session.Count(c.id) < c.n) shortOf.Add(new ItemCount(c.id, c.n - G.Session.Count(c.id)));
+                if (shortOf.Count > 0) return SourceFor(shortOf, from);
+                if (r.Station == "hand") return null;
+                foreach (var sp in Spot.All) if (sp.Kind == r.Station && sp.Active) return sp.Pos;
+                return null;
             }
             string kind = q.PointBuild ?? q.PointNode;
             if (kind == null) return null;

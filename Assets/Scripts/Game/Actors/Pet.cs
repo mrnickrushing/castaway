@@ -61,7 +61,7 @@ namespace LastTide.Game
                 goal = _target.transform.position;
                 speed = 6.5f;
                 _bite -= dt;
-                if (Vector3.Distance(goal, me) < 1.4f)
+                if (new Vector2(goal.x - me.x, goal.z - me.z).magnitude < 1.4f) // along the ground: works on slopes too
                 {
                     speed = 0;
                     if (_bite <= 0)

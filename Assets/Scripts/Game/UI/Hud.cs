@@ -207,7 +207,37 @@ namespace LastTide.Game
             if (q.PointBuild != null && Content.Builds.ContainsKey(q.PointBuild) && !s.Built(q.PointBuild) && !s.CanDeliver(q.PointBuild))
             {
                 var r = s.Remaining(q.PointBuild);
-                if (r.Count > 0) need = "  <size=24><color=#8FE3A8>need " + r[0].n + " " + Content.Items[r[0].id].Name + "</color></size>";
+                if (r.Count > 0)
+                {
+                    var it = r[0];
+                    int short_ = it.n - s.Count(it.id);
+                    var recipe = GuideArrow.RecipeFor(it.id);
+                    string name = Content.Items[it.id].Name;
+                    // Crafted materials say so: "craft 2 Rope", and where (CRAFT anywhere, or at the workbench).
+                    if (short_ > 0 && recipe != null && !GuideArrow.Gatherable(it.id))
+                        need = "  <size=24><color=#8FE3A8>craft " + short_ + " " + name + (recipe.Station == "hand" ? " (CRAFT)" : " at the " + Session.StationName(recipe.Station).ToLower()) + "</color></size>";
+                    else need = "  <size=24><color=#8FE3A8>need " + it.n + " " + name + "</color></size>";
+                }
+            }
+            if (q.Signal != null)
+            {
+                var miss = GuideArrow.RescueMissing(q);
+                if (miss.Count > 0)
+                {
+                    var it = miss[0];
+                    var recipe = GuideArrow.RecipeFor(it.id);
+                    string name = Content.Items[it.id].Name;
+                    if (recipe != null && !GuideArrow.Gatherable(it.id))
+                        need = "  <size=24><color=#8FE3A8>craft " + it.n + " " + name + (recipe.Station == "hand" ? " (CRAFT)" : " at the " + Session.StationName(recipe.Station).ToLower()) + "</color></size>";
+                    else need = "  <size=24><color=#8FE3A8>need " + it.n + " more " + name + "</color></size>";
+                }
+            }
+            if (q.Craft != null && Content.Recipes.ContainsKey(q.Craft))
+            {
+                var rc = Content.Recipes[q.Craft];
+                foreach (var c in rc.Inputs)
+                    if (s.Count(c.id) < c.n) { need = "  <size=24><color=#8FE3A8>need " + (c.n - s.Count(c.id)) + " more " + Content.Items[c.id].Name + "</color></size>"; break; }
+                if (need == "" && s.Job(rc.Station) == null) need = "  <size=24><color=#8FE3A8>ready: tap " + (rc.Station == "hand" ? "CRAFT" : "the " + Session.StationName(rc.Station).ToLower()) + "</color></size>";
             }
             _questText.text = "<color=#FFC24A>\u2022</color>  " + q.Label(s) + need;
             _questText.gameObject.SetActive(!_questFolded);
