@@ -5,9 +5,11 @@
 
 For every product in PRODUCTS (the same ids, names and prices as Catalog.Products in Core/Session.Store.cs) it makes
 sure there is: the in-app purchase, an en-US display name and description, a price (set in the USA, other storefronts
-follow Apple's equivalents) and availability in every territory. Anything already there is left alone, so running it
-again is safe. The review screenshot each product needs before its first review is not added here.
+follow Apple's equivalents), availability in every territory and the App Store review screenshot (the in-game SHOP,
+docs/appstore/iap_review.png, read from this repo's main branch on GitHub or from IAP_SCREENSHOT, a path or URL).
+Anything already there is left alone, so running it again is safe.
 """
+import hashlib
 import json
 import os
 import sys
@@ -19,6 +21,8 @@ import jwt
 
 BUNDLE_ID = "com.rushingtech.lasttide"
 API = "https://api.appstoreconnect.apple.com"
+SCREENSHOT = os.environ.get("IAP_SCREENSHOT") or \
+    "https://raw.githubusercontent.com/mrnickrushing/castaway/main/docs/appstore/iap_review.png"
 
 # productId, type, price (USD), display name (<= 30), description (<= 45)
 PRODUCTS = [
@@ -75,6 +79,31 @@ def pages(path):
     return out
 
 
+def screenshot_bytes():
+    if SCREENSHOT.startswith("http"):
+        with urllib.request.urlopen(SCREENSHOT) as r:
+            return r.read()
+    with open(SCREENSHOT, "rb") as f:
+        return f.read()
+
+
+def upload_screenshot(iap, png):
+    """Reserves the review screenshot, sends its parts to Apple's upload URLs and commits it with its checksum."""
+    shot = call("POST", "/v1/inAppPurchaseAppStoreReviewScreenshots", {"data": {
+        "type": "inAppPurchaseAppStoreReviewScreenshots",
+        "attributes": {"fileName": "iap_review.png", "fileSize": len(png)},
+        "relationships": {"inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": iap}}}}})["data"]
+    for op in shot["attributes"]["uploadOperations"]:
+        part = png[op["offset"]:op["offset"] + op["length"]]
+        req = urllib.request.Request(op["url"], data=part, method=op["method"],
+                                     headers={h["name"]: h["value"] for h in op.get("requestHeaders", [])})
+        with urllib.request.urlopen(req) as r:
+            r.read()
+    call("PATCH", "/v1/inAppPurchaseAppStoreReviewScreenshots/" + shot["id"], {"data": {
+        "type": "inAppPurchaseAppStoreReviewScreenshots", "id": shot["id"],
+        "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(png).hexdigest()}}})
+
+
 def main():
     apps = call("GET", "/v1/apps?filter[bundleId]=%s" % BUNDLE_ID)["data"]
     apps = [a for a in apps if a["attributes"]["bundleId"] == BUNDLE_ID]
@@ -84,6 +113,7 @@ def main():
     print("APPLE_ID", app, apps[0]["attributes"]["name"])
     have = {i["attributes"]["productId"]: i for i in pages("/v1/apps/%s/inAppPurchasesV2?limit=200" % app)}
     territories = None
+    png = None
 
     for pid, kind, price, name, desc in PRODUCTS:
         assert len(name) <= 30 and len(desc) <= 45, pid
@@ -137,6 +167,19 @@ def main():
                     "inAppPurchase": {"data": {"type": "inAppPurchases", "id": iap}},
                     "availableTerritories": {"data": [{"type": "territories", "id": t} for t in territories]}}}})
             print("  available in %d territories" % len(territories))
+
+        shot = call("GET", "/v2/inAppPurchases/%s/appStoreReviewScreenshot" % iap, ok404=True)
+        state = ((shot or {}).get("data") or {}).get("attributes", {}).get("assetDeliveryState") or {}
+        if state.get("state") in ("UPLOAD_COMPLETE", "COMPLETE"):
+            pass
+        else:
+            if shot and shot.get("data"):
+                # A reservation that never finished uploading: drop it and start again.
+                call("DELETE", "/v1/inAppPurchaseAppStoreReviewScreenshots/" + shot["data"]["id"])
+            if png is None:
+                png = screenshot_bytes()
+            upload_screenshot(iap, png)
+            print("  review screenshot (%d bytes)" % len(png))
 
     print("IAP done")
     for i in pages("/v1/apps/%s/inAppPurchasesV2?limit=200" % app):
