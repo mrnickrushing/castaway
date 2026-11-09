@@ -115,6 +115,7 @@ def _():
 @section("age rating")
 def _():
     decl = call("GET", "/v1/appInfos/%s/ageRatingDeclaration" % INFO["id"])["data"]
+    print("  questions: " + ", ".join(sorted(decl["attributes"])))
     want, unknown = {}, []
     for k, v in decl["attributes"].items():
         if k in L["ageRating"]:
@@ -123,9 +124,9 @@ def _():
             continue
         elif isinstance(v, bool) or k in ("gambling", "unrestrictedWebAccess", "lootBox", "seventeenPlus", "advertising",
                                           "ageAssurance", "healthOrWellnessTopics", "messagingAndChat",
-                                          "parentalControls", "userGeneratedContent"):
+                                          "parentalControls", "userGeneratedContent", "socialMedia"):
             want[k] = False
-        elif v in FREQUENCY or k.endswith(("Themes", "Violence", "References", "Humor", "Nudity", "Information",
+        elif v in FREQUENCY or k in ("contests", "gamblingSimulated") or k.endswith(("Themes", "Violence", "References", "Humor", "Nudity", "Information",
                                            "Simulated", "Contests", "Weapons", "Realistic", "Fantasy", "Sadistic")):
             want[k] = "NONE"
         elif v is None:
