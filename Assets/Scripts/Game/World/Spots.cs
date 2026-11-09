@@ -105,7 +105,8 @@ namespace LastTide.Game
             string[] scans = kind == "bush" ? new[] { "fern_02_a", "fern_02_c", "fern_02_b" }
                 : kind == "berrybush" ? new[] { "fern_02_c", "fern_02_a" }
                 : kind == "driftwood" ? new[] { "dry_branches_medium_01_a", "dry_branches_medium_01_b", "dry_branches_medium_01_c" }
-                : kind == "stones" ? new[] { "rock_moss_set_01_b", "rock_moss_set_01_d", "stone_01" } : null;
+                : kind == "stones" ? new[] { "rock_moss_set_01_b", "rock_moss_set_01_d", "stone_01" }
+                : kind == "ironvein" ? new[] { "ironore" } : null;
             if (scans != null)
             {
                 var pick = scans[(int)(h0 * scans.Length) % scans.Length];
@@ -114,8 +115,9 @@ namespace LastTide.Game
                     var hs = new GameObject("Model");
                     hs.transform.SetParent(parent, false);
                     var sa = ModelRegistry.Spawn(ModelRegistry.Scan, pick, hs.transform);
-                    sa.transform.localRotation = Quaternion.Euler(0, h0 * 360, 0);
-                    float sc = kind == "stones" ? 0.45f : kind == "driftwood" ? 0.9f : kind == "bush" ? 0.75f : 0.95f;
+                    // Turned about the vertical, on top of the import's own rotation (the scans come in Z-up).
+                    sa.transform.localRotation = Quaternion.Euler(0, h0 * 360, 0) * sa.transform.localRotation;
+                    float sc = kind == "stones" ? 0.45f : kind == "driftwood" ? 0.9f : kind == "bush" ? 0.75f : kind == "ironvein" ? 0.9f : 0.95f;
                     sa.transform.localScale *= sc * (0.85f + Noise2.Hash(key.GetHashCode(), 5) * 0.3f);
                     if (kind == "stones")
                         for (int i = 0; i < 2; i++)
@@ -123,7 +125,7 @@ namespace LastTide.Game
                             var extra = ModelRegistry.Spawn(ModelRegistry.Scan, scans[(i + 1 + (int)(h0 * 3)) % scans.Length], hs.transform);
                             if (extra == null) continue;
                             extra.transform.localPosition = new Vector3(i == 0 ? 0.6f : -0.5f, 0, i == 0 ? 0.3f : 0.4f);
-                            extra.transform.localRotation = Quaternion.Euler(0, i * 140 + h0 * 90, 0);
+                            extra.transform.localRotation = Quaternion.Euler(0, i * 140 + h0 * 90, 0) * extra.transform.localRotation;
                             extra.transform.localScale *= 0.3f;
                         }
                     if (kind == "berrybush")
@@ -618,6 +620,9 @@ namespace LastTide.Game
         public override string Label { get { return "To the map"; } }
         public override float Fill { get { return Mathf.Clamp01(_t / 0.8f); } }
 
+        /// <summary>Lines the scanned raft up with the painted one (long side along its z).</summary>
+        const float RaftYaw = 0f;
+
         public static ExitSpot Create(Transform parent, Vector3 pos, float yaw)
         {
             var go = new GameObject("Raft");
@@ -625,7 +630,8 @@ namespace LastTide.Game
             go.transform.position = pos;
             go.transform.rotation = Quaternion.Euler(0, yaw, 0);
             var s = go.AddComponent<ExitSpot>();
-            Models.Raft().ToObject("Raft", go.transform);
+            // The scanned log raft (Sketchfab, CC BY), else the painted one.
+            if (ModelRegistry.Free_("raft", go.transform, pos, yaw + RaftYaw) == null) Models.Raft().ToObject("Raft", go.transform);
             Obstacles.Add(pos, 1.2f, s);
             s.MakeRing(3.0f);
             return s;
@@ -672,7 +678,8 @@ namespace LastTide.Game
             var look = new SurvivorRig.Look { Shirt = Palette.Hex(0x6A8AA8), Pants = Palette.Hex(0x5A4A3A), Hair = Palette.Hex(0xB8B0A0), Band = Palette.Hex(0x3A5A7A), Pack = false };
             if (sig.Npc == "Mara") { look.Beard = false; look.Hair = Palette.Hex(0x5A2E1A); look.Shirt = Palette.Hex(0xC8A24A); }
             string model = sig.Npc == "Mara" ? "anne" : sig.Npc == "Ned Barlow" ? "mako" : "henry";
-            s._art = CharacterArt.TryCreate(model, go.transform);
+            string cast = sig.Npc == "Mara" ? "mara" : sig.Npc == "Ned Barlow" ? "ned" : sig.Npc == "Old Tomas" ? "tomas" : "revna";
+            s._art = CharacterArt.TryCreate(cast, go.transform) ?? CharacterArt.TryCreate(model, go.transform);
             if (s._art == null) s._rig = SurvivorRig.Build(go.transform, look);
             Obstacles.Add(pos, 0.5f, s);
             s.MakeRing(2.2f);

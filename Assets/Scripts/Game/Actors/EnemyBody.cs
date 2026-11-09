@@ -15,12 +15,21 @@ namespace LastTide.Game
                 case "skeleton":
                 case "redjack":
                 {
-                    var person = CharacterArt.TryCreate(kind == "skeleton" ? "skeleton" : "sharky", parent, kind == "redjack" ? 1.3f : 1f);
+                    // Realistic cast members (Models/Cast), else the old Quaternius stand-ins.
+                    string cast = kind == "skeleton" ? (Random.value < 0.5f ? "smuggler" : "smuggler2") : kind == "redjack" ? "captain" : "hunter";
+                    var person = CharacterArt.TryCreate(cast, parent, kind == "redjack" ? 1.1f : 1f)
+                                 ?? CharacterArt.TryCreate(kind == "skeleton" ? "skeleton" : "sharky", parent, kind == "redjack" ? 1.3f : 1f);
                     if (person != null) return new CharacterBody(person);
                     return new PirateBody(parent);
                 }
-                case "crab": return new CrabBody(parent);
-                case "snake": return new SnakeBody(parent);
+                case "crab":
+                case "snake":
+                {
+                    // Realistic scans (Models/Creatures), else the procedural stand-ins.
+                    var art = CreatureArt.TryCreate(kind, parent);
+                    if (art != null) return new CreatureBody(art);
+                    return kind == "crab" ? (EnemyBody)new CrabBody(parent) : new SnakeBody(parent);
+                }
                 default:
                     var boar = BoarArt.TryCreate(parent);
                     return boar != null ? (EnemyBody)new BoarArtBody(boar) : new BoarRigBody(BoarRig.Build(parent));
@@ -50,6 +59,13 @@ namespace LastTide.Game
 
         /// <summary>A short flinch when hit (animated characters only).</summary>
         public virtual void Flinch() { }
+
+        sealed class CreatureBody : EnemyBody
+        {
+            readonly CreatureArt _a;
+            public CreatureBody(CreatureArt a) { _a = a; }
+            public override void Pose(float gait, float speed, float attack, float dead) { _a.Pose(gait, speed, attack, dead); }
+        }
 
         sealed class BoarArtBody : EnemyBody
         {

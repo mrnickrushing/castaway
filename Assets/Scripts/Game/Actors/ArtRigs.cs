@@ -10,12 +10,15 @@ namespace LastTide.Game
     }
 
     /// <summary>
-    /// The AI-made castaway (Resources/Models/People/survivor): Walk and Idle clips for moving about, and the work
-    /// poses (chop, mine, gather, build, drink, rest, strike) laid over the clips by aiming the arm, spine and leg
-    /// bones in LateUpdate. Aiming by direction works whatever axes the rig's bones use.
+    /// The castaway: the realistic cast member (Resources/Models/Cast/castaway, moved by the shared humanoid clips:
+    /// walk, jog, sprint, crouch-walk when sneaking, kneel to build) or else the AI-made one
+    /// (Resources/Models/People/survivor, Walk and Idle). The work poses (chop, mine, gather, drink, rest, strike) are
+    /// laid over the clips by aiming the arm, spine and leg bones in LateUpdate; aiming by direction works whatever
+    /// axes the rig's bones use.
     /// </summary>
     public sealed class SurvivorArt : MonoBehaviour, IRig
     {
+        HumanMotion _human;
         Transform _model, _hips, _spine, _armL, _foreL, _handL, _armR, _foreR, _handR, _legL, _shinL, _footL, _legR, _shinR, _footR, _head;
         Animation _anim;
         GameObject _held;
@@ -28,6 +31,29 @@ namespace LastTide.Game
 
         public static SurvivorArt TryCreate(Transform parent)
         {
+            if (ModelRegistry.Prefab(ModelRegistry.Cast, "castaway") != null)
+            {
+                var cast = ModelRegistry.Spawn(ModelRegistry.Cast, "castaway", parent);
+                var h = HumanMotion.Attach(cast, true);
+                if (h != null)
+                {
+                    var c = cast.AddComponent<SurvivorArt>();
+                    c._human = h;
+                    c._model = cast.transform;
+                    var an = h.Animator;
+                    c._hips = an.GetBoneTransform(HumanBodyBones.Hips);
+                    c._spine = an.GetBoneTransform(HumanBodyBones.Chest) ?? an.GetBoneTransform(HumanBodyBones.Spine);
+                    c._head = an.GetBoneTransform(HumanBodyBones.Head);
+                    c._armL = an.GetBoneTransform(HumanBodyBones.LeftUpperArm); c._foreL = an.GetBoneTransform(HumanBodyBones.LeftLowerArm); c._handL = an.GetBoneTransform(HumanBodyBones.LeftHand);
+                    c._armR = an.GetBoneTransform(HumanBodyBones.RightUpperArm); c._foreR = an.GetBoneTransform(HumanBodyBones.RightLowerArm); c._handR = an.GetBoneTransform(HumanBodyBones.RightHand);
+                    c._legL = an.GetBoneTransform(HumanBodyBones.LeftUpperLeg); c._shinL = an.GetBoneTransform(HumanBodyBones.LeftLowerLeg); c._footL = an.GetBoneTransform(HumanBodyBones.LeftFoot);
+                    c._legR = an.GetBoneTransform(HumanBodyBones.RightUpperLeg); c._shinR = an.GetBoneTransform(HumanBodyBones.RightLowerLeg); c._footR = an.GetBoneTransform(HumanBodyBones.RightFoot);
+                    foreach (var r in cast.GetComponentsInChildren<SkinnedMeshRenderer>()) { r.updateWhenOffscreen = true; r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On; }
+                    h.Loop("Idle_Loop");
+                    return c;
+                }
+                Destroy(cast);
+            }
             var go = ModelRegistry.Spawn(ModelRegistry.People, "survivor", parent);
             if (go == null) return null;
             var a = go.AddComponent<SurvivorArt>();
@@ -86,6 +112,7 @@ namespace LastTide.Game
         public void Pose(float walk, float move, Act act, float actPhase, float swing)
         {
             _walk = walk; _move = move; _act = act; _phase = actPhase; _swing = swing;
+            if (_human != null) { PoseHuman(); return; }
             // Clips: walk while moving (stride speed follows the stick), idle otherwise; work poses override on top.
             bool walking = move > 0.08f && act == Act.None;
             var clip = walking ? "Walk" : "Idle";
@@ -93,11 +120,25 @@ namespace LastTide.Game
             if (walking) _anim["Walk"].speed = Mathf.Lerp(0.6f, 1.35f, move);
         }
 
+        /// <summary>Clip by gait: walk, jog or sprint by ground speed (crouch-walk when sneaking), kneel to build.</summary>
+        void PoseHuman()
+        {
+            float v = _move * Player.Speed * (Sneak ? 0.55f : 1f);
+            if (_act == Act.Build) { _human.Loop("Fixing_Kneeling", 1.1f, 0.25f); return; }
+            if (_act == Act.Gather || _act == Act.Drink) { _human.Loop("Crouch_Idle_Loop", 1, 0.25f); return; }
+            if (_act != Act.None) { _human.Loop("Idle_Loop", 1, 0.2f); return; }
+            if (_move <= 0.08f) { _human.Loop(Sneak ? "Crouch_Idle_Loop" : "Idle_Loop", 1, 0.2f); return; }
+            if (Sneak) _human.Loop("Crouch_Fwd_Loop", Mathf.Clamp(v / 1.3f, 0.6f, 2f), 0.18f);
+            else if (v < 2.4f) _human.Loop("Walk_Loop", Mathf.Clamp(v / 1.4f, 0.55f, 1.6f), 0.18f);
+            else if (v < 4.6f) _human.Loop("Jog_Fwd_Loop", Mathf.Clamp(v / 3.6f, 0.75f, 1.3f), 0.18f);
+            else _human.Loop("Sprint_Loop", Mathf.Clamp(v / 6f, 0.8f, 1.2f), 0.18f);
+        }
+
         void LateUpdate()
         {
             var root = transform.parent;
-            _hips.localPosition = _hipsRest;
-            if (Sneak)
+            if (_human == null) _hips.localPosition = _hipsRest;
+            if (Sneak && _human == null)
             {
                 _hips.position += Vector3.down * 0.28f;
                 Twist(_spine, 0, 28);
@@ -132,7 +173,8 @@ namespace LastTide.Game
                 case Act.Build:
                 case Act.Drink:
                 {
-                    Crouch(0.42f);
+                    if (_human != null && _act == Act.Build) break; // kneels and works in the clip
+                    if (_human == null) Crouch(0.42f);
                     float w = Mathf.Sin(p * Mathf.PI * 2 * (_act == Act.Build ? 2f : 1f));
                     Twist(_spine, 0, 35);
                     if (_act == Act.Drink)

@@ -243,12 +243,24 @@ def export_maps(mat, w):
         bpy.data.images.remove(am)
     alpha = alb[:, :, 3]
     entry["alpha"] = bool(alpha.min() < 0.5 and kind == "plant") or (bool(alpha.min() < 0.5) and mat.blend_method != "OPAQUE")
+    bsdf = next((n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None) if mat and mat.use_nodes else None
+    if bsdf is not None and bsdf.inputs.get("Specular Tint") is not None and bsdf.inputs["Specular Tint"].is_linked:
+        # Specular-glossiness materials: their maps aren't metallic/roughness, so keep a plain matte-ish finish.
+        arm = None
+        entry["smooth"] = 0.3
     if arm is not None:
         ao = px(arm, w)
         if arm.name != base.name:
             alb[:, :, :3] *= (0.35 + 0.65 * ao[:, :, 0:1])
         ms = np.zeros((w, w, 4), dtype=np.float32)
-        ms[:, :, 0] = ao[:, :, 2]          # metallic
+        # metallic: the map's blue channel times glTF's metallicFactor (an unlinked input, or a Multiply node).
+        met, factor = bsdf.inputs.get("Metallic") if bsdf is not None else None, 1.0
+        if met is not None and not met.is_linked:
+            factor = met.default_value
+        elif met is not None and met.links[0].from_node.type == "MATH" and met.links[0].from_node.operation == "MULTIPLY":
+            for x in met.links[0].from_node.inputs[:2]:
+                factor *= 1.0 if x.is_linked else x.default_value
+        ms[:, :, 0] = ao[:, :, 2] * factor
         ms[:, :, 3] = 1 - ao[:, :, 1]      # smoothness
         save(ms, os.path.join(texdir, name + "_ms.png"), "Non-Color")
         entry["ms"] = True

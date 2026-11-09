@@ -168,6 +168,7 @@ namespace LastTide.Game
             }
             decor.ToObject("Undergrowth", world, false);
             var grass = GrassField.Build(world, 1.6f, 7);
+            Gulls.Create(world, 7, 11);
             if (grass != null)
                 foreach (var piece in G.Session.State.pieces)
                 {
@@ -235,6 +236,7 @@ namespace LastTide.Game
             Jungle(world, loc.Biome == Biome.Grove ? 50 : loc.Biome == Biome.Shore || loc.Biome == Biome.Pier ? 14 : 28, 0.45f);
             Undergrowth(world, 600);
             GrassField.Build(world, loc.Biome == Biome.Grove ? 2f : 1.2f, loc.Id.GetHashCode());
+            Gulls.Create(world, loc.Biome == Biome.Cave ? 3 : 5, loc.Id.GetHashCode());
 
             var dens = new GameObject("Dens").AddComponent<Dens>();
             dens.transform.SetParent(world, false);
@@ -313,13 +315,22 @@ namespace LastTide.Game
             {
                 case Biome.Lighthouse:
                 {
-                    var go = Models.Lighthouse().ToObject("Lighthouse", world);
-                    go.transform.position = at;
-                    Obstacles.Add(at, 3.4f);
+                    // The scanned tower (Sketchfab, CC BY), else the painted one with its keeper's hut.
+                    var go = ModelRegistry.Free_("lighthouse", world, at + Vector3.down * 0.15f, LighthouseYaw);
+                    bool scanned = go != null;
+                    if (!scanned) { go = Models.Lighthouse().ToObject("Lighthouse", world); go.transform.position = at; }
+                    else foreach (var (x, z, id, yaw) in new[] { (3.4f, -1.2f, "barrel", 0f), (3.9f, -0.3f, "barrel", 40f), (-3.2f, -1.8f, "crate", 25f), (-4.2f, 1.6f, "log", 80f) })
+                    {
+                        var p = Island.Ground(at + new Vector3(x, 0, z));
+                        ModelRegistry.Free_(id, world, p, yaw);
+                        Obstacles.Add(p, 0.6f);
+                    }
+                    Obstacles.Add(at, scanned ? 2.6f : 3.4f);
                     Take(at, 9f);
                     var light = new GameObject("Beam").AddComponent<Light>();
                     light.type = LightType.Point; light.range = 18; light.intensity = 3; light.color = new Color(1, 0.9f, 0.6f);
-                    light.transform.SetParent(go.transform, false); light.transform.localPosition = new Vector3(0, 15.5f, 0);
+                    light.transform.SetParent(go.transform, false);
+                    light.transform.position = at + Vector3.up * (scanned ? 14.6f : 15.5f);
                     break;
                 }
                 case Biome.Cave:
@@ -416,9 +427,20 @@ namespace LastTide.Game
                 }
                 case Biome.Pier:
                 {
-                    var go = Models.Pier(PierLength).ToObject("Pier", world);
+                    bool boat = ModelRegistry.Has(ModelRegistry.Free, "rowboat");
+                    var go = Models.Pier(PierLength, !boat).ToObject("Pier", world);
                     go.transform.position = new Vector3(at.x, 0, at.z);
                     go.transform.rotation = Quaternion.Euler(0, PierYaw, 0);
+                    if (boat)
+                    {
+                        // The scanned rowboat tied up alongside the end, sitting low in the water, and the catch
+                        // waiting to be loaded: crates and a barrel on the deck.
+                        var b = Models.PierBoat;
+                        ModelRegistry.Free_("rowboat", go.transform, go.transform.TransformPoint(new Vector3(b.x, -0.2f, PierLength + b.z)), PierYaw + 98);
+                        float deck = Island.PierDeck + 0.05f;
+                        foreach (var (x, z, id, yaw) in new[] { (-0.9f, -2.5f, "crate", 15f), (-0.95f, -3.4f, "crate_bottles", -10f), (0.9f, -1.6f, "barrel", 0f) })
+                            ModelRegistry.Free_(id, go.transform, go.transform.TransformPoint(new Vector3(x, deck, PierLength + z)), PierYaw + yaw, 0.8f);
+                    }
                     Take(at, 8f);
                     break;
                 }
@@ -426,6 +448,8 @@ namespace LastTide.Game
         }
 
         const float PierLength = 26f, PierYaw = 125f;
+        /// <summary>Turns the scanned lighthouse so its door faces the beach the castaway comes up from.</summary>
+        const float LighthouseYaw = 90f;
 
         /// <summary>Fishing spots along the pier (world positions on the deck).</summary>
         static IEnumerable<Vector3> PierSpots()
@@ -497,7 +521,7 @@ namespace LastTide.Game
             if (_plants == null || _plants.parent != world) { _plants = new GameObject("Scanned plants").transform; _plants.SetParent(world, false); }
             var go = ModelRegistry.Spawn(ModelRegistry.Scan, id, _plants);
             go.transform.position = g;
-            go.transform.rotation = Quaternion.Euler(0, R() * 360, 0);
+            go.transform.rotation = Quaternion.Euler(0, R() * 360, 0) * go.transform.rotation;
             go.transform.localScale *= 0.5f + R() * 0.5f;
             return true;
         }

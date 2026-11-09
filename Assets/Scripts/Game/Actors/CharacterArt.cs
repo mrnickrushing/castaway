@@ -4,11 +4,22 @@ using UnityEngine;
 namespace LastTide.Game
 {
     /// <summary>
-    /// An animated Quaternius character (Resources/Models/People/{id}: Henry, Anne, Mako, Sharky, Skeleton) driven by
-    /// state: Idle, Walk or Run by speed, one-shot Sword strikes and hit reactions, Death, and gestures (Wave, Yes).
+    /// An animated character driven by state: Idle, Walk or Run by speed, one-shot Sword strikes and hit reactions,
+    /// Death, and gestures (Wave, Yes, Duck). People are realistic cast members (Resources/Models/Cast/{id}, Humanoid,
+    /// moved by the shared clips through <see cref="HumanMotion"/>); animals are Quaternius models with their own
+    /// Legacy clips (Resources/Models/People/{id}).
     /// </summary>
     public sealed class CharacterArt : MonoBehaviour
     {
+        /// <summary>The game's clip names played by a cast member as the shared humanoid clips.</summary>
+        static readonly Dictionary<string, string> HumanClip = new Dictionary<string, string>
+        {
+            { "Idle", "Idle_Loop" }, { "Walk", "Walk_Loop" }, { "Run", "Jog_Fwd_Loop" }, { "Sword", "Sword_Attack" },
+            { "HitReact", "Hit_Chest" }, { "Death", "Death01" }, { "Wave", "Interact" }, { "Yes", "Interact" },
+            { "Punch", "Punch_Cross" }, { "Jump", "Jump_Start" }, { "Duck", "Crouch_Idle_Loop" }, { "Talk", "Idle_Talking_Loop" },
+        };
+
+        HumanMotion _human;
         Animation _anim;
         readonly Dictionary<string, string> _clips = new Dictionary<string, string>();
         string _loop;
@@ -17,6 +28,20 @@ namespace LastTide.Game
 
         public static CharacterArt TryCreate(string id, Transform parent, float scale = 1)
         {
+            if (ModelRegistry.Prefab(ModelRegistry.Cast, id) != null)
+            {
+                var cast = ModelRegistry.Spawn(ModelRegistry.Cast, id, parent);
+                cast.transform.localScale *= scale;
+                var h = cast.AddComponent<CharacterArt>();
+                h._human = HumanMotion.Attach(cast);
+                if (h._human != null)
+                {
+                    foreach (var r in cast.GetComponentsInChildren<SkinnedMeshRenderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                    h.Loop("Idle");
+                    return h;
+                }
+                Destroy(cast);
+            }
             var go = ModelRegistry.Spawn(ModelRegistry.People, id, parent);
             if (go == null) return null;
             go.transform.localScale *= scale;
@@ -40,9 +65,12 @@ namespace LastTide.Game
         void OnEnable() { if (_anim != null && _loop != null) { var l = _loop; _loop = null; Loop(l); } }
 
         /// <summary>Keeps a looping clip playing (crossfading in) unless a one-shot is running.</summary>
+        static string Human(string n) { string c; return HumanClip.TryGetValue(n, out c) ? c : n; }
+
         public void Loop(string n, float speed = 1)
         {
             if (_dead) return;
+            if (_human != null) { _human.Loop(Human(n), speed); return; }
             var c = Clip(n);
             if (c == null) return;
             _anim[c].speed = speed;
@@ -55,6 +83,7 @@ namespace LastTide.Game
         public void Once(string n, float speed = 1)
         {
             if (_dead) return;
+            if (_human != null) { _human.Once(Human(n), speed); return; }
             var c = Clip(n);
             if (c == null) return;
             _anim[c].speed = speed;
@@ -66,6 +95,7 @@ namespace LastTide.Game
         public void Die()
         {
             if (_dead) return;
+            if (_human != null) { _human.Once("Death01", 1, 0.1f, true); _dead = true; return; }
             var c = Clip("Death");
             if (c != null) { _anim[c].time = 0; _anim.CrossFade(c, 0.1f); }
             _dead = true;
@@ -73,6 +103,7 @@ namespace LastTide.Game
 
         void Update()
         {
+            if (_anim == null) return;
             if (_oneShot > 0)
             {
                 _oneShot -= Time.deltaTime;
