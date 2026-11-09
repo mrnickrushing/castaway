@@ -49,15 +49,21 @@ def call(method, path, body=None, ok404=False):
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method,
                                  headers={"Authorization": "Bearer " + TOKEN, "Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req) as r:
-            raw = r.read()
-            return json.loads(raw) if raw else {}
-    except urllib.error.HTTPError as e:
-        text = e.read().decode(errors="replace")
-        if ok404 and e.code == 404:
-            return None
-        raise SystemExit("%s %s -> %d\n%s" % (method, url, e.code, text[:2000]))
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(req) as r:
+                raw = r.read()
+                return json.loads(raw) if raw else {}
+        except urllib.error.HTTPError as e:
+            text = e.read().decode(errors="replace")
+            if ok404 and e.code == 404:
+                return None
+            if e.code >= 500 and attempt < 4:
+                # Apple's API has the odd server hiccup: wait and try again.
+                print("  %s %s -> %d, retrying" % (method, url, e.code))
+                time.sleep(5 * (attempt + 1))
+                continue
+            raise SystemExit("%s %s -> %d\n%s" % (method, url, e.code, text[:2000]))
 
 
 def pages(path):
