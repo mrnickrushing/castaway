@@ -6,7 +6,7 @@ apart for the UI. One image instead of one per icon keeps the credits down.
   python3 Tools/art/sheets.py install <sheet>   # free: cut the grid -> Assets/Resources/UI/<folder>/<id>.png
   python3 Tools/art/sheets.py card <id>         # paid (2.75): one painting from CARDS, straight to UI/Places/<id>.jpg
 
-Sheets: items (30 inventory icons, transparent) and places (8 location postcards, 3 offer pictures, key art).
+Sheets: items (30 inventory icons, transparent), items2 (16 more, added later) and places (8 location postcards, 3 offer pictures, key art).
 Cards: single shop pictures added later, in the places sheet's style (skips one that already exists in art-src).
 """
 import os
@@ -33,6 +33,18 @@ ITEM_ROWS = [
      ("rod", "a bamboo fishing rod with line and a red float, diagonal"), ("harpoon", "an iron-barbed harpoon, diagonal"), ("cutlass", "a pirate cutlass with a brass guard, diagonal")],
 ]
 
+# Added later: clothes, iron tools, the season rewards and the companions' tokens (they were drawn from 3D models).
+ITEM2_ROWS = [
+    [("palm_hat", "a wide woven palm-leaf sun hat"), ("hide_vest", "a sleeveless brown boar-hide vest stitched with plant fibre"),
+     ("hide_pants", "a pair of brown boar-hide leggings laced at the sides"), ("hide_boots", "a pair of rough brown hide boots tied with cord")],
+    [("tricorn", "a black pirate tricorn hat with gold trim"), ("pirate_coat", "a heavy red wool captain's long coat with brass buttons"),
+     ("iron_bar", "a dull grey wrought iron ingot"), ("plank", "a small stack of three sawn wooden planks")],
+    [("iron_hatchet", "an iron hatchet with a dark forged steel head and a wooden handle"), ("iron_pickaxe", "an iron pickaxe with a forged steel head, diagonal"),
+     ("stew", "a wooden bowl of hearty stew with meat chunks and vegetables, steaming"), ("supply_crate", "a closed wooden supply crate with rope handles and iron corners")],
+    [("gold_chest", "an ornate treasure chest banded in gold, warm light glowing from under the lid"), ("pet_fox", "the head of a friendly red fox"),
+     ("pet_husky", "the head of a grey and white husky dog with blue eyes"), ("pet_wolf", "the head of a grey wolf")],
+]
+
 PLACE_ROWS = [
     [("home", "a castaway's camp above a tropical beach: a palm-leaf lean-to shelter, a smoking campfire and a wrecked sailing ship heeled over on the sand"),
      ("grove", "a small islet thick with coconut palms and ferns, turquoise shallows, a wild boar in the undergrowth"),
@@ -54,12 +66,14 @@ SHEETS = {
         "centered in its own equal square cell with generous empty space around it, on a fully transparent background. "
         "Semi-realistic painted style like a premium mobile survival game: chunky readable shapes, rich saturated colour, soft "
         "top-left lighting, a subtle dark outline. No text, no numbers, no grid lines, no borders, no labels. {rows}")),
+    "items2": dict(rows=ITEM2_ROWS, folder="Items", ar="1:1", transparent=True, size=256, prompt=None),
     "places": dict(rows=PLACE_ROWS, folder="Places", ar="4:3", transparent=False, size=640, prompt=(
         "A grid of {n} separate painted illustrations, {cols} columns and {r} rows, each filling its own equal square tile, the "
         "tiles separated by thin pure white gaps. Painterly semi-realistic concept art for a premium mobile survival game set "
         "on tropical islands, warm sunlight, rich colour, no people unless named. No text, no letters, no borders inside the "
         "tiles. {rows}")),
 }
+SHEETS["items2"]["prompt"] = SHEETS["items"]["prompt"]
 
 CARDS = {
     "offer_bigpack": "a big weathered canvas sailor's backpack with leather straps and brass buckles, stuffed full, a rolled "
