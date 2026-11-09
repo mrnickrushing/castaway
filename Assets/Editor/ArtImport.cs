@@ -18,6 +18,25 @@ namespace LastTide.EditorTools
             if (!assetPath.StartsWith(Models)) return;
             var mi = (ModelImporter)assetImporter;
             mi.materialImportMode = ModelImporterMaterialImportMode.None; // ArtMaterials builds URP materials at runtime
+            if (assetPath.StartsWith(Models + "Cast/"))
+            {
+                // Realistic people (Tools/art/sketchfab.py): Humanoid, so the shared clips in moves.fbx retarget onto
+                // every one of them. Bones stay as transforms: the castaway's work poses aim them in LateUpdate.
+                bool moves = assetPath.EndsWith("/moves.fbx");
+                mi.animationType = ModelImporterAnimationType.Human;
+                mi.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                mi.optimizeGameObjects = false;
+                mi.importAnimation = moves;
+                mi.importCameras = false;
+                mi.importLights = false;
+                mi.isReadable = false;
+                mi.meshCompression = ModelImporterMeshCompression.Medium;
+                mi.importNormals = ModelImporterNormals.Import;
+                mi.importTangents = ModelImporterTangents.CalculateMikk;
+                mi.skinWeights = ModelImporterSkinWeights.Standard;
+                if (moves) { mi.animationCompression = ModelImporterAnimationCompression.Optimal; mi.resampleCurves = true; }
+                return;
+            }
             bool person = assetPath.StartsWith(Models + "People/") || assetPath.StartsWith(Models + "Animals/"); // rigged, Legacy clips
             mi.importAnimation = person;
             mi.importCameras = false;
@@ -32,6 +51,24 @@ namespace LastTide.EditorTools
             mi.meshCompression = ModelImporterMeshCompression.Medium;
             mi.importNormals = ModelImporterNormals.Import;
             mi.importTangents = ModelImporterTangents.CalculateMikk;
+        }
+
+        /// <summary>The shared humanoid clips: loops loop, everything stays in place (the game moves the body).</summary>
+        void OnPreprocessAnimation()
+        {
+            if (!assetPath.StartsWith(Models + "Cast/")) return;
+            var mi = (ModelImporter)assetImporter;
+            var clips = mi.defaultClipAnimations;
+            for (int i = 0; i < clips.Length; i++)
+            {
+                string n = clips[i].name.Substring(clips[i].name.LastIndexOf('|') + 1);
+                clips[i].name = n;
+                clips[i].loopTime = n.EndsWith("_Loop") || n == "Sword_Idle" || n == "Fixing_Kneeling";
+                clips[i].lockRootRotation = true; clips[i].keepOriginalOrientation = false; // face the body forward (+Z)
+                clips[i].lockRootHeightY = true; clips[i].keepOriginalPositionY = true;
+                clips[i].lockRootPositionXZ = true; clips[i].keepOriginalPositionXZ = true;
+            }
+            mi.clipAnimations = clips;
         }
 
         /// <summary>Recorded game audio (Tools/art/audio.py): effects decompressed for instant playback, beds and music streamed.</summary>
@@ -70,7 +107,7 @@ namespace LastTide.EditorTools
                 var t = (TextureImporter)assetImporter;
                 bool normal = assetPath.EndsWith("_normal.jpg") || assetPath.EndsWith("_normal.png"), data = assetPath.EndsWith("_ms.png");
                 t.textureType = normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-                if (assetPath.Contains("/Scan/") && assetPath.EndsWith("_albedo.png"))
+                if ((assetPath.Contains("/Scan/") || assetPath.Contains("/Cast/")) && assetPath.EndsWith("_albedo.png"))
                 {
                     // Leaf cutouts: keep their coverage in the small mips so distant plants don't thin out.
                     t.alphaSource = TextureImporterAlphaSource.FromInput;

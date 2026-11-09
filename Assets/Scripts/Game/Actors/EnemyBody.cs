@@ -15,7 +15,10 @@ namespace LastTide.Game
                 case "skeleton":
                 case "redjack":
                 {
-                    var person = CharacterArt.TryCreate(kind == "skeleton" ? "skeleton" : "sharky", parent, kind == "redjack" ? 1.3f : 1f);
+                    // Realistic cast members (Models/Cast), else the old Quaternius stand-ins.
+                    string cast = kind == "skeleton" ? (Random.value < 0.5f ? "smuggler" : "smuggler2") : kind == "redjack" ? "captain" : "hunter";
+                    var person = CharacterArt.TryCreate(cast, parent, kind == "redjack" ? 1.1f : 1f)
+                                 ?? CharacterArt.TryCreate(kind == "skeleton" ? "skeleton" : "sharky", parent, kind == "redjack" ? 1.3f : 1f);
                     if (person != null) return new CharacterBody(person);
                     return new PirateBody(parent);
                 }

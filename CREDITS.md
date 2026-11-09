@@ -13,3 +13,17 @@
 - Fonts: Barlow by Jeremy Tribby (SIL Open Font License).
 
 Re-download and convert the free models with `python3 Tools/art/free_assets.py fetch` then `install`.
+
+## Sketchfab (CC BY 4.0)
+
+- "Castaway" by katarzynaszemla (https://sketchfab.com/3d-models/6a481c17d68a4a138f726ccb76caedff), CC BY 4.0. Used as the player's castaway; rescaled, decimated, rig renamed.
+- "Pirate Captain" by byenbyen (https://sketchfab.com/3d-models/bae2223031094f629ad86242e26a37e6), CC BY 4.0. Used as Red Jack; rescaled, decimated, rig renamed.
+- "Game ready Pirate Hunter / Viking / Medieval man" by chenuka_wy (https://sketchfab.com/3d-models/9f51d396733b451bab550b406b067805), CC BY 4.0; its jacket is "Gambeson" by Leon.Steiner (https://sketchfab.com/3d-models/0fc44d2876ed449ca9473e78c83a8d39), CC BY 4.0. Used as Red Jack's raiders; rescaled, decimated, rig renamed.
+- "Pirate Girl" by Anriil_Kl (https://sketchfab.com/3d-models/8e71658a2f93410e8905aa7a160bc5d9), CC BY 4.0. Used as Mara; rescaled, decimated, rig renamed.
+- "Farmer" by LxNazarov (https://sketchfab.com/3d-models/ae5182ccddfd47acb59400f739581743), CC BY 4.0. Used as Old Tomas; rescaled, decimated, rig renamed.
+- "Virtual model linen tunic Svend" by chambersu1996 (https://sketchfab.com/3d-models/1da6ed53db67461eb0d36b80ddcf6ffb), CC BY 4.0. Used as Ned Barlow and other survivors; rescaled, decimated, rig renamed.
+- "Virtual model linen tunic & slim Revna" by chambersu1996 (https://sketchfab.com/3d-models/9ac96b0353264685b1290bab355fe876), CC BY 4.0. Used as rescued survivors; rescaled, decimated, rig renamed.
+- "Skeleton Pirate " The Captin "" by ShadowCoffee (https://sketchfab.com/3d-models/65cbe69004924bbc940cd74276ba90fb), CC BY 4.0. Used as drowned smugglers; rescaled, decimated, rig renamed.
+- "Skeleton Pirate " The Drunk "" by ShadowCoffee (https://sketchfab.com/3d-models/9ed1650abdce48d4a1a4d34a4a56cfc5), CC BY 4.0. Used as drowned smugglers; rescaled, decimated, rig renamed.
+
+- Universal Animation Library by Quaternius (https://quaternius.com), CC0. Every character's moves.

@@ -9,7 +9,7 @@ namespace LastTide.Game
     /// </summary>
     public static class ModelRegistry
     {
-        public const string Props = "Props", Buildings = "Buildings", Animals = "Animals", People = "People", Free = "Free", Scan = "Scan";
+        public const string Props = "Props", Buildings = "Buildings", Animals = "Animals", People = "People", Free = "Free", Scan = "Scan", Cast = "Cast";
 
         /// <summary>
         /// Photoscanned Poly Haven replacements (Resources/Models/Scan, Tools/art/polyhaven.py) for the free kit models:
@@ -99,7 +99,7 @@ namespace LastTide.Game
             var go = Object.Instantiate(prefab, parent, false);
             go.name = id;
             foreach (var c in go.GetComponentsInChildren<Collider>()) Object.Destroy(c);
-            if (category == Scan) ScanMaterials(go, id);
+            if (category == Scan || category == Cast) ScanMaterials(go, category, id);
             else
             {
                 var mat = Material(category, id);
@@ -245,13 +245,17 @@ namespace LastTide.Game
             }
         }
 
-        /// <summary>URP Lit materials for a scanned model, one per submesh, from its manifest (Models/Scan/{id}.json).</summary>
-        static void ScanMaterials(GameObject go, string id)
+        /// <summary>
+        /// URP Lit materials for a scanned model or a cast member, one per submesh, from its manifest
+        /// (Models/{Scan|Cast}/{id}.json) and maps (Models/{Scan|Cast}/tex).
+        /// </summary>
+        static void ScanMaterials(GameObject go, string category, string id)
         {
             Material[] mats;
-            if (!_scanMats.TryGetValue(id, out mats))
+            string dir = "Models/" + category + "/";
+            if (!_scanMats.TryGetValue(category + "/" + id, out mats))
             {
-                var json = Resources.Load<TextAsset>("Models/Scan/" + id);
+                var json = Resources.Load<TextAsset>(dir + id);
                 var info = json != null ? JsonUtility.FromJson<ScanInfo>(json.text) : null;
                 var template = Resources.Load<Material>("Models/ArtLit");
                 mats = new Material[info != null && info.slots != null ? info.slots.Length : 0];
@@ -262,14 +266,14 @@ namespace LastTide.Game
                     if (!_slotMats.TryGetValue(s.name, out m))
                     {
                         m = new Material(template) { name = s.name, enableInstancing = true };
-                        var alb = Resources.Load<Texture2D>("Models/Scan/tex/" + s.name + "_albedo");
+                        var alb = Resources.Load<Texture2D>(dir + "tex/" + s.name + "_albedo");
                         m.SetTexture("_BaseMap", alb);
                         m.SetColor("_BaseColor", alb != null ? new Color(1.06f, 1.05f, 1.02f) : (s.color != null && s.color.Length == 3 ? new Color(s.color[0], s.color[1], s.color[2]) : Color.gray));
                         m.SetFloat("_Metallic", 0);
                         m.SetFloat("_Smoothness", s.smooth >= 0 ? s.smooth : 0.5f);
-                        var ms = s.ms ? Resources.Load<Texture2D>("Models/Scan/tex/" + s.name + "_ms") : null;
+                        var ms = s.ms ? Resources.Load<Texture2D>(dir + "tex/" + s.name + "_ms") : null;
                         if (ms != null) { m.SetTexture("_MetallicGlossMap", ms); m.EnableKeyword("_METALLICSPECGLOSSMAP"); m.SetFloat("_Smoothness", 0.85f); }
-                        var n = s.normal ? Resources.Load<Texture2D>("Models/Scan/tex/" + s.name + "_normal") : null;
+                        var n = s.normal ? Resources.Load<Texture2D>(dir + "tex/" + s.name + "_normal") : null;
                         if (n != null) { m.SetTexture("_BumpMap", n); m.SetFloat("_BumpScale", 1f); m.EnableKeyword("_NORMALMAP"); }
                         if (s.alpha)
                         {
@@ -283,7 +287,7 @@ namespace LastTide.Game
                     }
                     mats[i] = m;
                 }
-                _scanMats[id] = mats;
+                _scanMats[category + "/" + id] = mats;
             }
             foreach (var r in go.GetComponentsInChildren<Renderer>())
             {

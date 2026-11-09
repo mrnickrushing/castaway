@@ -672,7 +672,8 @@ namespace LastTide.Game
             var look = new SurvivorRig.Look { Shirt = Palette.Hex(0x6A8AA8), Pants = Palette.Hex(0x5A4A3A), Hair = Palette.Hex(0xB8B0A0), Band = Palette.Hex(0x3A5A7A), Pack = false };
             if (sig.Npc == "Mara") { look.Beard = false; look.Hair = Palette.Hex(0x5A2E1A); look.Shirt = Palette.Hex(0xC8A24A); }
             string model = sig.Npc == "Mara" ? "anne" : sig.Npc == "Ned Barlow" ? "mako" : "henry";
-            s._art = CharacterArt.TryCreate(model, go.transform);
+            string cast = sig.Npc == "Mara" ? "mara" : sig.Npc == "Ned Barlow" ? "ned" : sig.Npc == "Old Tomas" ? "tomas" : "revna";
+            s._art = CharacterArt.TryCreate(cast, go.transform) ?? CharacterArt.TryCreate(model, go.transform);
             if (s._art == null) s._rig = SurvivorRig.Build(go.transform, look);
             Obstacles.Add(pos, 0.5f, s);
             s.MakeRing(2.2f);

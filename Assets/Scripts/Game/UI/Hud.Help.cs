@@ -136,10 +136,13 @@ namespace LastTide.Game
             var credits = UIKit.Label("Credits", _helpBody,
                 "LAST TIDE  ·  a Rushing Technologies game\n" +
                 "Photoscanned models, ground and sky: Poly Haven (polyhaven.com) and ambientCG (ambientcg.com), CC0. " +
-                "3D models: Kenney (kenney.nl) and Quaternius (quaternius.com), CC0. " +
-                "Castaway, story art, movies and icons made for this game. Fonts: Barlow (SIL Open Font License).",
+                "3D models: Kenney (kenney.nl) and Quaternius (quaternius.com), CC0; animations: Quaternius Universal Animation Library, CC0. " +
+                "Characters from Sketchfab (sketchfab.com), CC BY 4.0, adapted for the game: \"Castaway\" by katarzynaszemla, " +
+                "\"Pirate Captain\" by byenbyen, \"Pirate Hunter\" by chenuka_wy (jacket \"Gambeson\" by Leon.Steiner), \"Pirate Girl\" by Anriil_Kl, " +
+                "\"Farmer\" by LxNazarov, \"Svend\" and \"Revna\" by chambersu1996, \"Skeleton Pirate\" captain and drunk by ShadowCoffee. " +
+                "Story art, movies, icons, boar and palms made for this game. Fonts: Barlow (SIL Open Font License).",
                 26, new Color(1, 1, 1, 0.6f), TextAnchor.UpperLeft, false);
-            credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(1600, 200));
+            credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(1600, 330));
         }
 
         void Setting(ref float y, string label, string button, System.Action act)

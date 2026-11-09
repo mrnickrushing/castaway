@@ -103,6 +103,17 @@ setting only.
 - Fight reach is measured along the ground (`Enemy.Nearest`, enemy attack, Biscuit's bite): 3D distance stalled fights
   on slopes. The drowned smugglers (5 dens, back in 40 s) and the cave/camp barrels (rum) feed the late story steps.
 - Story cards use `Resources/UI/Story/<key>.jpg` (16:9, from `ai_media.py story`), else the small map painting.
+- Realistic people (Sketchfab, CC BY; `Tools/art/sketchfab.py` keeps uid/author/role and writes `CREDITS.md`; the
+  in-game credits are in `UI/Hud.Help.cs`): `Tools/blender/cast_import.py` renames each rig to the Unreal mannequin's
+  core bones, stands it up from its bones (some rest poses lie down), decimates and packs maps into
+  `Resources/Models/Cast/<id>.fbx|json|tex` (Humanoid, `Editor/ArtImport.cs`). All of them share one clip set,
+  `Cast/moves.fbx` (Quaternius Universal Animation Library, CC0, slimmed by `cast_moves.py`; clips baked by body
+  orientation), played through a Playables mixer (`Actors/HumanMotion.cs`, no AnimatorController). `CharacterArt`
+  maps the game's clip names (Idle/Walk/Run/Sword/HitReact/Death/Wave/Duck) onto them; the castaway (`SurvivorArt`)
+  walks/jogs/sprints by speed, crouch-walks when sneaking, kneels to build, and keeps the bone-aimed work poses on top.
+  Cast: castaway (player), captain (Red Jack), hunter (raiders), mara, tomas, ned, revna, smuggler/smuggler2. Only
+  CC BY/CC0 originals: no fan art of other games/films. Sketchfab glbs sometimes lack their textures (both animated
+  boars did): render a preview before using one.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor
