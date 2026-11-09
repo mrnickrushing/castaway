@@ -53,6 +53,9 @@ def section(name):
         except SystemExit as e:  # call() stops with the API's answer
             print("FAILED", name, "\n", e)
             failed.append(name)
+        except Exception as e:  # anything else (a missing key, an upload error): report it, keep going
+            print("FAILED", name, "\n", repr(e))
+            failed.append(name)
         return fn
     return wrap
 
