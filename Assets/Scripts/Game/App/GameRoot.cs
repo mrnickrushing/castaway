@@ -127,20 +127,31 @@ namespace LastTide.Game
             }
             else player.Place(new Vector3(state.px, 0, state.pz), state.facing);
             CameraRig.Create(player.transform);
-            if (G.Session.HasPet) SpawnPet(player.transform.position - player.transform.forward * 2);
-            if (FindFirstObjectByType<EventSystem>() == null)
-                new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
-            MapView.Create();
-            Hud.Create();
-            GuideArrow.Create(transform);
-            Sfx.Init(transform);
-            Sfx.Muted = state.muted;
-            Store.Reconcile();
-            G.Session.CheckQuests();
+            // Each step is guarded: one that throws on a device (a shader missing from the build, say) is logged and
+            // the rest still run, so the loading screen always gets out of the way instead of hanging here.
+            Guard("pet", () => { if (G.Session.HasPet) SpawnPet(player.transform.position - player.transform.forward * 2); });
+            Guard("input", () =>
+            {
+                if (FindFirstObjectByType<EventSystem>() == null)
+                    new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            });
+            Guard("map", () => MapView.Create());
+            Guard("hud", () => Hud.Create());
+            Guard("arrow", () => GuideArrow.Create(transform));
+            Guard("sound", () => { Sfx.Init(transform); Sfx.Muted = state.muted; });
+            Guard("store", Store.Reconcile);
+            Guard("quests", G.Session.CheckQuests);
             // Closed the app mid-journey: open on the map to finish it.
-            if (state.travel != null) Hud.Instance.OpenMap();
+            Guard("journey", () => { if (state.travel != null && Hud.Instance != null) Hud.Instance.OpenMap(); });
             _ready = true;
             yield return _loading.Finish();
+        }
+
+        /// <summary>Runs one start-up step, logging (not rethrowing) what it throws.</summary>
+        static void Guard(string step, System.Action act)
+        {
+            try { act(); }
+            catch (System.Exception e) { Debug.LogError("[Start] " + step + " failed: " + e); }
         }
 
         Transform _world;

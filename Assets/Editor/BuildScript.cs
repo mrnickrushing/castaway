@@ -27,6 +27,7 @@ namespace LastTide.EditorTools
             UrpSetup.Run();
 #endif
             AppIcon.Generate();
+            ProjectSetup.IncludeShaders();
 
             var buildNumber = Environment.GetEnvironmentVariable("BUILD_NUMBER");
             if (!string.IsNullOrEmpty(buildNumber)) PlayerSettings.iOS.buildNumber = buildNumber;
