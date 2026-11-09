@@ -72,6 +72,15 @@ setting only.
   ghost outlines only the parts still to come. Build-mode pieces play `Appear` (floors settle, walls rise with hammer
   taps, objects drop and squash) and `Crumble` when taken down; `BuildFx` has dust, chips, sparks and the busy look of
   a station with a craft running. Build a structure's parts in the order they'd go up (poles before the ridge).
+- Loading and movies: `UI/LoadingScreen.cs` covers launch (`GameRoot.Start` builds the island a step at a time behind
+  it, `_ready` holds `Update` until then) and landfall after a voyage (`EnterArrived`). It always shows the Rushing
+  Technologies logo (`Resources/UI/Brand/rushingtech.png`, cut from the master `Tools/brand/rushingtech_logo.png` by
+  luminance; every game's loading screen carries it). Story movies: `SceneDef.Movie` names a clip that `UI/Cinema.cs`
+  plays once (flag `movie_<id>`) before the scene's lines, full screen with sound, a SKIP button and the chapter title;
+  ambience/music duck via `Sfx.Duck`. Clips and the loading art come from `Tools/art/ai_media.py` (Higgsfield: still,
+  review, then video; paid) -> `install` writes `StreamingAssets/Videos/<id>.mp4`, the still to `Resources/UI/Cinematics`
+  (shown until the first frame or if the clip can't play) and VP8 copies in `Library/EditorVideos` (the Linux Editor
+  can't decode H.264). Needs the `com.unity.modules.video` package.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

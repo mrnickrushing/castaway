@@ -1,3 +1,4 @@
+using System.Collections;
 using System;
 using System.IO;
 using LastTide.Core;
@@ -97,8 +98,23 @@ namespace LastTide.Game
             G.Session.PetChanged += OnPetChanged;
             G.Session.UpdateEnergy();
 
+            _loading = LoadingScreen.Show("Washing ashore...");
+        }
+
+        LoadingScreen _loading;
+        bool _ready;
+
+        /// <summary>Builds the island a step at a time behind the loading screen, so its bar moves.</summary>
+        IEnumerator Start()
+        {
+            var state = G.Session.State;
+            yield return null; // let the loading screen draw first
             Lighting();
+            _loading.SetProgress(0.15f, "Raising the island...");
+            yield return null;
             BuildWorld();
+            _loading.SetProgress(0.7f, "Lighting the campfire...");
+            yield return null;
             var player = Player.Create(transform);
             if (!state.placed)
             {
@@ -119,6 +135,8 @@ namespace LastTide.Game
             G.Session.CheckQuests();
             // Closed the app mid-journey: open on the map to finish it.
             if (state.travel != null) Hud.Instance.OpenMap();
+            _ready = true;
+            yield return _loading.Finish();
         }
 
         Transform _world;
@@ -178,8 +196,21 @@ namespace LastTide.Game
         /// <summary>Steps ashore at the end of a journey: builds that island and puts the castaway on its landing.</summary>
         public void EnterArrived()
         {
+            if (G.Session.State.travel == null || _arriving) return;
+            StartCoroutine(Arriving());
+        }
+
+        bool _arriving;
+
+        IEnumerator Arriving()
+        {
+            _arriving = true;
+            var ls = LoadingScreen.Show("Making landfall...", 1.8f);
+            yield return null;
             var to = G.Session.Arrive();
-            if (to == null) return;
+            if (to == null) { _arriving = false; yield return ls.Finish(); yield break; }
+            ls.SetProgress(0.3f, "Making landfall at " + to.Name + "...");
+            yield return null;
             BuildWorld();
             ShowMap(false);
             var p = to.Home ? Island.Start + new Vector3(-9, 0, 0) : Island.Start;
@@ -188,6 +219,8 @@ namespace LastTide.Game
             if (Pet.Instance != null) Pet.Instance.Place(p + new Vector3(1.5f, 0, -1.5f));
             Hud.Instance.Toast(to.Name);
             Save();
+            _arriving = false;
+            yield return ls.Finish(to.Name);
         }
 
         void Lighting()
@@ -251,6 +284,7 @@ namespace LastTide.Game
 
         void Update()
         {
+            if (!_ready) return;
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
             if ((!Hud.Instance || !Hud.Instance.Blocking) && !OnMap) G.Session.Tick(dt);
             else G.Session.UpdateEnergy();
