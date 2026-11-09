@@ -6,6 +6,7 @@
 # its numeric Apple ID is looked up from the bundle id whenever it's needed.
 #
 #   asc-lookup      read only: prints the app's Apple ID, name, SKU and the in-app purchases already created.
+#   asc-iap         creates the in-app purchases of docs/STORE.md (Tools/appstore/iap.py; safe to rerun).
 #   ios-testflight  downloads the Xcode project exported by Tools/ios-export.sh (the `ios-latest` release asset),
 #                   archives it, signs it with an App Store profile Xcode creates through
 #                   the key, and uploads to TestFlight. Run it only when a TestFlight build is wanted.
@@ -43,9 +44,10 @@ workflows:
       - name: In-app purchases already created
         script: |
           set -euo pipefail
-          python3 - <<'PY'
+          python3 -m venv /tmp/asc && /tmp/asc/bin/pip install -q pyjwt cryptography
+          /tmp/asc/bin/python - <<'PY'
           import json, os, time, urllib.request
-          import jwt  # PyJWT, installed with codemagic-cli-tools
+          import jwt
           key = os.environ["APP_STORE_CONNECT_PRIVATE_KEY"].replace("\\n", "\n")
           token = jwt.encode({"iss": os.environ["APP_STORE_CONNECT_ISSUER_ID"], "iat": int(time.time()),
                               "exp": int(time.time()) + 600, "aud": "appstoreconnect-v1"}, key, algorithm="ES256",
@@ -59,6 +61,20 @@ workflows:
               at = i["attributes"]
               print("IAP", i["id"], at.get("productId"), at.get("inAppPurchaseType"), at.get("state"))
           PY
+
+  asc-iap:
+    name: Create the in-app purchases
+    max_build_duration: 15
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - ios_credentials
+    scripts:
+      - name: In-app purchases (Tools/appstore/iap.py)
+        script: |
+          set -euo pipefail
+          python3 -m venv /tmp/asc && /tmp/asc/bin/pip install -q pyjwt cryptography
+          /tmp/asc/bin/python Tools/appstore/iap.py
 
   ios-testflight:
     name: iOS → TestFlight

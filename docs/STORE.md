@@ -17,7 +17,9 @@ Editor and development builds, nothing in a release build until RevenueCat is co
 
 To go live:
 1. Create the app in App Store Connect (bundle id `com.rushingtech.lasttide`).
-2. Create the seven in-app purchases above with the same ids.
+2. Create the eight in-app purchases above with the same ids: the Codemagic workflow `asc-iap` runs
+   `Tools/appstore/iap.py` (names, descriptions, USA base prices, every territory; safe to rerun). Each still needs a
+   review screenshot in App Store Connect before its first review.
 3. Create the app in RevenueCat, attach the products, and put its Apple public key (`appl_...`) in
    `RevenueCatStore.ApiKey`.
 
