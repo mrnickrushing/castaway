@@ -782,6 +782,37 @@ namespace LastTide.Game
             return go;
         }
 
+        /// <summary>
+        /// A straight scanned log (palisade_log: dead_tree_trunk cut to 300 triangles by Tools/blender/lod.py, sharing
+        /// its textures) laid from one local point to another, its thickness set to
+        /// <paramref name="diameter"/> metres and turned <paramref name="roll"/> degrees about its own length so a row of
+        /// them doesn't repeat the same knots. Falls back to a thickened branch without the scan.
+        /// </summary>
+        static GameObject Log(Transform parent, Vector3 from, Vector3 to, float diameter, float roll)
+        {
+            var go = Scan("palisade_log", parent, Vector3.zero, 0);
+            if (go == null) return Stake(parent, from, to, 7.5f);
+            Span(go, parent, from, to);
+            var mf = go.GetComponentInChildren<MeshFilter>();
+            if (mf == null) return go;
+            var b = mf.sharedMesh.bounds;
+            var e = b.extents;
+            int k = e.x >= e.y && e.x >= e.z ? 0 : e.y >= e.z ? 1 : 2;
+            var ls = mf.transform.localScale;
+            for (int i = 0; i < 3; i++)
+            {
+                if (i == k) continue;
+                var axis = Vector3.zero; axis[i] = e[i] * 2;
+                ls[i] *= diameter / Mathf.Max(0.01f, mf.transform.TransformVector(axis).magnitude);
+            }
+            var before = mf.transform.TransformPoint(b.center);
+            mf.transform.localScale = ls;
+            go.transform.position += before - mf.transform.TransformPoint(b.center);
+            var a = parent.TransformPoint(from);
+            go.transform.RotateAround(a, parent.TransformPoint(to) - a, roll);
+            return go;
+        }
+
         static Material _tarp, _black;
         /// <summary>Old sailcloth stained dark for the raiders' tents.</summary>
         static Material Tarp
@@ -864,18 +895,28 @@ namespace LastTide.Game
             flag.transform.localPosition = new Vector3(fp.x + 0.82f, fy + 5.6f, fp.z);
             flag.transform.localRotation = Quaternion.Euler(90, 0, 0);
             flag.GetComponent<MeshRenderer>().receiveShadows = true;
-            // A palisade of sharpened logs around the back of the camp.
+            // A palisade around the back of the camp: nine panels of straight logs stood shoulder to shoulder, each
+            // held by a rail across its inside face.
             for (int i = 0; i < 9; i++)
             {
                 float a0 = Mathf.Lerp(20, 160, i / 8f) * Mathf.Deg2Rad;
-                for (int j = 0; j < 5; j++)
+                const int n = 7;
+                const float step = 0.031f; // ~0.47 m at 15 m: logs touching
+                for (int j = 0; j < n; j++)
                 {
-                    float a = a0 + (j - 2) * 0.04f; // ~0.6 m apart: thick logs shoulder to shoulder
+                    float a = a0 + (j - (n - 1) / 2f) * step;
                     var pp = new Vector3(Mathf.Cos(a) * 15, 0, Mathf.Sin(a) * 15);
                     float y = Island.Ground(at + pp).y - at.y;
-                    float hgt = 2.6f + ((i * 5 + j) * 37 % 10) * 0.05f;
-                    Stake(t, new Vector3(pp.x, y - 0.3f, pp.z), new Vector3(pp.x, y + hgt, pp.z), 7.5f);
+                    int h = (i * n + j) * 37 % 10;
+                    float hgt = 2.7f + h * 0.06f;
+                    Log(t, new Vector3(pp.x, y - 0.4f, pp.z), new Vector3(pp.x, y + hgt, pp.z), 0.5f, h * 36);
                 }
+                // The rail, a hand inside the logs.
+                float r0 = a0 - (n - 1) / 2f * step - 0.01f, r1 = a0 + (n - 1) / 2f * step + 0.01f;
+                var q0 = new Vector3(Mathf.Cos(r0) * 14.6f, 0, Mathf.Sin(r0) * 14.6f);
+                var q1 = new Vector3(Mathf.Cos(r1) * 14.6f, 0, Mathf.Sin(r1) * 14.6f);
+                float ry = (Island.Ground(at + q0).y + Island.Ground(at + q1).y) / 2 - at.y + 1.7f;
+                Log(t, new Vector3(q0.x, ry, q0.z), new Vector3(q1.x, ry, q1.z), 0.3f, i * 50);
             }
             return go;
         }
