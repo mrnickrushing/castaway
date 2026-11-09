@@ -710,6 +710,17 @@ namespace LastTide.Game
                 }
                 return null;
             }
+            // A crafting step: fetch what the recipe is short of, then the station (hand recipes: open CRAFT, no arrow).
+            if (q.Craft != null && Content.Recipes.ContainsKey(q.Craft))
+            {
+                var r = Content.Recipes[q.Craft];
+                var shortOf = new List<ItemCount>();
+                foreach (var c in r.Inputs) if (G.Session.Count(c.id) < c.n) shortOf.Add(new ItemCount(c.id, c.n - G.Session.Count(c.id)));
+                if (shortOf.Count > 0) return SourceFor(shortOf, from);
+                if (r.Station == "hand") return null;
+                foreach (var sp in Spot.All) if (sp.Kind == r.Station && sp.Active) return sp.Pos;
+                return null;
+            }
             string kind = q.PointBuild ?? q.PointNode;
             if (kind == null) return null;
             // A blueprint short of materials the backpack doesn't hold: point at where to get them instead.

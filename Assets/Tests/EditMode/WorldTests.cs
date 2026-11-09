@@ -141,6 +141,18 @@ namespace LastTide.Tests
         }
 
         [Test]
+        public void SmugglersBarrelsHoldRum()
+        {
+            // Ned needs two bottles at level 10, before the pirate camp opens: the cave's barrels must provide them.
+            var g = Fresh();
+            g.State.level = 10;
+            g.Travel(World.Location("cave"), true); _now += 1000; g.Arrive();
+            Assert.IsTrue(g.Harvest(Session.ZonePrefix("cave") + "barrel#0", "barrel"));
+            Assert.IsTrue(g.Harvest(Session.ZonePrefix("cave") + "barrel#1", "barrel"));
+            Assert.GreaterOrEqual(g.Count("rum"), 2);
+        }
+
+        [Test]
         public void FishingNeedsARod()
         {
             var g = Fresh();

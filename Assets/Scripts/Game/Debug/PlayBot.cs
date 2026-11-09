@@ -156,14 +156,10 @@ namespace LastTide.Game
             switch (_quest)
             {
                 case "spear":
-                    if (s.Has("spear")) break;
-                    if (s.Job("workbench") == null)
-                    {
-                        string why = s.CraftBlocked("spear");
-                        if (why != null) { foreach (var c in Content.Recipes["spear"].Inputs) Need(c.id, c.n, "spear: " + why); }
-                        if (s.Craft("spear")) Log("crafting a spear at the workbench");
-                        else Log("craft spear failed: " + s.CraftBlocked("spear"));
-                    }
+                    // Gather what the card asks for (the arrow leads there), then tap CRAFT like a player.
+                    if (s.Has("spear") || s.Job("hand") != null) break;
+                    if (s.CraftBlocked("spear") == null) { if (s.Craft("spear")) Log("crafted a spear from CRAFT"); return; }
+                    if (_questT > 120) foreach (var c in Content.Recipes["spear"].Inputs) Need(c.id, c.n, "spear ingredients too slow");
                     break;
                 case "cook":
                     if (s.Job("campfire") == null)

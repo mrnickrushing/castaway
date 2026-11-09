@@ -194,6 +194,8 @@ namespace LastTide.Core
                 return true;
             }
             foreach (var y in d.Yield) { Give(y.id, y.n); Tally("gather:" + y.id, y.n); }
+            // The smugglers' and pirates' barrels hold their rum (Ned needs two bottles before the pirate camp opens).
+            if (kind == "barrel" && !Here.Home && Array.IndexOf(Here.MainLoot, "rum") >= 0) Give("rum", 1);
             if (n.hitsUsed >= d.Hits)
             {
                 if (d.Bonus != null) foreach (var b in d.Bonus) Give(b.id, b.n);

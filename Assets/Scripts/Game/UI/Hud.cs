@@ -219,6 +219,13 @@ namespace LastTide.Game
                     else need = "  <size=24><color=#8FE3A8>need " + it.n + " " + name + "</color></size>";
                 }
             }
+            if (q.Craft != null && Content.Recipes.ContainsKey(q.Craft))
+            {
+                var rc = Content.Recipes[q.Craft];
+                foreach (var c in rc.Inputs)
+                    if (s.Count(c.id) < c.n) { need = "  <size=24><color=#8FE3A8>need " + (c.n - s.Count(c.id)) + " more " + Content.Items[c.id].Name + "</color></size>"; break; }
+                if (need == "" && s.Job(rc.Station) == null) need = "  <size=24><color=#8FE3A8>ready: tap " + (rc.Station == "hand" ? "CRAFT" : "the " + Session.StationName(rc.Station).ToLower()) + "</color></size>";
+            }
             _questText.text = "<color=#FFC24A>\u2022</color>  " + q.Label(s) + need;
             _questText.gameObject.SetActive(!_questFolded);
             _questCard.anchoredPosition = new Vector2(_questFolded ? -540 : 0, MapOpen ? -215 : -170);

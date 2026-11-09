@@ -93,6 +93,12 @@ setting only.
   running north, Red Jack's ship lies in a bay on the pirate island, Limestone Ridge has a second peak, Palm Grove a
   lagoon (`Island.Lagoon`; scenery checks `Island.Height` so nothing floats in it). Keep noise inputs off whole
   numbers: Unity's Perlin is flat on the lattice and drew a straight seam across the terrain.
+- The guide (quest card + green arrow) always says what to do next: build steps short of a material name it ("need 6
+  Wood", or "craft 2 Rope (CRAFT)") and the arrow leads to a node that yields it, or its ingredients, then the station;
+  crafting steps (`Quest.Craft`) list missing ingredients, then "ready: tap CRAFT". When a hunt target is all dead, the
+  arrow leads toward the next den but stops 30 m short (dens only refill with the castaway over 26 m away).
+- Fight reach is measured along the ground (`Enemy.Nearest`, enemy attack, Biscuit's bite): 3D distance stalled fights
+  on slopes. The drowned smugglers (5 dens, back in 40 s) and the cave/camp barrels (rum) feed the late story steps.
 - Story cards use `Resources/UI/Story/<key>.jpg` (16:9, from `ai_media.py story`), else the small map painting.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
