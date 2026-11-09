@@ -47,7 +47,7 @@ namespace LastTide.Core
         {
             { "hatchet", new SceneDef { Id = "intro", Movie = "wreck", Title = "Washed Ashore", Lines = new[] {
                 new StoryLine(Tale, "Three weeks out of Port Royal, the merchant brig Gull carried sugar, salt and forty souls.", "keyart"),
-                new StoryLine(Tale, "Then the black sails came. Red Jack's raiders chased her into a storm, and the reef did the rest.", "pirates"),
+                new StoryLine(Tale, "Then the black sails came. Red Jack's raiders chased her into a storm, and the reef did the rest.", "wreck"),
                 new StoryLine(Tale, "You wake on warm sand. The Gull lies broken in the shallows. No one answers when you call.", "home"),
                 new StoryLine(You, "Alright. Fire, water, shelter. One thing at a time. There was a hatchet in the bosun's locker...", "home"),
             } } },
@@ -56,8 +56,8 @@ namespace LastTide.Core
                 new StoryLine(You, "The nights here will be cold, and the rain comes hard. I need a roof over my head.", "home"),
             } } },
             { "hunt", new SceneDef { Id = "tracks", Title = "Tracks", Lines = new[] {
-                new StoryLine(You, "Fresh tracks, and the ferns torn up. Something big roots about in the jungle.", "grove"),
-                new StoryLine(You, "Meat for the fire... if it doesn't make a meal of me first.", "grove"),
+                new StoryLine(You, "Fresh tracks, and the ferns torn up. Something big roots about in the jungle.", "jungle"),
+                new StoryLine(You, "Meat for the fire... if it doesn't make a meal of me first.", "jungle"),
             } } },
             { "map", new SceneDef { Id = "raft", Movie = "raft", Title = "The Raft", Lines = new[] {
                 new StoryLine(You, "The Gull's raft held together. Lash on a sail and it'll carry me between the islands.", "home"),
@@ -72,8 +72,8 @@ namespace LastTide.Core
                 new StoryLine(You, "Scrap for the casing, rope for an aerial, sailcloth to keep the rain off. Then we'll see who's listening.", "home"),
             } } },
             { "keeper", new SceneDef { Id = "tomas", Title = "Someone's Alive", Lines = new[] {
-                new StoryLine(You, "A voice. Someone else is alive out there.", "grove"),
-                new StoryLine(You, "Hold on, Tomas. I'm coming, and I'm bringing bandages.", "grove"),
+                new StoryLine(You, "A voice. Someone else is alive out there.", "tomas"),
+                new StoryLine(You, "Hold on, Tomas. I'm coming, and I'm bringing bandages.", "tomas"),
             } } },
             { "pier", new SceneDef { Id = "lasttide", Movie = "lasttide", Title = "The Last Tide", Lines = new[] {
                 new StoryLine("Old Tomas", "Red Jack... he's ruled these islands for years. He hunts the shipwrecked for his crew. The ones who won't join, he leaves for the sharks.", "pirates"),

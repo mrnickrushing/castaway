@@ -50,6 +50,19 @@ namespace LastTide.Game
             _story.gameObject.SetActive(false);
         }
 
+        static readonly System.Collections.Generic.Dictionary<string, Sprite> _storyArts = new System.Collections.Generic.Dictionary<string, Sprite>();
+
+        /// <summary>The full-screen painting for a story line: Resources/UI/Story/{key} (made for the cards), else the map painting.</summary>
+        static Sprite StoryArt(string key)
+        {
+            Sprite sp;
+            if (_storyArts.TryGetValue(key, out sp)) return sp;
+            var tex = Resources.Load<Texture2D>("UI/Story/" + key);
+            sp = tex != null ? Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f)) : UIKit.Place(key);
+            _storyArts[key] = sp;
+            return sp;
+        }
+
         static Sprite _grad;
         static Sprite Gradient()
         {
@@ -97,7 +110,7 @@ namespace LastTide.Game
         void ShowLine()
         {
             var l = _scene.Lines[_line];
-            var art = UIKit.Place(l.Art ?? "home");
+            var art = StoryArt(l.Art ?? "home");
             _storyArt.sprite = art;
             _storyArt.color = art != null ? Color.white : new Color(0.1f, 0.2f, 0.25f);
             if (art != null) _storyArt.GetComponent<AspectRatioFitter>().aspectRatio = art.rect.width / art.rect.height;
@@ -106,6 +119,9 @@ namespace LastTide.Game
             _typed = 0;
             Sfx.Play("beep");
         }
+
+        /// <summary>A tap on the story card (finish the line, or go to the next).</summary>
+        public void TapStory() { NextLine(); }
 
         void NextLine()
         {

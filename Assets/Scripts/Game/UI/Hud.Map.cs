@@ -102,7 +102,7 @@ namespace LastTide.Game
             _bigButtonSub = UIKit.Label("Sub", _bigButton, "", 26, new Color(1, 1, 1, 0.75f), TextAnchor.MiddleCenter, false);
             _bigButtonSub.rectTransform.Fill(); _bigButtonSub.rectTransform.offsetMax = new Vector2(0, -50);
 
-            var rushBtn = UIKit.Button("Rush", _mapUi, "", new Color(0.8f, 0.62f, 0.12f), () =>
+            var rushBtn = UIKit.Button("Rush", _mapUi, "RUSH", new Color(0.8f, 0.62f, 0.12f), () =>
             {
                 var s = G.Session;
                 Confirm("Arrive now?", "Skip the rest of the journey for " + s.RushTravelCost + " doubloons.\nYou have " + s.State.coins + ".", "ARRIVE NOW", () => { if (s.RushTravel()) Sfx.Play("coin"); });

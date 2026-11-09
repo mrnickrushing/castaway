@@ -20,7 +20,7 @@ UA = {"User-Agent": "LastTide-asset-pipeline"}
 API = "https://api.polyhaven.com"
 
 # "acg:" layers come from ambientCG (also CC0): Poly Haven's ground scans are all dry, none is lush tropical green.
-TERRAIN = ["acg:Grass001", "forest_leaves_02", "forrest_ground_01", "coast_sand_01", "rock_face", "coast_sand_rocks_02"]
+TERRAIN = ["acg:Grass001", "forest_leaves_02", "forrest_ground_01", "coast_sand_01", "lichen_rock", "coast_sand_rocks_02"]
 TILE = 1024
 
 # Models: id -> (kind, target size in metres (longest side, or height for plants/trees), triangle budget per piece).
@@ -59,6 +59,14 @@ MODELS = {
     "wooden_hammer_01": ("prop", 0.4, 1200),
     "handsaw_wood": ("prop", 0.65, 1200),
     "bananas": ("prop", 0.3, 2500),
+    # Landmarks: the cave's cliffs, Red Jack's camp, the ridge ruins.
+    "coastal_cliff_01": ("prop", 22.0, 16000),
+    "coastal_cliff_02": ("prop", 16.0, 16000),
+    "cannon_01": ("prop", 2.4, 5000),
+    "stone_fire_pit": ("solid", 2.0, 2500),
+    "wine_barrel_01": ("prop", 1.0, 2000),
+    "modular_fort_01": ("prop", 9.0, 5000),
+    "gothic_statue": ("prop", 2.8, 8000),
 }
 
 
@@ -165,7 +173,7 @@ UNUSED = ["tree_small_02", "coast_rocks_01", "ship_pinnace", "modular_wooden_pie
           "wooden_barrels_01_b", "wooden_barrels_01_c", "wooden_barrels_01_e", "wooden_barrels_01_f", "wooden_barrels_01_g",
           "wooden_barrels_01_h", "grass_medium_02_a", "grass_medium_02_b", "bananas_a", "bananas_b", "shrub_sorrel_01_d",
           "shrub_sorrel_01_e", "shrub_sorrel_01_f", "shrub_sorrel_01_g", "anthurium_botany_01_d", "anthurium_botany_01_f",
-          "calathea_orbifolia_01_b", "calathea_orbifolia_01_d"]
+          "calathea_orbifolia_01_b", "calathea_orbifolia_01_d", "modular_fort_01_a", "modular_fort_01_g", "modular_fort_01_h"]
 
 
 def slim():

@@ -25,7 +25,7 @@ namespace LastTide.Core
     public static class Season
     {
         public const int Days = 28, Levels = 30, PointsPerLevel = 250;
-        public const int EpochDay = 20458;          // Monday 5 January 2026: season 1 began
+        public const int EpochDay = 20759;          // Monday 2 November 2026: season 1 began (launch)
         public const int TakesPerDay = 3, TakePoints = 50;
         public const int CycleDays = 14;
         public const string PremiumProduct = "lasttide.season";

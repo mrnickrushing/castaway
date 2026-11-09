@@ -81,6 +81,15 @@ setting only.
   review, then video; paid) -> `install` writes `StreamingAssets/Videos/<id>.mp4`, the still to `Resources/UI/Cinematics`
   (shown until the first frame or if the clip can't play) and VP8 copies in `Library/EditorVideos` (the Linux Editor
   can't decode H.264). Needs the `com.unity.modules.video` package.
+- Playtesting: `Game/Debug/PlayBot.cs` (editor only) plays the whole guide from a new game: it walks the stick to
+  `GuideArrow.GoalPosition` along an A* path (slopes, water, obstacles), fights with auto-attack, sails, skips movies and
+  taps through story cards; menu steps call the same Session method as the button. Every shortcut is logged as `GRANT`.
+  Drive it from the CLI: delete the save, enter Play mode, `LastTide.Game.PlayBot.Begin(3)`, read `PlayBot.Report(40)`.
+  `PlayBot.Visit(loc, phase)` lands on an island at a time of day for screenshots; `PlayBot.Heal = false` for fair fights.
+  Balance check (2026-11-09): an iron harpoon + the hide set beats Red Jack and his raiders with health to spare.
+- Landmarks are photoscanned where possible (`Models.ScanCave`, `ScanPirateCamp`, `ScanRuins`); the cliffs are
+  one-sided scans, so their faces must look at the player (yaw 0). The terrain's rock layer is Poly Haven `lichen_rock`.
+- Story cards use `Resources/UI/Story/<key>.jpg` (16:9, from `ai_media.py story`), else the small map painting.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

@@ -751,6 +751,185 @@ namespace LastTide.Game
             return holder;
         }
 
+        // ------------------------------------------------------------------ photoscanned landmarks
+
+        /// <summary>A stake of rough timber stood in the ground (a palisade log, a tent pole): a scanned branch made thicker.</summary>
+        static GameObject Stake(Transform parent, Vector3 from, Vector3 to, float thick)
+        {
+            var go = Pole(parent, from, to);
+            var mf = go.GetComponentInChildren<MeshFilter>();
+            if (mf == null) return go;
+            var e = mf.sharedMesh.bounds.extents;
+            int k = e.x >= e.y && e.x >= e.z ? 0 : e.y >= e.z ? 1 : 2;
+            var ls = mf.transform.localScale;
+            for (int i = 0; i < 3; i++) if (i != k) ls[i] *= thick;
+            // Thicken about the pole's own axis so it stays where it was laid.
+            var before = mf.transform.TransformPoint(mf.sharedMesh.bounds.center);
+            mf.transform.localScale = ls;
+            go.transform.position += before - mf.transform.TransformPoint(mf.sharedMesh.bounds.center);
+            return go;
+        }
+
+        static Material _tarp, _black;
+        /// <summary>Old sailcloth stained dark for the raiders' tents.</summary>
+        static Material Tarp
+        {
+            get
+            {
+                if (_tarp != null || ModelRegistry.SailMaterial == null) return _tarp;
+                _tarp = new Material(ModelRegistry.SailMaterial) { name = "Tarp" };
+                _tarp.SetColor("_BaseColor", new Color(0.62f, 0.5f, 0.38f));
+                _tarp.SetFloat("_Smoothness", 0.08f);
+                return _tarp;
+            }
+        }
+        static Material BlackCloth
+        {
+            get
+            {
+                if (_black != null || ModelRegistry.SailMaterial == null) return _black;
+                _black = new Material(ModelRegistry.SailMaterial) { name = "Black flag" };
+                _black.SetColor("_BaseColor", new Color(0.09f, 0.08f, 0.08f));
+                _black.SetFloat("_Smoothness", 0.05f);
+                return _black;
+            }
+        }
+
+        /// <summary>
+        /// Red Jack's camp from scans: a stone fire pit with a roasting spit, A-frame tents of stained sailcloth on timber
+        /// poles, two bronze cannons, rum barrels and crates, a black flag, and a palisade of sharpened logs behind.
+        /// Null when the scans aren't in the build.
+        /// </summary>
+        public static GameObject ScanPirateCamp(Transform parent, Vector3 at)
+        {
+            if (ModelRegistry.Prefab(ModelRegistry.Scan, "stone_fire_pit") == null || Tarp == null) return null;
+            var go = new GameObject("Pirate camp");
+            go.transform.SetParent(parent, false);
+            go.transform.position = at;
+            var t = go.transform;
+            Scan("stone_fire_pit", t, Vector3.zero, 0, 1.15f);
+            string[] wood = { "dry_branches_medium_01_a", "dry_branches_medium_01_b", "dry_branches_medium_01_c" };
+            for (int i = 0; i < 5; i++)
+                Scan(wood[i % 3], t, new Vector3(Mathf.Cos(i * 1.26f) * 0.2f, 0.12f + i * 0.04f, Mathf.Sin(i * 1.26f) * 0.2f), i * 72 + 20, 0.45f, new Vector3(0, 0, i % 2 == 0 ? 14 : -10));
+            // Spit: two forked uprights and a bar.
+            foreach (float x in new[] { -1.15f, 1.15f }) Stake(t, new Vector3(x, -0.1f, 0), new Vector3(x, 1.25f, 0), 1.4f);
+            Stake(t, new Vector3(-1.35f, 1.15f, 0), new Vector3(1.35f, 1.15f, 0), 1.1f);
+            // A-frame tents facing the fire.
+            foreach (var p in PirateTents)
+            {
+                var tent = new GameObject("Tent").transform;
+                tent.SetParent(t, false);
+                tent.localPosition = new Vector3(p.x, Island.Ground(at + p).y - at.y, p.z);
+                tent.localRotation = Quaternion.Euler(0, Mathf.Atan2(-p.x, -p.z) * Mathf.Rad2Deg + 90, 0);
+                // Ridge along local Z, cloth falling to both sides.
+                foreach (float z in new[] { -1.4f, 1.4f }) { Stake(tent, new Vector3(-0.05f, -0.1f, z), new Vector3(0, 2.0f, z), 1.6f); }
+                Stake(tent, new Vector3(0, 1.95f, -1.7f), new Vector3(0, 1.95f, 1.7f), 1.3f);
+                for (int side = 0; side < 2; side++)
+                {
+                    var c = Cloth(tent, Tarp, SailMesh(3.1f, 1.95f, 0f, -1.55f, new Vector4(0.42f + side * 0.1f, 0.64f, 0.94f, 0.97f)));
+                    c.transform.localRotation = Quaternion.Euler(0, side == 0 ? 90 : -90, 0);
+                }
+                Scan("rock_moss_set_01_f", tent, new Vector3(1.6f, 0, 1.2f), 40, 0.2f);
+                Scan("rock_moss_set_01_f", tent, new Vector3(-1.6f, 0, -1.2f), 140, 0.2f);
+            }
+            // Cannons guarding the way in from the beach.
+            foreach (var c in new[] { new Vector3(-5, 0, -8), new Vector3(5, 0, -8) })
+                Scan("cannon_01", t, new Vector3(c.x, Island.Ground(at + c).y - at.y, c.z), 180, 1.1f);
+            // Rum barrels and crates.
+            for (int i = 0; i < 4; i++)
+            {
+                var b = new Vector3(5.6f + (i % 2) * 0.95f, 0, -1.5f + i * 0.65f);
+                Scan(i % 2 == 0 ? "wine_barrel_01" : "wooden_barrels_01_d", t, new Vector3(b.x, Island.Ground(at + b).y - at.y, b.z), i * 47, 1f);
+            }
+            var cr = new Vector3(4.3f, 0, -3.2f);
+            Scan("wooden_crate_02", t, new Vector3(cr.x, Island.Ground(at + cr).y - at.y, cr.z), 30, 0.85f);
+            Scan("treasure_chest", t, new Vector3(-2.2f, Island.Ground(at + new Vector3(-2.2f, 0, 2.6f)).y - at.y, 2.6f), 200, 0.9f);
+            // The black flag.
+            var fp = new Vector3(-3, 0, -2);
+            float fy = Island.Ground(at + fp).y - at.y;
+            Stake(t, new Vector3(fp.x, fy - 0.2f, fp.z), new Vector3(fp.x, fy + 6.2f, fp.z), 1.5f);
+            var flag = Cloth(t, BlackCloth, SailMesh(1.6f, 1.0f, 0f, 0.001f, new Vector4(0.1f, 0.1f, 0.5f, 0.4f), flat: true));
+            flag.transform.localPosition = new Vector3(fp.x + 0.82f, fy + 5.6f, fp.z);
+            flag.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            flag.GetComponent<MeshRenderer>().receiveShadows = true;
+            // A palisade of sharpened logs around the back of the camp.
+            for (int i = 0; i < 9; i++)
+            {
+                float a0 = Mathf.Lerp(20, 160, i / 8f) * Mathf.Deg2Rad;
+                for (int j = 0; j < 7; j++)
+                {
+                    float a = a0 + (j - 3) * 0.0285f; // ~0.43 m apart: logs shoulder to shoulder
+                    var pp = new Vector3(Mathf.Cos(a) * 15, 0, Mathf.Sin(a) * 15);
+                    float y = Island.Ground(at + pp).y - at.y;
+                    float hgt = 2.6f + ((i * 7 + j) * 37 % 10) * 0.05f;
+                    Stake(t, new Vector3(pp.x, y - 0.3f, pp.z), new Vector3(pp.x, y + hgt, pp.z), 5.5f);
+                }
+            }
+            return go;
+        }
+
+        /// <summary>The smugglers' cave: a scanned sea cliff with a dark mouth at its foot, boulders either side.</summary>
+        public static GameObject ScanCave(Transform parent, Vector3 at)
+        {
+            if (ModelRegistry.Prefab(ModelRegistry.Scan, "coastal_cliff_02") == null) return null;
+            var go = new GameObject("Cave");
+            go.transform.SetParent(parent, false);
+            go.transform.position = at;
+            var t = go.transform;
+            // The scans are one-sided rock faces (the sea side was scanned), turned to face the castaway and set into
+            // the foot of the island's hill so the hill above reads as the same cliff.
+            float G(float x, float z) { return Island.Ground(at + new Vector3(x, 0, z)).y - at.y; }
+            Scan("coastal_cliff_02", t, new Vector3(0, G(0, 4.6f) - 0.5f, 4.6f), 0, 1.6f);
+            Scan("coastal_cliff_01", t, new Vector3(-15, G(-15, 6.5f) - 0.6f, 6.5f), 20, 1.2f);
+            Scan("coastal_cliff_01", t, new Vector3(15, G(15, 6.5f) - 0.6f, 6.5f), -20, 1.2f);
+            // The mouth: a dark arch in the cliff face.
+            var mb = new MeshBuilder();
+            const int n = 14;
+            var c0 = new Vector3(0, G(0, 1.2f) - 0.1f, 1.2f);
+            for (int i = 0; i < n; i++)
+            {
+                float a0 = Mathf.PI * i / n, a1 = Mathf.PI * (i + 1) / n;
+                mb.Tri(c0, c0 + new Vector3(Mathf.Cos(a1) * 2.2f, Mathf.Sin(a1) * 3.0f, 0), c0 + new Vector3(Mathf.Cos(a0) * 2.2f, Mathf.Sin(a0) * 3.0f, 0), new Color(0.015f, 0.015f, 0.02f));
+            }
+            var mouth = mb.ToObject("Mouth", t, false);
+            mouth.transform.localPosition = Vector3.zero;
+            Scan("boulder_01", t, new Vector3(-3.3f, G(-3.3f, 1.0f) - 0.4f, 1.0f), 30, 0.9f);
+            Scan("boulder_01", t, new Vector3(3.4f, G(3.4f, 0.9f) - 0.4f, 0.9f), 200, 0.8f);
+            Scan("rock_moss_set_01_a", t, new Vector3(-2.2f, G(-2.2f, 0.2f), 0.2f), 80, 0.5f);
+            Scan("rock_moss_set_01_c", t, new Vector3(2.6f, G(2.6f, 0.1f), 0.1f), 10, 0.45f);
+            Scan("wooden_crate_02", t, new Vector3(-3, 0, -2), 15, 0.85f);
+            Scan("wine_barrel_01", t, new Vector3(3.2f, 0, -1.5f), 40, 1f);
+            return go;
+        }
+
+        /// <summary>Old stone ruins in the ridge pass: broken fort walls and towers around a weathered statue.</summary>
+        public static GameObject ScanRuins(Transform parent)
+        {
+            if (ModelRegistry.Prefab(ModelRegistry.Scan, "modular_fort_01_b") == null) return null;
+            var go = new GameObject("Ruins");
+            go.transform.SetParent(parent, false);
+            var t = go.transform;
+            (string id, float x, float z, float yaw, float sink)[] parts =
+            {
+                ("gothic_statue", -6f, 0.15f, 160f, 0.1f),
+                ("modular_fort_01_b", 7f, 0.12f, 10f, 0.4f),
+                ("modular_fort_01_c", 3f, 0.24f, 70f, 0.3f),
+                ("modular_fort_01_e", -12f, 0.05f, 200f, 0.3f),
+                ("modular_fort_01_f", 12f, 0.22f, 120f, 0.3f),
+                ("modular_fort_01_d", -1f, 0.32f, 15f, 0.3f),
+            };
+            foreach (var (id, x, zf, yaw, sink) in parts)
+            {
+                var p = Island.Ground(new Vector3(x, 0, Island.Radius * zf));
+                // The fort pieces were modelled lying down (tall axis along the scan's depth): stand them up.
+                var piece = Scan(id, t, p, yaw, 1, id.StartsWith("modular_fort") ? new Vector3(-90, 0, 0) : (Vector3?)null);
+                if (piece == null) continue;
+                var b = ModelRegistry.RendererBounds(piece);
+                piece.transform.position += new Vector3(p.x - b.center.x, p.y - sink - b.min.y, p.z - b.center.z);
+            }
+            return go;
+        }
+
         /// <summary>A sheet of cloth in the camp: casts shadows but doesn't receive them.</summary>
         static GameObject Cloth(Transform parent, Material mat, Mesh mesh)
         {

@@ -133,7 +133,7 @@ namespace LastTide.Core
         public List<EventRun> EventRuns(int from, int to)
         {
             var runs = new List<EventRun>();
-            int baseDay = from - Mod(from, Season.CycleDays) - Season.CycleDays;
+            int baseDay = from - Mod(from - Season.EpochDay, Season.CycleDays) - Season.CycleDays; // cycles start with the seasons
             for (int c = baseDay; c < to; c += Season.CycleDays)
                 foreach (var e in Season.Events)
                 {

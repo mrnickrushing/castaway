@@ -72,17 +72,20 @@ namespace LastTide.Game
             for (int i = 0; i < HowTo.Length; i++)
             {
                 var (icon, title, text) = HowTo[i];
-                int c = i % 2, r = i / 2;
+                // Three columns, four rows: every card fits the 1600 x 860 body, text shrinks to its card if it must.
+                int c = i % 3, r = i / 3;
                 var row = UIKit.Img("Row", _helpBody, UIKit.Round, new Color(1, 1, 1, 0.06f)).rectTransform;
-                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(c * 810, -r * 172), new Vector2(790, 164));
+                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(c * 540, -r * 215), new Vector2(525, 205));
                 var disc = UIKit.Img("Disc", row, UIKit.Circle, UIKit.Ink);
-                disc.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 0), new Vector2(110, 110));
+                disc.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -14), new Vector2(62, 62));
                 var ic = UIKit.Img("Icon", disc.transform, UIKit.Symbol(icon), UIKit.Sand);
-                ic.rectTransform.Fill(22);
-                var t = UIKit.Label("Title", row, title, 36, UIKit.Amber, TextAnchor.UpperLeft);
-                t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(150, 0); t.rectTransform.offsetMax = new Vector2(-20, -14);
-                var b = UIKit.Label("Text", row, text, 25, Color.white, TextAnchor.UpperLeft, false);
-                b.rectTransform.Fill(); b.rectTransform.offsetMin = new Vector2(150, 8); b.rectTransform.offsetMax = new Vector2(-20, -60);
+                ic.rectTransform.Fill(12);
+                var t = UIKit.Label("Title", row, title, 32, UIKit.Amber, TextAnchor.MiddleLeft);
+                t.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(90, -14), new Vector2(420, 62));
+                var b = UIKit.Label("Text", row, text, 22, Color.white, TextAnchor.UpperLeft, false);
+                b.rectTransform.Fill(); b.rectTransform.offsetMin = new Vector2(16, 8); b.rectTransform.offsetMax = new Vector2(-14, -84);
+                b.resizeTextForBestFit = true; b.resizeTextMinSize = 15; b.resizeTextMaxSize = 22;
+                b.verticalOverflow = VerticalWrapMode.Truncate;
             }
         }
 
@@ -132,8 +135,9 @@ namespace LastTide.Game
             }));
             var credits = UIKit.Label("Credits", _helpBody,
                 "LAST TIDE  ·  a Rushing Technologies game\n" +
-                "3D models: Kenney (kenney.nl) Pirate, Survival and Nature kits, and Quaternius (quaternius.com) pirate characters and dog, all CC0. " +
-                "Castaway, boar and palm models, icons and paintings made for this game. Fonts: Barlow (SIL Open Font License).",
+                "Photoscanned models, ground and sky: Poly Haven (polyhaven.com) and ambientCG (ambientcg.com), CC0. " +
+                "3D models: Kenney (kenney.nl) and Quaternius (quaternius.com), CC0. " +
+                "Castaway, story art, movies and icons made for this game. Fonts: Barlow (SIL Open Font License).",
                 26, new Color(1, 1, 1, 0.6f), TextAnchor.UpperLeft, false);
             credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(1600, 200));
         }

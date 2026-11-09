@@ -20,7 +20,7 @@ namespace LastTide.Game
             main.loop = true;
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.45f, 0.8f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(1.2f, 2.2f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.55f, 0.95f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.6f, 1.05f);
             main.maxParticles = 80;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             var em = ps.emission;
@@ -34,8 +34,10 @@ namespace LastTide.Game
             var col = ps.colorOverLifetime;
             col.enabled = true;
             var g = new Gradient();
+            // HDR colours (above 1) so the fire blooms and still reads as fire at night.
             g.SetKeys(new[] { new GradientColorKey(new Color(1f, 0.85f, 0.4f), 0), new GradientColorKey(new Color(1f, 0.45f, 0.1f), 0.5f), new GradientColorKey(new Color(0.6f, 0.15f, 0.05f), 1) },
-                new[] { new GradientAlphaKey(0.0f, 0), new GradientAlphaKey(0.9f, 0.15f), new GradientAlphaKey(0.5f, 0.6f), new GradientAlphaKey(0, 1) });
+                new[] { new GradientAlphaKey(0.0f, 0), new GradientAlphaKey(1f, 0.15f), new GradientAlphaKey(0.6f, 0.6f), new GradientAlphaKey(0, 1) });
+            main.startColor = new Color(2.2f, 1.9f, 1.6f, 1);
             col.color = g;
             var r = go.GetComponent<ParticleSystemRenderer>();
             r.sharedMaterial = _mat;
