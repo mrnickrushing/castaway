@@ -16,7 +16,7 @@ Re-download and convert the free models with `python3 Tools/art/free_assets.py f
 
 ## Sketchfab (CC BY 4.0 and CC0)
 
-- "Castaway" by katarzynaszemla (https://sketchfab.com/3d-models/6a481c17d68a4a138f726ccb76caedff), CC BY 4.0. Used as the player's castaway; rescaled, decimated, rig renamed.
+- "Castaway" by katarzynaszemla (https://sketchfab.com/3d-models/6a481c17d68a4a138f726ccb76caedff), CC BY 4.0. Used as the player's castaway; rescaled, decimated, rig renamed, clothes recoloured to match the story paintings (linen shirt, red sash, brown breeches).
 - "Pirate Captain" by byenbyen (https://sketchfab.com/3d-models/bae2223031094f629ad86242e26a37e6), CC BY 4.0. Used as Red Jack; rescaled, decimated, rig renamed.
 - "Game ready Pirate Hunter / Viking / Medieval man" by chenuka_wy (https://sketchfab.com/3d-models/9f51d396733b451bab550b406b067805), CC BY 4.0; its jacket is "Gambeson" by Leon.Steiner (https://sketchfab.com/3d-models/0fc44d2876ed449ca9473e78c83a8d39), CC BY 4.0. Used as Red Jack's raiders; rescaled, decimated, rig renamed.
 - "Pirate Girl" by Anriil_Kl (https://sketchfab.com/3d-models/8e71658a2f93410e8905aa7a160bc5d9), CC BY 4.0. Used as Mara; rescaled, decimated, rig renamed.
@@ -27,7 +27,7 @@ Re-download and convert the free models with `python3 Tools/art/free_assets.py f
 - "Skeleton Pirate " The Drunk "" by ShadowCoffee (https://sketchfab.com/3d-models/9ed1650abdce48d4a1a4d34a4a56cfc5), CC BY 4.0. Used as drowned smugglers; rescaled, decimated, rig renamed.
 - "Japanese Freshwater Crab" by ffishAsia-and-floraZia (https://sketchfab.com/3d-models/35559c2236d04c1a80ccbe08cae863c6), CC0. Used as the giant crabs; rescaled, decimated, rig kept.
 - "Striped Snake, Elaphe quadrivirgata" by ffishAsia-and-floraZia (https://sketchfab.com/3d-models/0f4f583d5e3842eca1152c0bb021ec32), CC0. Used as the vipers (thickened, spine bent in code); rescaled, decimated, rig kept.
-- "Low-Poly Seagull (with Animation & Rigged)" by simonaskLDE (https://sketchfab.com/3d-models/985024328902444c8270c0f09acc897e), CC BY 4.0. Used as the gulls over the shore (wings flapped in code); rescaled, decimated, rig kept.
+- "Low-Poly Seagull (with Animation & Rigged)" by simonaskLDE (https://sketchfab.com/3d-models/985024328902444c8270c0f09acc897e), CC BY 4.0. Used as the gulls over the shore (wings flapped in code); rescaled, rig kept.
 - "Old Rowboat" by toomanydemons (https://sketchfab.com/3d-models/9922d5678af84adeb1c9b479856446ca), CC BY 4.0. Used as the rowboat, the beached boat on Driftwood Shore and the boat at the pier; rescaled, maps repacked.
 - "Iron Ore (FREE)" by vxdesigns (https://sketchfab.com/3d-models/93118b922cbb48caa4f45b16592fa519), CC BY 4.0. Used as the iron veins; rescaled, maps repacked.
 - "Lighthouse" by stnabeal (https://sketchfab.com/3d-models/9cc7e0ae47824e198ad5dd296644c125), CC BY 4.0. Used as the lighthouse on Lighthouse Point; rescaled, maps repacked.

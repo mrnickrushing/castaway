@@ -42,7 +42,8 @@ SKELETON_HANDS = {"l": ["L_forarm", ["L_hand1", "L_hand2", "L_hand3", "L_hand4",
 # id: Sketchfab uid, title, author (username), role in the game, height (m), triangle budget, import cfg.
 CAST = {
     "castaway": dict(uid="6a481c17d68a4a138f726ccb76caedff", title="Castaway", author="katarzynaszemla",
-                     role="the player's castaway", height=1.8, tris=30000,
+                     role="the player's castaway", height=1.8, tris=30000, recolour=True,
+                     done="decimated, rig renamed, clothes recoloured to match the story paintings (linen shirt, red sash, brown breeches)",
                      cfg={"map": dict(cat("CATRig", "l"), **cat("CATRig", "r"), **{
                          "CATRigpelvis": "pelvis", "CATRigSpinespine1": "spine_01", "CATRigSpinespine2": "spine_02",
                          "CATRigchest": "spine_03", "CATRigSpineneck1": "neck_01", "CATRighead": "Head",
@@ -91,7 +92,7 @@ CREATURES = {
                   author="ffishAsia-and-floraZia", license="CC0", role="the vipers (thickened, spine bent in code)",
                   size=2.4, tris=7000, cfg={"yaw": 90, "rest": 0, "girth": 1.8}),
     "gull": dict(uid="985024328902444c8270c0f09acc897e", title="Low-Poly Seagull (with Animation & Rigged)",
-                 author="simonaskLDE", role="the gulls over the shore (wings flapped in code)", size=1.3, tris=1000,
+                 author="simonaskLDE", role="the gulls over the shore (wings flapped in code)", done="rig kept", size=1.3, tris=1000,
                  cfg={"pitch": -90}),
 }
 PROPS = {
@@ -131,6 +132,12 @@ def cast(i):
                        capture_output=True, text=True)
     out = [l for l in r.stdout.splitlines() if l.startswith("[cast]") or "Error" in l or "Traceback" in l]
     print("\n".join(out) or r.stdout[-2000:] + r.stderr[-2000:])
+    if c.get("recolour"):
+        # Dressed like the story paintings (Tools/blender/cast_recolour.py).
+        r = subprocess.run(["blender", "-b", "--factory-startup", "-P", os.path.join(ROOT, "Tools", "blender", "cast_recolour.py"), "--",
+                            os.path.join(CAST_DIR, i + ".fbx"), os.path.join(CAST_DIR, "tex", i + "_0_albedo.png")],
+                           capture_output=True, text=True)
+        print("\n".join(l for l in r.stdout.splitlines() if l.startswith("[recolour]") or "Error" in l) or r.stderr[-2000:])
 
 
 def creature(i):
@@ -160,7 +167,7 @@ def credit_lines():
     lines = []
     for i, c in list(CAST.items()) + list(OTHER.items()):
         extra = ("; " + c["extra"]) if c.get("extra") else ""
-        done = "decimated, rig renamed" if i in CAST else "decimated, rig kept" if i in CREATURES else "maps repacked"
+        done = c.get("done") or ("decimated, rig renamed" if i in CAST else "decimated, rig kept" if i in CREATURES else "maps repacked")
         lines.append('- "%s" by %s (https://sketchfab.com/3d-models/%s), %s%s. Used as %s; rescaled, %s.'
                      % (c["title"], c["author"], c["uid"], c.get("license", "CC BY 4.0"), extra, c["role"], done))
     return lines

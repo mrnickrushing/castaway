@@ -111,7 +111,8 @@ setting only.
   orientation), played through a Playables mixer (`Actors/HumanMotion.cs`, no AnimatorController). `CharacterArt`
   maps the game's clip names (Idle/Walk/Run/Sword/HitReact/Death/Wave/Duck) onto them; the castaway (`SurvivorArt`)
   walks/jogs/sprints by speed, crouch-walks when sneaking, kneels to build, and keeps the bone-aimed work poses on top.
-  Cast: castaway (player), captain (Red Jack), hunter (raiders), mara, tomas, ned, revna, smuggler/smuggler2. Only
+  Cast: castaway (player; dressed like the story paintings, cream linen shirt, red sash, brown breeches, by
+  `Tools/blender/cast_recolour.py`, which `sketchfab.py cast castaway` reruns), captain (Red Jack), hunter (raiders), mara, tomas, ned, revna, smuggler/smuggler2. Only
   CC BY/CC0 originals: no fan art of other games/films. Sketchfab glbs sometimes lack their textures (both animated
   boars did): render a preview before using one.
 - Realistic animals (`Tools/art/sketchfab.py creature`, `Tools/blender/creature_import.py`, Generic rigs in
