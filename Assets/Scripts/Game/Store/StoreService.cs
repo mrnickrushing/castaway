@@ -39,7 +39,7 @@ namespace LastTide.Game
             {
                 if (_store != null) return _store;
 #if LASTTIDE_REVENUECAT
-                // The RevenueCat package is installed (Ironhorse.Game.asmdef versionDefines); it's used once the
+                // The RevenueCat package is installed (LastTide.Game.asmdef versionDefines); it's used once the
                 // project's Apple SDK key is filled in, and on device only (the Editor has no StoreKit).
                 _store = RevenueCatStore.Configured && !Application.isEditor ? RevenueCatStore.Create() : (IStore)new TestStore();
 #else
@@ -132,7 +132,7 @@ namespace LastTide.Game
     public sealed class RevenueCatStore : IStore
     {
         /// <summary>RevenueCat → Project → API keys → Apple App Store public key (appl_...).</summary>
-        public const string ApiKey = "appl_REPLACE_WITH_LAST_TIDE_KEY"; // public by design (ships in the app)
+        public const string ApiKey = "appl_yPmoGUAkFUXhRODLFAHphhfckYc"; // public by design (ships in the app)
         public static bool Configured { get { return ApiKey.StartsWith("appl_") && !ApiKey.Contains("REPLACE"); } }
 
         Purchases _purchases;

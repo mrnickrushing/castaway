@@ -21,8 +21,12 @@ To go live:
    base prices and every territory (`Tools/appstore/iap.py`, Codemagic `lasttide-iap`; safe to rerun). Each has its
    review screenshot (the SHOP, `docs/appstore/iap_review.png`) and is READY_TO_SUBMIT: they go to review with the
    first app version (pick them on the version page under In-App Purchases).
-3. Create the app in RevenueCat, attach the products, and put its Apple public key (`appl_...`) in
-   `RevenueCatStore.ApiKey`.
+3. Done 2026-11-09: RevenueCat project **Last Tide** (`bd280fd2`) with the App Store app `appe3954014ef` for the
+   bundle id, the team's in-app purchase key (8V5W657NH4, validates purchases) and App Store Connect API key
+   (CBXMPCMX4L, imports products and prices), and all eight products imported. Its public Apple SDK key is in
+   `RevenueCatStore.ApiKey`. The game buys and restores by product id, so no entitlements or offerings are needed.
+4. Before the first sandbox purchase: the Paid Apps Agreement must be active (App Store Connect → Business), then
+   buy in a TestFlight build with a sandbox account; the purchase shows under Customers in RevenueCat.
 
 Grants are idempotent per App Store transaction; a purchase interrupted by a crash is delivered on the next launch
 (`Session.ReconcilePurchases`). One-time products come back with Restore Purchases.
