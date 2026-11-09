@@ -1,12 +1,13 @@
 # Codemagic: Last Tide for iOS.
 #
-# The App Store Connect API key is the team integration `CodeMagic-Team` (Codemagic team settings); nothing secret
-# lives in this repository. The app record (bundle id com.rushingtech.lasttide) already exists in App Store Connect;
+# The App Store Connect API key comes from the Codemagic variable group `ios_credentials` (APP_STORE_CONNECT_PRIVATE_KEY,
+# APP_STORE_CONNECT_KEY_IDENTIFIER, APP_STORE_CONNECT_ISSUER_ID), as in the team's other apps; nothing secret lives in
+# this repository. The app record (bundle id com.rushingtech.lasttide) already exists in App Store Connect;
 # its numeric Apple ID is looked up from the bundle id whenever it's needed.
 #
 #   asc-lookup      read only: prints the app's Apple ID, name, SKU and the in-app purchases already created.
 #   ios-testflight  downloads the Xcode project exported by Tools/ios-export.sh (the `ios-latest` release asset),
-#                   signs it with a cloud-managed App Store profile, builds and uploads to TestFlight. Run it only
+#                   archives it, signs it with an App Store profile Xcode creates through the key, and uploads to TestFlight. Run it only
 #                   when a TestFlight build is wanted. The repository is private, so the app needs a GITHUB_TOKEN
 #                   (read-only, this repository) in the variable group `github` to download the release asset.
 
@@ -15,15 +16,18 @@ workflows:
     name: App Store Connect lookup
     max_build_duration: 10
     instance_type: linux_x2
-    integrations:
-      app_store_connect: CodeMagic-Team
     environment:
+      groups:
+        - ios_credentials
       vars:
         BUNDLE_ID: com.rushingtech.lasttide
     scripts:
       - name: App record
         script: |
           set -euo pipefail
+          for v in APP_STORE_CONNECT_PRIVATE_KEY APP_STORE_CONNECT_KEY_IDENTIFIER APP_STORE_CONNECT_ISSUER_ID; do
+            [ -n "${!v:-}" ] || { echo "Missing $v (variable group ios_credentials)"; exit 1; }
+          done
           app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json > /tmp/apps.json
           python3 - <<'PY'
           import json
@@ -40,7 +44,6 @@ workflows:
       - name: In-app purchases already created
         script: |
           set -euo pipefail
-          if [ -z "${APP_STORE_CONNECT_PRIVATE_KEY:-}" ]; then echo "The integration doesn't expose the key to scripts; skipping the IAP list"; exit 0; fi
           python3 - <<'PY'
           import json, os, time, urllib.request
           import jwt  # PyJWT, installed with codemagic-cli-tools
@@ -62,16 +65,13 @@ workflows:
     name: iOS → TestFlight
     max_build_duration: 60
     instance_type: mac_mini_m2
-    integrations:
-      app_store_connect: CodeMagic-Team
     environment:
       groups:
+        - ios_credentials
         - github
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.rushingtech.lasttide
       vars:
         BUNDLE_ID: com.rushingtech.lasttide
+        APPLE_TEAM_ID: PH4AKDQ4Q7
         XCODE_PROJECT: ios/Unity-iPhone.xcodeproj
         XCODE_SCHEME: Unity-iPhone
       xcode: latest
@@ -94,14 +94,43 @@ workflows:
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $((LATEST + 1))" ios/Info.plist
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/Info.plist 2>/dev/null \
             || /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/Info.plist
-      - name: Signing
-        script: xcode-project use-profiles --project "$XCODE_PROJECT"
-      - name: Build the .ipa
-        script: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+      - name: Archive and export a signed .ipa
+        script: |
+          set -euo pipefail
+          KEY="/tmp/AuthKey_${APP_STORE_CONNECT_KEY_IDENTIFIER}.p8"
+          printf "%b" "$APP_STORE_CONNECT_PRIVATE_KEY" > "$KEY"
+          chmod 600 "$KEY"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY"
+                -authenticationKeyID "$APP_STORE_CONNECT_KEY_IDENTIFIER" -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID")
+          xcodebuild -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME" -configuration Release \
+            -destination "generic/platform=iOS" -archivePath /tmp/LastTide.xcarchive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" COMPILER_INDEX_STORE_ENABLE=NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            "${AUTH[@]}" archive > /tmp/xcodebuild_archive.log 2>&1 \
+            || { grep -E "error:|error -|Error Domain|No profiles|No signing|failed" /tmp/xcodebuild_archive.log | sort -u | tail -40; exit 1; }
+          cat > /tmp/export_options.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+            <dict>
+              <key>method</key><string>app-store-connect</string>
+              <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+              <key>signingStyle</key><string>automatic</string>
+              <key>destination</key><string>export</string>
+            </dict>
+          </plist>
+          PLIST
+          mkdir -p build/ios/ipa
+          xcodebuild -exportArchive -archivePath /tmp/LastTide.xcarchive -exportPath build/ios/ipa \
+            -exportOptionsPlist /tmp/export_options.plist "${AUTH[@]}" > /tmp/xcodebuild_export.log 2>&1 \
+            || { grep -E "error|Error" /tmp/xcodebuild_export.log | tail -30; exit 1; }
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
+      - /tmp/LastTide.xcarchive/dSYMs/*.dSYM
+      - /tmp/xcodebuild_*.log
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
