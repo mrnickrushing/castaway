@@ -1,0 +1,107 @@
+# Codemagic: Last Tide for iOS.
+#
+# The App Store Connect API key is the team integration `CodeMagic-Team` (Codemagic team settings); nothing secret
+# lives in this repository. The app record (bundle id com.rushingtech.lasttide) already exists in App Store Connect;
+# its numeric Apple ID is looked up from the bundle id whenever it's needed.
+#
+#   asc-lookup      read only: prints the app's Apple ID, name, SKU and the in-app purchases already created.
+#   ios-testflight  downloads the Xcode project exported by Tools/ios-export.sh (the `ios-latest` release asset),
+#                   signs it with a cloud-managed App Store profile, builds and uploads to TestFlight. Run it only
+#                   when a TestFlight build is wanted. The repository is private, so the app needs a GITHUB_TOKEN
+#                   (read-only, this repository) in the variable group `github` to download the release asset.
+
+workflows:
+  asc-lookup:
+    name: App Store Connect lookup
+    max_build_duration: 10
+    instance_type: linux_x2
+    integrations:
+      app_store_connect: CodeMagic-Team
+    environment:
+      vars:
+        BUNDLE_ID: com.rushingtech.lasttide
+    scripts:
+      - name: App record
+        script: |
+          set -euo pipefail
+          app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json > /tmp/apps.json
+          python3 - <<'PY'
+          import json
+          apps = json.load(open("/tmp/apps.json"))
+          if not apps:
+              raise SystemExit("No App Store Connect app with this bundle id")
+          a = apps[0]
+          at = a.get("attributes", {})
+          print("APPLE_ID", a["id"])
+          for k in ("name", "bundleId", "sku", "primaryLocale"):
+              print(k, at.get(k))
+          open("/tmp/app_id", "w").write(a["id"])
+          PY
+      - name: In-app purchases already created
+        script: |
+          set -euo pipefail
+          if [ -z "${APP_STORE_CONNECT_PRIVATE_KEY:-}" ]; then echo "The integration doesn't expose the key to scripts; skipping the IAP list"; exit 0; fi
+          python3 - <<'PY'
+          import json, os, time, urllib.request
+          import jwt  # PyJWT, installed with codemagic-cli-tools
+          key = os.environ["APP_STORE_CONNECT_PRIVATE_KEY"].replace("\\n", "\n")
+          token = jwt.encode({"iss": os.environ["APP_STORE_CONNECT_ISSUER_ID"], "iat": int(time.time()),
+                              "exp": int(time.time()) + 600, "aud": "appstoreconnect-v1"}, key, algorithm="ES256",
+                             headers={"kid": os.environ["APP_STORE_CONNECT_KEY_IDENTIFIER"]})
+          app = open("/tmp/app_id").read().strip()
+          req = urllib.request.Request("https://api.appstoreconnect.apple.com/v1/apps/%s/inAppPurchasesV2?limit=200" % app,
+                                       headers={"Authorization": "Bearer " + token})
+          items = json.load(urllib.request.urlopen(req))["data"]
+          print("IAP_COUNT", len(items))
+          for i in items:
+              at = i["attributes"]
+              print("IAP", i["id"], at.get("productId"), at.get("inAppPurchaseType"), at.get("state"))
+          PY
+
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: CodeMagic-Team
+    environment:
+      groups:
+        - github
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.rushingtech.lasttide
+      vars:
+        BUNDLE_ID: com.rushingtech.lasttide
+        XCODE_PROJECT: ios/Unity-iPhone.xcodeproj
+        XCODE_SCHEME: Unity-iPhone
+      xcode: latest
+    scripts:
+      - name: Download the exported Xcode project
+        script: |
+          set -euo pipefail
+          [ -n "${GITHUB_TOKEN:-}" ] || { echo "Add GITHUB_TOKEN to the variable group 'github'"; exit 1; }
+          ASSET=$(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" \
+            https://api.github.com/repos/mrnickrushing/castaway/releases/tags/ios-latest \
+            | python3 -c "import sys,json; print([a['url'] for a in json.load(sys.stdin)['assets'] if a['name']=='ios-xcode.zip'][0])")
+          curl -fL --retry 3 -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/octet-stream" -o /tmp/ios-xcode.zip "$ASSET"
+          rm -rf ios && unzip -q /tmp/ios-xcode.zip -d .
+      - name: Build number after the latest one on App Store Connect
+        script: |
+          set -euo pipefail
+          APP_ID=$(app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['id'])")
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_ID" --all-versions 2>/dev/null || echo 0)
+          echo "Apple ID $APP_ID, latest TestFlight build $LATEST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $((LATEST + 1))" ios/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/Info.plist 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/Info.plist
+      - name: Signing
+        script: xcode-project use-profiles --project "$XCODE_PROJECT"
+      - name: Build the .ipa
+        script: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
