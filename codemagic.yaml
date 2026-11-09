@@ -7,6 +7,7 @@
 #
 #   asc-lookup      read only: prints the app's Apple ID, name, SKU and the in-app purchases already created.
 #   asc-iap         creates the in-app purchases of docs/STORE.md (Tools/appstore/iap.py; safe to rerun).
+#   asc-listing     fills in the store listing from docs/appstore/listing.json and screens/ (Tools/appstore/listing.py).
 #   ios-testflight  downloads the Xcode project exported by Tools/ios-export.sh (the `ios-latest` release asset),
 #                   archives it, signs it with an App Store profile Xcode creates through
 #                   the key, and uploads to TestFlight. Run it only when a TestFlight build is wanted.
@@ -75,6 +76,20 @@ workflows:
           set -euo pipefail
           python3 -m venv /tmp/asc && /tmp/asc/bin/pip install -q pyjwt cryptography
           /tmp/asc/bin/python Tools/appstore/iap.py
+
+  asc-listing:
+    name: App Store listing
+    max_build_duration: 20
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - ios_credentials
+    scripts:
+      - name: Listing, age rating, price and screenshots (Tools/appstore/listing.py)
+        script: |
+          set -euo pipefail
+          python3 -m venv /tmp/asc && /tmp/asc/bin/pip install -q pyjwt cryptography
+          /tmp/asc/bin/python Tools/appstore/listing.py
 
   ios-testflight:
     name: iOS → TestFlight
