@@ -14,7 +14,7 @@
 
 Re-download and convert the free models with `python3 Tools/art/free_assets.py fetch` then `install`.
 
-## Sketchfab (CC BY 4.0)
+## Sketchfab (CC BY 4.0 and CC0)
 
 - "Castaway" by katarzynaszemla (https://sketchfab.com/3d-models/6a481c17d68a4a138f726ccb76caedff), CC BY 4.0. Used as the player's castaway; rescaled, decimated, rig renamed.
 - "Pirate Captain" by byenbyen (https://sketchfab.com/3d-models/bae2223031094f629ad86242e26a37e6), CC BY 4.0. Used as Red Jack; rescaled, decimated, rig renamed.
@@ -25,5 +25,8 @@ Re-download and convert the free models with `python3 Tools/art/free_assets.py f
 - "Virtual model linen tunic & slim Revna" by chambersu1996 (https://sketchfab.com/3d-models/9ac96b0353264685b1290bab355fe876), CC BY 4.0. Used as rescued survivors; rescaled, decimated, rig renamed.
 - "Skeleton Pirate " The Captin "" by ShadowCoffee (https://sketchfab.com/3d-models/65cbe69004924bbc940cd74276ba90fb), CC BY 4.0. Used as drowned smugglers; rescaled, decimated, rig renamed.
 - "Skeleton Pirate " The Drunk "" by ShadowCoffee (https://sketchfab.com/3d-models/9ed1650abdce48d4a1a4d34a4a56cfc5), CC BY 4.0. Used as drowned smugglers; rescaled, decimated, rig renamed.
+- "Japanese Freshwater Crab" by ffishAsia-and-floraZia (https://sketchfab.com/3d-models/35559c2236d04c1a80ccbe08cae863c6), CC0. Used as the giant crabs; rescaled, decimated, rig kept.
+- "Striped Snake, Elaphe quadrivirgata" by ffishAsia-and-floraZia (https://sketchfab.com/3d-models/0f4f583d5e3842eca1152c0bb021ec32), CC0. Used as the vipers (thickened, spine bent in code); rescaled, decimated, rig kept.
+- "Old Rowboat" by toomanydemons (https://sketchfab.com/3d-models/9922d5678af84adeb1c9b479856446ca), CC BY 4.0. Used as the rowboat and the beached boat on Driftwood Shore; rescaled, maps repacked.
 
 - Universal Animation Library by Quaternius (https://quaternius.com), CC0. Every character's moves.

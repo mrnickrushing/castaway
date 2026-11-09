@@ -3,6 +3,8 @@
 
   python3 Tools/art/sketchfab.py fetch [id...]    # download glb (needs SKETCHFAB_API_KEY; or use the Sketchfab MCP)
   python3 Tools/art/sketchfab.py cast [id...]     # rigged people -> Assets/Resources/Models/Cast (Tools/blender/cast_import.py)
+  python3 Tools/art/sketchfab.py creature [id...] # animals -> Assets/Resources/Models/Creatures (Tools/blender/creature_import.py)
+  python3 Tools/art/sketchfab.py prop [id...]     # props -> Assets/Resources/Models/Scan (Tools/blender/scan_import.py)
   python3 Tools/art/sketchfab.py moves            # the shared humanoid clips (Quaternius UAL, CC0) -> Cast/moves.fbx
   python3 Tools/art/sketchfab.py credits          # rewrite the Sketchfab section of CREDITS.md
 
@@ -76,12 +78,24 @@ CAST = {
     "smuggler2": dict(uid="9ed1650abdce48d4a1a4d34a4a56cfc5", title='Skeleton Pirate " The Drunk "', author="ShadowCoffee",
                       role="drowned smugglers", height=1.75, tris=12000, cfg={"map": SKELETON_MAP, "hands": SKELETON_HANDS}),
 }
-FILES = {"castaway": "castaway", "captain": "captain", "hunter": "hunter", "mara": "pirategirl", "tomas": "farmer",
+FILES = {"snake": "stripesnake", "castaway": "castaway", "captain": "captain", "hunter": "hunter", "mara": "pirategirl", "tomas": "farmer",
          "ned": "svend", "revna": "revna", "smuggler": "skelcaptain", "smuggler2": "skeldrunk"}
 
-# Creatures and props from Sketchfab, credited the same way (imported by their own tools).
-# (Both well-animated Sketchfab boars ship without their textures; the game keeps its own boar.)
-OTHER = {}
+# Creatures (Tools/blender/creature_import.py -> Models/Creatures) and props (Tools/blender/scan_import.py ->
+# Models/Scan), credited the same way. Both well-animated Sketchfab boars ship without their textures, and the
+# realistic animated dogs have no walk or run: the game keeps its own boar and the Quaternius pets.
+CREATURES = {
+    "crab": dict(uid="35559c2236d04c1a80ccbe08cae863c6", title="Japanese Freshwater Crab", author="ffishAsia-and-floraZia",
+                 license="CC0", role="the giant crabs", size=1.7, tris=9000, cfg={"clips": {"Animation": "Walk"}}),
+    "snake": dict(uid="0f4f583d5e3842eca1152c0bb021ec32", title="Striped Snake, Elaphe quadrivirgata",
+                  author="ffishAsia-and-floraZia", license="CC0", role="the vipers (thickened, spine bent in code)",
+                  size=2.4, tris=7000, cfg={"yaw": 90, "rest": 0, "girth": 1.8}),
+}
+PROPS = {
+    "rowboat": dict(uid="9922d5678af84adeb1c9b479856446ca", title="Old Rowboat", author="toomanydemons",
+                    role="the rowboat and the beached boat on Driftwood Shore", kind="prop", size=3.6, tris=6000),
+}
+OTHER = dict(CREATURES, **PROPS)
 
 
 def src_of(i):
@@ -110,6 +124,22 @@ def cast(i):
     print("\n".join(out) or r.stdout[-2000:] + r.stderr[-2000:])
 
 
+def creature(i):
+    c = CREATURES[i]
+    out = os.path.join(ROOT, "Assets", "Resources", "Models", "Creatures")
+    r = subprocess.run(["blender", "-b", "--factory-startup", "-P", os.path.join(ROOT, "Tools", "blender", "creature_import.py"), "--",
+                        src_of(i), out, i, str(c["size"]), str(c["tris"]), json.dumps(c["cfg"])], capture_output=True, text=True)
+    print("\n".join(l for l in r.stdout.splitlines() if l.startswith("[creature]") or "Error" in l) or r.stderr[-2000:])
+
+
+def prop(i):
+    c = PROPS[i]
+    out = os.path.join(ROOT, "Assets", "Resources", "Models", "Scan")
+    r = subprocess.run(["blender", "-b", "--factory-startup", "-P", os.path.join(ROOT, "Tools", "blender", "scan_import.py"), "--",
+                        src_of(i), out, i, c["kind"], str(c["size"]), str(c["tris"])], capture_output=True, text=True)
+    print("\n".join(l for l in r.stdout.splitlines() if "[scan]" in l) or r.stderr[-2000:])
+
+
 def moves():
     os.makedirs(CAST_DIR, exist_ok=True)
     r = subprocess.run(["blender", "-b", "--factory-startup", "-P", os.path.join(ROOT, "Tools", "blender", "cast_moves.py"), "--",
@@ -121,17 +151,21 @@ def credit_lines():
     lines = []
     for i, c in list(CAST.items()) + list(OTHER.items()):
         extra = ("; " + c["extra"]) if c.get("extra") else ""
-        lines.append('- "%s" by %s (https://sketchfab.com/3d-models/%s), CC BY 4.0%s. Used as %s; rescaled, decimated, '
-                     'rig renamed.' % (c["title"], c["author"], c["uid"], extra, c["role"]))
+        done = "decimated, rig renamed" if i in CAST else "decimated, rig kept" if i in CREATURES else "maps repacked"
+        lines.append('- "%s" by %s (https://sketchfab.com/3d-models/%s), %s%s. Used as %s; rescaled, %s.'
+                     % (c["title"], c["author"], c["uid"], c.get("license", "CC BY 4.0"), extra, c["role"], done))
     return lines
 
 
 def credits():
     path = os.path.join(ROOT, "CREDITS.md")
     text = open(path).read() if os.path.exists(path) else "# Credits\n"
-    head = "## Sketchfab (CC BY 4.0)"
+    head = "## Sketchfab (CC BY 4.0 and CC0)"
     body = head + "\n\n" + "\n".join(credit_lines()) + "\n\n" + \
         "- Universal Animation Library by Quaternius (https://quaternius.com), CC0. Every character's moves.\n"
+    old = "## Sketchfab (CC BY 4.0)"
+    if old in text and head not in text:
+        text = text.replace(old, head)
     if head in text:
         start = text.index(head)
         end = text.find("\n## ", start + len(head))
@@ -150,6 +184,12 @@ if __name__ == "__main__":
     elif cmd == "cast":
         for i in ids or CAST:
             cast(i)
+    elif cmd == "creature":
+        for i in ids or CREATURES:
+            creature(i)
+    elif cmd == "prop":
+        for i in ids or PROPS:
+            prop(i)
     elif cmd == "moves":
         moves()
     elif cmd == "credits":

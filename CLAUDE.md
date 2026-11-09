@@ -114,6 +114,12 @@ setting only.
   Cast: castaway (player), captain (Red Jack), hunter (raiders), mara, tomas, ned, revna, smuggler/smuggler2. Only
   CC BY/CC0 originals: no fan art of other games/films. Sketchfab glbs sometimes lack their textures (both animated
   boars did): render a preview before using one.
+- Realistic animals (`Tools/art/sketchfab.py creature`, `Tools/blender/creature_import.py`, Generic rigs in
+  `Resources/Models/Creatures`): the giant crab plays its own scuttle clip faster with its pace and rears to strike; the
+  viper (a CC0 snake scan, thickened by `girth`) has no usable clip, so `Actors/CreatureArt.cs` bends its ~100 spine
+  bones into a travelling S and raises the neck to strike. Props from Sketchfab go through `sketchfab.py prop` into
+  `Models/Scan` (the rowboat, also the beached boat on Driftwood Shore). The pets stay Quaternius: no realistic dog
+  on Sketchfab has walk and run clips.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

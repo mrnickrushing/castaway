@@ -37,6 +37,25 @@ namespace LastTide.EditorTools
                 if (moves) { mi.animationCompression = ModelImporterAnimationCompression.Optimal; mi.resampleCurves = true; }
                 return;
             }
+            if (assetPath.StartsWith(Models + "Creatures/"))
+            {
+                // Realistic animals (Tools/art/sketchfab.py creature): their own Generic rig and clips; bones stay
+                // transforms (the snake's spine is bent in code).
+                mi.animationType = ModelImporterAnimationType.Generic;
+                mi.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                mi.optimizeGameObjects = false;
+                mi.importAnimation = true;
+                mi.importCameras = false;
+                mi.importLights = false;
+                mi.isReadable = false;
+                mi.meshCompression = ModelImporterMeshCompression.Medium;
+                mi.importNormals = ModelImporterNormals.Import;
+                mi.importTangents = ModelImporterTangents.CalculateMikk;
+                mi.skinWeights = ModelImporterSkinWeights.Standard;
+                mi.animationCompression = ModelImporterAnimationCompression.Optimal;
+                mi.resampleCurves = true;
+                return;
+            }
             bool person = assetPath.StartsWith(Models + "People/") || assetPath.StartsWith(Models + "Animals/"); // rigged, Legacy clips
             mi.importAnimation = person;
             mi.importCameras = false;
@@ -56,8 +75,16 @@ namespace LastTide.EditorTools
         /// <summary>The shared humanoid clips: loops loop, everything stays in place (the game moves the body).</summary>
         void OnPreprocessAnimation()
         {
-            if (!assetPath.StartsWith(Models + "Cast/")) return;
             var mi = (ModelImporter)assetImporter;
+            if (assetPath.StartsWith(Models + "Creatures/"))
+            {
+                // An animal's clips are cycles played in place.
+                var cc = mi.defaultClipAnimations;
+                for (int i = 0; i < cc.Length; i++) { cc[i].name = cc[i].name.Substring(cc[i].name.LastIndexOf('|') + 1); cc[i].loopTime = true; }
+                mi.clipAnimations = cc;
+                return;
+            }
+            if (!assetPath.StartsWith(Models + "Cast/")) return;
             var clips = mi.defaultClipAnimations;
             for (int i = 0; i < clips.Length; i++)
             {

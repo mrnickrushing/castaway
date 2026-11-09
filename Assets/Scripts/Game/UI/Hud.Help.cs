@@ -139,7 +139,8 @@ namespace LastTide.Game
                 "3D models: Kenney (kenney.nl) and Quaternius (quaternius.com), CC0; animations: Quaternius Universal Animation Library, CC0. " +
                 "Characters from Sketchfab (sketchfab.com), CC BY 4.0, adapted for the game: \"Castaway\" by katarzynaszemla, " +
                 "\"Pirate Captain\" by byenbyen, \"Pirate Hunter\" by chenuka_wy (jacket \"Gambeson\" by Leon.Steiner), \"Pirate Girl\" by Anriil_Kl, " +
-                "\"Farmer\" by LxNazarov, \"Svend\" and \"Revna\" by chambersu1996, \"Skeleton Pirate\" captain and drunk by ShadowCoffee. " +
+                "\"Farmer\" by LxNazarov, \"Svend\" and \"Revna\" by chambersu1996, \"Skeleton Pirate\" captain and drunk by ShadowCoffee, " +
+                "\"Old Rowboat\" by toomanydemons. Crab and snake: scans by ffishAsia-and-floraZia, CC0. " +
                 "Story art, movies, icons, boar and palms made for this game. Fonts: Barlow (SIL Open Font License).",
                 26, new Color(1, 1, 1, 0.6f), TextAnchor.UpperLeft, false);
             credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(1600, 330));

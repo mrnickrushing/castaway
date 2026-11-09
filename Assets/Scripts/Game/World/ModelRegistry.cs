@@ -9,7 +9,7 @@ namespace LastTide.Game
     /// </summary>
     public static class ModelRegistry
     {
-        public const string Props = "Props", Buildings = "Buildings", Animals = "Animals", People = "People", Free = "Free", Scan = "Scan", Cast = "Cast";
+        public const string Props = "Props", Buildings = "Buildings", Animals = "Animals", People = "People", Free = "Free", Scan = "Scan", Cast = "Cast", Creatures = "Creatures";
 
         /// <summary>
         /// Photoscanned Poly Haven replacements (Resources/Models/Scan, Tools/art/polyhaven.py) for the free kit models:
@@ -43,6 +43,8 @@ namespace LastTide.Game
             { "tree_fat", new[] { "island_tree_02" } },
             { "tree_detailed", new[] { "island_tree_02" } },
             { "pirate_ship", new[] { "dutch_ship_large_01" } },
+            { "rowboat", new[] { "rowboat" } },
+            { "canoe", new[] { "rowboat" } },
         };
 
         static int _pick;
@@ -99,7 +101,7 @@ namespace LastTide.Game
             var go = Object.Instantiate(prefab, parent, false);
             go.name = id;
             foreach (var c in go.GetComponentsInChildren<Collider>()) Object.Destroy(c);
-            if (category == Scan || category == Cast) ScanMaterials(go, category, id);
+            if (category == Scan || category == Cast || category == Creatures) ScanMaterials(go, category, id);
             else
             {
                 var mat = Material(category, id);
