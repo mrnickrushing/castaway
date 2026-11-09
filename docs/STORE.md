@@ -18,8 +18,9 @@ Editor and development builds, nothing in a release build until RevenueCat is co
 To go live:
 1. Done: the app exists in App Store Connect (bundle id `com.rushingtech.lasttide`, Apple ID 6832382482).
 2. Done 2026-11-09: all eight in-app purchases exist in App Store Connect with en-US names and descriptions, USA
-   base prices and every territory (`Tools/appstore/iap.py`, Codemagic `lasttide-iap`; safe to rerun). Each still
-   needs a review screenshot (state MISSING_METADATA) before it can go to review with the first app version.
+   base prices and every territory (`Tools/appstore/iap.py`, Codemagic `lasttide-iap`; safe to rerun). Each has its
+   review screenshot (the SHOP, `docs/appstore/iap_review.png`) and is READY_TO_SUBMIT: they go to review with the
+   first app version (pick them on the version page under In-App Purchases).
 3. Create the app in RevenueCat, attach the products, and put its Apple public key (`appl_...`) in
    `RevenueCatStore.ApiKey`.
 
