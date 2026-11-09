@@ -14,6 +14,8 @@ namespace LastTide.Game
         static int _next;
         static AudioSource _surf, _jungle, _music;
         public static bool Muted;
+        /// <summary>Scales the ambience and music beds (a cinematic turns them down to 0 while it plays).</summary>
+        public static float Duck = 1;
 
         public static void Init(Transform root)
         {
@@ -85,9 +87,9 @@ namespace LastTide.Game
             if (_surf == null && _jungle == null) return;
             float d = Island.Distance01(player.x, player.z);
             float beach = Mathf.Clamp01((d - 0.55f) / 0.35f);
-            if (_surf != null) _surf.volume = Muted ? 0 : Mathf.Lerp(0.15f, 0.55f, beach);
-            if (_jungle != null) _jungle.volume = Muted ? 0 : Mathf.Lerp(0.4f, 0.1f, beach);
-            if (_music != null) _music.volume = Muted ? 0 : 0.28f;
+            if (_surf != null) _surf.volume = Muted ? 0 : Mathf.Lerp(0.15f, 0.55f, beach) * Duck;
+            if (_jungle != null) _jungle.volume = Muted ? 0 : Mathf.Lerp(0.4f, 0.1f, beach) * Duck;
+            if (_music != null) _music.volume = Muted ? 0 : 0.28f * Duck;
         }
     }
 }

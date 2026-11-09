@@ -12,6 +12,8 @@ namespace LastTide.Core
     public sealed class SceneDef
     {
         public string Id, Title;
+        /// <summary>Cinematic clip played once before the scene's lines (StreamingAssets/Videos/{Movie}.mp4), or null.</summary>
+        public string Movie;
         public StoryLine[] Lines;
     }
 
@@ -43,13 +45,13 @@ namespace LastTide.Core
         /// <summary>Scenes keyed by the guide step they open ("intro" plays on a new game).</summary>
         public static readonly Dictionary<string, SceneDef> Scenes = new Dictionary<string, SceneDef>
         {
-            { "hatchet", new SceneDef { Id = "intro", Title = "Washed Ashore", Lines = new[] {
+            { "hatchet", new SceneDef { Id = "intro", Movie = "wreck", Title = "Washed Ashore", Lines = new[] {
                 new StoryLine(Tale, "Three weeks out of Port Royal, the merchant brig Gull carried sugar, salt and forty souls.", "keyart"),
                 new StoryLine(Tale, "Then the black sails came. Red Jack's raiders chased her into a storm, and the reef did the rest.", "pirates"),
                 new StoryLine(Tale, "You wake on warm sand. The Gull lies broken in the shallows. No one answers when you call.", "home"),
                 new StoryLine(You, "Alright. Fire, water, shelter. One thing at a time. There was a hatchet in the bosun's locker...", "home"),
             } } },
-            { "fiber", new SceneDef { Id = "fire", Title = "First Night", Lines = new[] {
+            { "fiber", new SceneDef { Id = "fire", Movie = "firstnight", Title = "First Night", Lines = new[] {
                 new StoryLine(You, "A fire. The first thing that's gone right since the storm.", "home"),
                 new StoryLine(You, "The nights here will be cold, and the rain comes hard. I need a roof over my head.", "home"),
             } } },
@@ -57,7 +59,7 @@ namespace LastTide.Core
                 new StoryLine(You, "Fresh tracks, and the ferns torn up. Something big roots about in the jungle.", "grove"),
                 new StoryLine(You, "Meat for the fire... if it doesn't make a meal of me first.", "grove"),
             } } },
-            { "map", new SceneDef { Id = "raft", Title = "The Raft", Lines = new[] {
+            { "map", new SceneDef { Id = "raft", Movie = "raft", Title = "The Raft", Lines = new[] {
                 new StoryLine(You, "The Gull's raft held together. Lash on a sail and it'll carry me between the islands.", "home"),
                 new StoryLine(You, "There's land on every horizon. If anyone else made it ashore, they're out there.", "shore"),
             } } },
@@ -65,7 +67,7 @@ namespace LastTide.Core
                 new StoryLine(You, "Barking, over on Driftwood Shore. Faint, but I'd know that bark anywhere.", "shore"),
                 new StoryLine(You, "Biscuit. The bosun's dog. If he made it ashore, he'll be hungry and scared. Let's bring him home.", "shore"),
             } } },
-            { "radio", new SceneDef { Id = "radio", Title = "The Ship's Radio", Lines = new[] {
+            { "radio", new SceneDef { Id = "radio", Movie = "radio", Title = "The Ship's Radio", Lines = new[] {
                 new StoryLine(You, "The ship's radio. Waterlogged, but the valves look whole.", "home"),
                 new StoryLine(You, "Scrap for the casing, rope for an aerial, sailcloth to keep the rain off. Then we'll see who's listening.", "home"),
             } } },
@@ -73,7 +75,7 @@ namespace LastTide.Core
                 new StoryLine(You, "A voice. Someone else is alive out there.", "grove"),
                 new StoryLine(You, "Hold on, Tomas. I'm coming, and I'm bringing bandages.", "grove"),
             } } },
-            { "pier", new SceneDef { Id = "lasttide", Title = "The Last Tide", Lines = new[] {
+            { "pier", new SceneDef { Id = "lasttide", Movie = "lasttide", Title = "The Last Tide", Lines = new[] {
                 new StoryLine("Old Tomas", "Red Jack... he's ruled these islands for years. He hunts the shipwrecked for his crew. The ones who won't join, he leaves for the sharks.", "pirates"),
                 new StoryLine("Old Tomas", "There's only one way off. Once a year the Last Tide lifts a ship clean over the reef. Jack's ship will sail on it.", "lighthouse"),
                 new StoryLine("Old Tomas", "There's a woman at the old pier, Mara. If anyone knows when the tide comes, she does. Get strong first. Jack's men don't play fair.", "pier"),
@@ -88,7 +90,7 @@ namespace LastTide.Core
                 new StoryLine("Ned Barlow", "Jack won't hand over his ship. But with enough powder we can blow his palisade wide open.", "pirates"),
                 new StoryLine("Ned Barlow", "Bring six kegs of gunpowder. The drowned men in the cave and Jack's raiders carry plenty. Then we go for the ship.", "pirates"),
             } } },
-            { "redjack", new SceneDef { Id = "assault", Title = "Red Jack", Lines = new[] {
+            { "redjack", new SceneDef { Id = "assault", Movie = "redjack", Title = "Red Jack", Lines = new[] {
                 new StoryLine("Ned Barlow", "That's enough powder to wake the dead. Again.", "pirates"),
                 new StoryLine("Ned Barlow", "Jack sits by his fire at the heart of the camp. Bring him down, and the ship is ours.", "pirates"),
                 new StoryLine(You, "Eat well, mend your wounds, sharpen your blade. He won't go easy.", "pirates"),
@@ -97,7 +99,7 @@ namespace LastTide.Core
                 new StoryLine("Red Jack", "The tide... was mine...", "pirates"),
                 new StoryLine(You, "Not anymore. The ship is anchored off the camp. Time to go home.", "pirates"),
             } } },
-            { "free", new SceneDef { Id = "ending", Title = "The Last Tide", Lines = new[] {
+            { "free", new SceneDef { Id = "ending", Movie = "ending", Title = "The Last Tide", Lines = new[] {
                 new StoryLine(Tale, "On the night of the Last Tide, the black ship slipped over the reef with a new crew.", "pirates"),
                 new StoryLine(Tale, "Tomas at the helm, Mara on the lines, Ned at the bow. And you, who came ashore with nothing.", "lighthouse"),
                 new StoryLine(Tale, "Behind you the islands glowed under the moon. You will be back. Some places don't let go of you.", "keyart"),

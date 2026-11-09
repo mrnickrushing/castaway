@@ -19,7 +19,7 @@ namespace LastTide.Game
         Canvas _canvas;
         RectTransform _root, _worldLayer;
         public Vector2 Stick { get; private set; }
-        public bool Blocking { get { return _passOut > 0 || StoryPlaying; } }
+        public bool Blocking { get { return _passOut > 0 || StoryPlaying || Cinema.Playing || LoadingScreen.Active; } }
 
         public static Hud Create()
         {
@@ -66,7 +66,6 @@ namespace LastTide.Game
             BuildHelp();
             BuildOverlays();
             BuildStory();
-            BuildSplash();
 
             var s = G.Session;
             s.Toast += Toast;
@@ -347,7 +346,6 @@ namespace LastTide.Game
             UpdateMap();
             UpdateRadio();
             UpdateSay();
-            UpdateSplash();
             UpdateStory();
             UpdateBuild();
             UpdateActions();
@@ -527,40 +525,6 @@ namespace LastTide.Game
             _black.raycastTarget = false;
             _passText = UIKit.Label("Text", _black.transform, "", 56, Color.white, TextAnchor.MiddleCenter);
             _passText.rectTransform.Fill();
-        }
-
-        // ------------------------------------------------------------------ title splash
-
-        Image _splash;
-        float _splashT = 2.6f;
-
-        /// <summary>The key art and the title for a moment at launch, fading into the island.</summary>
-        void BuildSplash()
-        {
-            var art = UIKit.Place("keyart");
-            _splash = UIKit.Img("Splash", _root, null, new Color(0.04f, 0.12f, 0.15f));
-            _splash.rectTransform.Fill();
-            _splash.raycastTarget = true;
-            if (art != null)
-            {
-                var im = UIKit.Img("Art", _splash.transform, art, Color.white);
-                var f = im.gameObject.AddComponent<AspectRatioFitter>();
-                f.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
-                f.aspectRatio = art.rect.width / art.rect.height;
-            }
-            var t = UIKit.Outlined(UIKit.Label("Title", _splash.transform, "LAST TIDE", 150, new Color(1f, 0.93f, 0.78f), TextAnchor.UpperCenter), 4f);
-            t.rectTransform.Fill(); t.rectTransform.offsetMax = new Vector2(0, -90);
-            var sub = UIKit.Outlined(UIKit.Label("Sub", _splash.transform, "SHIPWRECK SURVIVAL", 44, new Color(1f, 0.8f, 0.45f), TextAnchor.UpperCenter), 2f);
-            sub.rectTransform.Fill(); sub.rectTransform.offsetMax = new Vector2(0, -260);
-        }
-
-        void UpdateSplash()
-        {
-            if (_splash == null) return;
-            _splashT -= Time.unscaledDeltaTime;
-            float a = Mathf.Clamp01(_splashT / 0.8f);
-            foreach (var g in _splash.GetComponentsInChildren<Graphic>()) { var c = g.color; c.a = g == _splash ? a : a; g.color = c; }
-            if (_splashT <= 0) { Destroy(_splash.gameObject); _splash = null; }
         }
 
         public void Toast(string msg)

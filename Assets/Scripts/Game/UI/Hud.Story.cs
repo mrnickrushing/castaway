@@ -63,10 +63,18 @@ namespace LastTide.Game
         /// <summary>Plays the scene that opens the current guide step, once.</summary>
         void CheckStory()
         {
-            if (_scene != null || _splash != null || _passOut > 0) return;
+            if (_scene != null || LoadingScreen.Active || Cinema.Playing || _passOut > 0) return;
             var s = G.Session;
             var sc = Story.SceneFor(s.CurrentQuest.Id);
             if (sc == null || s.Flag("scene_" + sc.Id)) return;
+            // The chapter's movie first (once), then the scene's words.
+            if (sc.Movie != null && !s.Flag("movie_" + sc.Movie) && Cinema.Has(sc.Movie))
+            {
+                s.SetFlag("movie_" + sc.Movie);
+                CloseAll();
+                Cinema.Play(sc.Movie, () => PlayScene(sc));
+                return;
+            }
             PlayScene(sc);
         }
 
