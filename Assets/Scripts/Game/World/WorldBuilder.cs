@@ -666,6 +666,16 @@ namespace LastTide.Game
 
         public static bool Gatherable(string item) { return NodeYields(item); }
 
+        /// <summary>What the survivor of a rescue step still needs that the backpack doesn't hold.</summary>
+        public static List<ItemCount> RescueMissing(Quest q)
+        {
+            var list = new List<ItemCount>();
+            var sig = q.Signal != null ? World.Signal(q.Signal) : null;
+            if (sig == null) return list;
+            foreach (var c in sig.Need) { int have = G.Session.Count(c.id); if (have < c.n) list.Add(new ItemCount(c.id, c.n - have)); }
+            return list;
+        }
+
         static bool NodeYields(string item)
         {
             foreach (var d in Content.Nodes.Values) foreach (var y in d.Yield) if (y.id == item) return true;
@@ -683,6 +693,9 @@ namespace LastTide.Game
                 var def = Content.Nodes[n.NodeKind];
                 bool useful = false;
                 foreach (var y in def.Yield) foreach (var c in need) if (y.id == c.id) useful = true;
+                // The cave's and the pirate camp's barrels hold rum (Session.Harvest).
+                if (n.NodeKind == "barrel" && !G.Session.Here.Home && System.Array.IndexOf(G.Session.Here.MainLoot, "rum") >= 0)
+                    foreach (var c in need) if (c.id == "rum") useful = true;
                 if (!useful) continue;
                 float d = Vector3.Distance(n.Pos, from);
                 if (d < bd) { bd = d; best = n; }
@@ -709,6 +722,12 @@ namespace LastTide.Game
                     return den.Value;                        // walk toward it; the arrow stops at 30 m
                 }
                 return null;
+            }
+            // A rescue: fetch what the survivor needs first (on this island), then go to them.
+            if (q.Signal != null)
+            {
+                var missing = RescueMissing(q);
+                if (missing.Count > 0) { var src = SourceFor(missing, from); if (src.HasValue) return src; }
             }
             // A crafting step: fetch what the recipe is short of, then the station (hand recipes: open CRAFT, no arrow).
             if (q.Craft != null && Content.Recipes.ContainsKey(q.Craft))

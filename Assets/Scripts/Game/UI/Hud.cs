@@ -219,6 +219,19 @@ namespace LastTide.Game
                     else need = "  <size=24><color=#8FE3A8>need " + it.n + " " + name + "</color></size>";
                 }
             }
+            if (q.Signal != null)
+            {
+                var miss = GuideArrow.RescueMissing(q);
+                if (miss.Count > 0)
+                {
+                    var it = miss[0];
+                    var recipe = GuideArrow.RecipeFor(it.id);
+                    string name = Content.Items[it.id].Name;
+                    if (recipe != null && !GuideArrow.Gatherable(it.id))
+                        need = "  <size=24><color=#8FE3A8>craft " + it.n + " " + name + (recipe.Station == "hand" ? " (CRAFT)" : " at the " + Session.StationName(recipe.Station).ToLower()) + "</color></size>";
+                    else need = "  <size=24><color=#8FE3A8>need " + it.n + " more " + name + "</color></size>";
+                }
+            }
             if (q.Craft != null && Content.Recipes.ContainsKey(q.Craft))
             {
                 var rc = Content.Recipes[q.Craft];

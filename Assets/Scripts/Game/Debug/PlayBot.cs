@@ -217,8 +217,24 @@ namespace LastTide.Game
             var d = World.Signals.First(x => x.Id == sig);
             if (s.State.level < d.Level) LevelTo(d.Level, "signal " + sig);
             if (!s.Heard(d)) { s.Tune(d); Log("tuned the radio to " + d.Npc); }
-            foreach (var c in d.Need) Need(c.id, c.n, d.Npc + " needs it");
-            return Be(d.Location);
+            var missing = GuideArrow.RescueMissing(s.CurrentQuest);
+            if (missing.Count == 0) return Be(d.Location);
+            if (_questT > 150) { foreach (var c in d.Need) Need(c.id, c.n, d.Npc + " needs it (gathering too slow)"); return false; }
+            // Craft what can be crafted now (bandages, rope, nails), as the quest card says.
+            foreach (var c in missing)
+            {
+                var r = GuideArrow.RecipeFor(c.id);
+                if (r == null || GuideArrow.Gatherable(c.id) || (r.Station != "hand" && s.Level(r.Station) == 0)) continue;
+                if (s.Job(r.Station) != null) return false;
+                if (s.CraftBlocked(r.Id) == null && s.Craft(r.Id)) { Log("crafted " + r.Output + " for " + d.Npc); return false; }
+            }
+            // Gather on this island if the arrow knows where; otherwise home has crates, bushes and the workbench, and
+            // the survivor's own island has what it is known for (Mara's pier has the fish).
+            var goal = GuideArrow.GoalPosition(Player.Instance.transform.position);
+            if (goal.HasValue && (s.State.location == "home" || s.State.location == d.Location)) { Walk(goal); return false; }
+            if (missing.Exists(c => c.id == "fish" || c.id == "rum")) { if (Be(d.Location)) Walk(goal); return false; }
+            if (Be("home")) Walk(goal);
+            return false;
         }
 
         List<Vector3> _path;

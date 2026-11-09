@@ -13,6 +13,8 @@ namespace LastTide.Core
         public string PointNode, PointBuild; // what the guide arrow points at
         /// <summary>A crafting step: the recipe to make (the guide fetches its ingredients, then sends you to CRAFT).</summary>
         public string Craft;
+        /// <summary>A rescue step: the radio signal whose survivor needs things brought.</summary>
+        public string Signal;
         public ItemCount[] Reward = new ItemCount[0];
         /// <summary>The Ultra track's reward for this step (Survivor's Path).</summary>
         public ItemCount[] Premium = new ItemCount[0];
@@ -60,6 +62,9 @@ namespace LastTide.Core
         /// <summary>Every step pays something on the free track and more on the Ultra track.</summary>
         static Quests()
         {
+            All.Find(q => q.Id == "keeper").Signal = "keeper";
+            All.Find(q => q.Id == "pier").Signal = "fisher";
+            All.Find(q => q.Id == "captive").Signal = "captive";
             var ultra = new[]
             {
                 new[] { Content.I("meat", 3), Content.I("water", 3) }, new[] { Content.I("bandage", 2) }, new[] { Content.I("rope", 4) },
