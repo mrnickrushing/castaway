@@ -343,7 +343,8 @@ namespace LastTide.Game
             return path;
         }
 
-        void OnDestroy() { Player.BotStick = null; if (Instance == this) Instance = null; }
+        // Leaving Play mode mid-run must not leave the Editor (and the next build) at the bot's speed.
+        void OnDestroy() { Player.BotStick = null; Time.timeScale = 1; if (Instance == this) Instance = null; }
     }
 }
 #endif

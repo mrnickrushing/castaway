@@ -21,6 +21,8 @@ namespace LastTide.EditorTools
         {
             ProjectSetup.EnsureScene();
             ProjectSetup.ApplyPlayerSettings();
+            // The time scale is a project setting the play bot changes; a build must ship at real time.
+            Time.timeScale = 1f;
 #if LASTTIDE_URP
             UrpSetup.Run();
 #endif
