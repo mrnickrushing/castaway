@@ -89,6 +89,9 @@ namespace LastTide.Core
             if (dt <= 0) return;
             State.time += dt;
             UpdateEnergy();
+            // Once a second: a step finished by an item that arrived some other way (a crate, a reward, a purchase).
+            _questCheck -= dt;
+            if (_questCheck <= 0) { _questCheck = 1; CheckQuests(); }
             State.hunger = Clamp(State.hunger - Content.HungerDecay * dt);
             State.thirst = Clamp(State.thirst - Content.ThirstDecay * dt);
             if (State.hunger <= 0 || State.thirst <= 0) Damage(Content.StarveDamage * dt * ((State.hunger <= 0 ? 1 : 0) + (State.thirst <= 0 ? 1 : 0)), "starving");
@@ -491,6 +494,8 @@ namespace LastTide.Core
         }
 
         // ------------------------------------------------------------------ quests
+
+        float _questCheck;
 
         public void CheckQuests()
         {
