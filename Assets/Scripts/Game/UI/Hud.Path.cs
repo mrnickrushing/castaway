@@ -54,6 +54,9 @@ namespace LastTide.Game
             if (!_pathOpen) return;
             var s = G.Session;
             Clear(_pathBody);
+            // The card and the rows need 1700 across: on a narrower canvas (16:9 phones, iPads) shrink the whole body
+            // from its top-left corner rather than let the CLAIM column run under CLOSE.
+            FitWidth(_pathBody, 1700);
             var ch = Story.Chapters[_pathChapter];
             int start = Quests.All.FindIndex(q => q.Id == ch.FirstQuest);
             int end = _pathChapter + 1 < Story.Chapters.Count ? Quests.All.FindIndex(q => q.Id == Story.Chapters[_pathChapter + 1].FirstQuest) : Quests.All.Count;

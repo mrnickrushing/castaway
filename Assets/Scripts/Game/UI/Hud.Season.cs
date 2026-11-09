@@ -125,9 +125,12 @@ namespace LastTide.Game
             free.rectTransform.Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(720, 52), new Vector2(260, 50));
 
             // Premium highlights on the right: the companions and the gold chest.
+            // As many as fit beside the 1000-wide painting (three on a wide phone, two on 16:9 and iPad).
             float hx = -30;
+            int room = Mathf.Clamp(Mathf.FloorToInt((_root.rect.width - 380 - 1020) / 220f), 0, 3);
             foreach (var (id, col) in new[] { ("pet_wolf", new Color(0.45f, 0.36f, 0.6f)), ("pet_husky", new Color(0.62f, 0.52f, 0.2f)), ("gold_chest", new Color(0.62f, 0.52f, 0.2f)) })
             {
+                if (room-- <= 0) break;
                 var h = UIKit.Img("Highlight", banner, null, new Color(col.r, col.g, col.b, 0.75f)).rectTransform;
                 h.Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(hx, 0), new Vector2(210, 300));
                 UIKit.ItemIcon(h, id, 180);
