@@ -8,7 +8,8 @@ namespace LastTide.Game
     /// <summary>
     /// A realistic animal from Resources/Models/Creatures (Tools/art/sketchfab.py creature, CC0 scans): the crab plays
     /// its own scuttle cycle faster or slower with its pace; the snake has no usable clip, so its spine (a chain of
-    /// ~100 bones from the head back) is bent in code into a travelling S that rears up to strike.
+    /// ~100 bones from the head back) is bent in code into a travelling S that rears up to strike; the gull's wings
+    /// are beaten in code too (<see cref="Wings"/>).
     /// </summary>
     public sealed class CreatureArt : MonoBehaviour
     {
@@ -26,6 +27,10 @@ namespace LastTide.Game
         float _length;
         float _phase;
         bool _snake;
+        // Bird wings: inner and outer joints, left then right.
+        Transform[] _wing;
+        Quaternion[] _wingRest;
+        float[] _wingSide;
 
         public static CreatureArt TryCreate(string id, Transform parent)
         {
@@ -52,6 +57,7 @@ namespace LastTide.Game
             {
                 if (an != null) an.enabled = false;
                 c.BuildSpine();
+                c.BuildWings();
             }
             return c;
         }
@@ -83,6 +89,40 @@ namespace LastTide.Game
             if (_head != null) { _headRest = _head.localRotation; _headRestPos = _head.localPosition; }
             // The model is centred on its length: slide it back so the head sits a little ahead of the enemy's spot.
             _model.localPosition = new Vector3(0, 0, -_pivot.InverseTransformPoint(_spine[0].position).z * 0.6f);
+        }
+
+        /// <summary>A bird's wing joints (wing1/wing2, .l/.r), with the side each spreads to.</summary>
+        void BuildWings()
+        {
+            var names = new[] { "wing1.l", "wing2.l", "wing1.r", "wing2.r" };
+            var found = new Transform[4];
+            foreach (var t in _model.GetComponentsInChildren<Transform>())
+                for (int i = 0; i < 4; i++) if (t.name == names[i]) found[i] = t;
+            if (System.Array.IndexOf(found, null) >= 0) return;
+            _wing = found;
+            _wingRest = new Quaternion[4];
+            _wingSide = new float[4];
+            for (int i = 0; i < 4; i++)
+            {
+                _wingRest[i] = found[i].localRotation;
+                _wingSide[i] = Mathf.Sign(_pivot.InverseTransformPoint(found[i < 2 ? 1 : 3].position).x);
+            }
+        }
+
+        /// <summary>Beats a bird's wings: beat is the stroke phase (radians), flap from 0 (gliding, wings held a
+        /// little up) to 1 (full strokes, the tips trailing the shoulders).</summary>
+        public void Wings(float beat, float flap)
+        {
+            if (_wing == null) return;
+            var fwd = _pivot.forward;
+            float inner = Mathf.Lerp(7, Mathf.Sin(beat) * 30 + 4, flap);
+            float outer = Mathf.Lerp(-5, Mathf.Sin(beat - 0.9f) * 22, flap);
+            for (int i = 0; i < 4; i++)
+            {
+                // Inner joint first: the outer one is its child and rides on it.
+                _wing[i].localRotation = _wingRest[i];
+                _wing[i].rotation = Quaternion.AngleAxis((i % 2 == 0 ? inner : outer) * _wingSide[i], fwd) * _wing[i].rotation;
+            }
         }
 
         /// <summary>gait: distance walked (radians of stride), speed m/s, attack 0..1 through a strike or -1, dead 0..1.</summary>

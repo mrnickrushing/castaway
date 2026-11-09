@@ -105,7 +105,8 @@ namespace LastTide.Game
             string[] scans = kind == "bush" ? new[] { "fern_02_a", "fern_02_c", "fern_02_b" }
                 : kind == "berrybush" ? new[] { "fern_02_c", "fern_02_a" }
                 : kind == "driftwood" ? new[] { "dry_branches_medium_01_a", "dry_branches_medium_01_b", "dry_branches_medium_01_c" }
-                : kind == "stones" ? new[] { "rock_moss_set_01_b", "rock_moss_set_01_d", "stone_01" } : null;
+                : kind == "stones" ? new[] { "rock_moss_set_01_b", "rock_moss_set_01_d", "stone_01" }
+                : kind == "ironvein" ? new[] { "ironore" } : null;
             if (scans != null)
             {
                 var pick = scans[(int)(h0 * scans.Length) % scans.Length];
@@ -114,8 +115,9 @@ namespace LastTide.Game
                     var hs = new GameObject("Model");
                     hs.transform.SetParent(parent, false);
                     var sa = ModelRegistry.Spawn(ModelRegistry.Scan, pick, hs.transform);
-                    sa.transform.localRotation = Quaternion.Euler(0, h0 * 360, 0);
-                    float sc = kind == "stones" ? 0.45f : kind == "driftwood" ? 0.9f : kind == "bush" ? 0.75f : 0.95f;
+                    // Turned about the vertical, on top of the import's own rotation (the scans come in Z-up).
+                    sa.transform.localRotation = Quaternion.Euler(0, h0 * 360, 0) * sa.transform.localRotation;
+                    float sc = kind == "stones" ? 0.45f : kind == "driftwood" ? 0.9f : kind == "bush" ? 0.75f : kind == "ironvein" ? 0.9f : 0.95f;
                     sa.transform.localScale *= sc * (0.85f + Noise2.Hash(key.GetHashCode(), 5) * 0.3f);
                     if (kind == "stones")
                         for (int i = 0; i < 2; i++)
@@ -123,7 +125,7 @@ namespace LastTide.Game
                             var extra = ModelRegistry.Spawn(ModelRegistry.Scan, scans[(i + 1 + (int)(h0 * 3)) % scans.Length], hs.transform);
                             if (extra == null) continue;
                             extra.transform.localPosition = new Vector3(i == 0 ? 0.6f : -0.5f, 0, i == 0 ? 0.3f : 0.4f);
-                            extra.transform.localRotation = Quaternion.Euler(0, i * 140 + h0 * 90, 0);
+                            extra.transform.localRotation = Quaternion.Euler(0, i * 140 + h0 * 90, 0) * extra.transform.localRotation;
                             extra.transform.localScale *= 0.3f;
                         }
                     if (kind == "berrybush")

@@ -140,7 +140,8 @@ namespace LastTide.Game
                 "From Sketchfab (sketchfab.com), CC BY 4.0, adapted for the game: characters \"Castaway\" by katarzynaszemla, " +
                 "\"Pirate Captain\" by byenbyen, \"Pirate Hunter\" by chenuka_wy (jacket \"Gambeson\" by Leon.Steiner), \"Pirate Girl\" by Anriil_Kl, " +
                 "\"Farmer\" by LxNazarov, \"Svend\" and \"Revna\" by chambersu1996, \"Skeleton Pirate\" captain and drunk by ShadowCoffee; " +
-                "props \"Old Rowboat\" by toomanydemons, \"Lighthouse\" by stnabeal and \"Raft\" by _SeF_. " +
+                "props \"Old Rowboat\" by toomanydemons, \"Lighthouse\" by stnabeal, \"Raft\" by _SeF_ and \"Iron Ore\" by vxdesigns; " +
+                "gulls \"Low-Poly Seagull\" by simonaskLDE. " +
                 "Crab and snake: scans by ffishAsia-and-floraZia, CC0. " +
                 "Story art, movies, icons, boar and palms made for this game. Fonts: Barlow (SIL Open Font License).",
                 26, new Color(1, 1, 1, 0.6f), TextAnchor.UpperLeft, false);

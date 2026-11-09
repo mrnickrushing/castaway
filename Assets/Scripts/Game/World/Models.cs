@@ -683,7 +683,8 @@ namespace LastTide.Game
             var go = ModelRegistry.Spawn(ModelRegistry.Scan, id, parent);
             if (go == null) return null;
             go.transform.localPosition = at;
-            go.transform.localRotation = Quaternion.Euler(0, yaw, 0) * Quaternion.Euler(tilt ?? Vector3.zero);
+            // Turned and tilted on top of the import's own rotation (the scans are modelled Z-up).
+            go.transform.localRotation = Quaternion.Euler(0, yaw, 0) * Quaternion.Euler(tilt ?? Vector3.zero) * go.transform.localRotation;
             go.transform.localScale *= scale;
             return go;
         }
@@ -722,11 +723,16 @@ namespace LastTide.Game
                     var table = Scan("WoodenTable_03", t, Vector3.zero, 0);
                     if (table == null) { Object.Destroy(holder); return null; }
                     float top = ModelRegistry.RendererBounds(table).max.y - t.position.y;
-                    Scan("wooden_axe", t, new Vector3(-0.5f, top, 0.05f), 80, 1, new Vector3(0, 0, 90));
-                    Scan("wooden_hammer_01", t, new Vector3(0.25f, top, -0.1f), 30, 1, new Vector3(0, 0, 90));
-                    Scan("handsaw_wood", t, new Vector3(0.6f, top, 0.15f), -20, 1, new Vector3(90, 0, 0));
+                    // Tools laid on the top (each resting on it by its own bounds), a crate beside.
+                    foreach (var tool in new[]
+                    {
+                        Scan("wooden_axe", t, new Vector3(-0.5f, top, 0.05f), 80, 1, new Vector3(0, 0, 90)),
+                        Scan("wooden_hammer_01", t, new Vector3(0.25f, top, -0.1f), 30, 1, new Vector3(0, 0, 90)),
+                        Scan("handsaw_wood", t, new Vector3(0.6f, top, 0.15f), -20),
+                        Scan("wooden_lantern_01", t, new Vector3(-0.2f, top, -0.25f), 10, 0.8f),
+                    })
+                        if (tool != null) tool.transform.position += Vector3.up * (t.position.y + top - ModelRegistry.RendererBounds(tool).min.y);
                     Scan("wooden_crate_01", t, new Vector3(1.9f, 0, 0.2f), 15, 0.8f);
-                    Scan("wooden_lantern_01", t, new Vector3(-0.2f, top, -0.25f), 10, 0.8f);
                     break;
                 }
                 case "shelter":
@@ -737,7 +743,7 @@ namespace LastTide.Game
                     sail.SetFloat("_Smoothness", 0.12f);
                     sail.SetColor("_BaseColor", new Color(1.1f, 1.06f, 0.98f));
                     // Two upright driftwood poles and a ridge pole lashed across them; the sail runs from the ridge down
-                    // to the sand behind, pegged with stones. (The scanned branches lie along Z: tip them upright.)
+                    // to the sand behind, pegged with stones (Span lines each branch up between two points).
                     foreach (float x in new[] { -1.6f, 1.6f })
                         Span(Scan("dry_branches_medium_01_b", t, Vector3.zero, 0), t, new Vector3(x, -0.1f, 0.95f), new Vector3(x * 0.97f, 2.05f, 0.9f));
                     Span(Scan("dry_branches_medium_01_c", t, Vector3.zero, 0), t, new Vector3(-2.1f, 1.88f, 0.9f), new Vector3(2.1f, 1.92f, 0.9f));
@@ -927,8 +933,7 @@ namespace LastTide.Game
             foreach (var (id, x, zf, yaw, sink) in parts)
             {
                 var p = Island.Ground(new Vector3(x, 0, Island.Radius * zf));
-                // The fort pieces were modelled lying down (tall axis along the scan's depth): stand them up.
-                var piece = Scan(id, t, p, yaw, 1, id.StartsWith("modular_fort") ? new Vector3(-90, 0, 0) : (Vector3?)null);
+                var piece = Scan(id, t, p, yaw, 1);
                 if (piece == null) continue;
                 var b = ModelRegistry.RendererBounds(piece);
                 piece.transform.position += new Vector3(p.x - b.center.x, p.y - sink - b.min.y, p.z - b.center.z);

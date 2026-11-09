@@ -168,6 +168,7 @@ namespace LastTide.Game
             }
             decor.ToObject("Undergrowth", world, false);
             var grass = GrassField.Build(world, 1.6f, 7);
+            Gulls.Create(world, 7, 11);
             if (grass != null)
                 foreach (var piece in G.Session.State.pieces)
                 {
@@ -235,6 +236,7 @@ namespace LastTide.Game
             Jungle(world, loc.Biome == Biome.Grove ? 50 : loc.Biome == Biome.Shore || loc.Biome == Biome.Pier ? 14 : 28, 0.45f);
             Undergrowth(world, 600);
             GrassField.Build(world, loc.Biome == Biome.Grove ? 2f : 1.2f, loc.Id.GetHashCode());
+            Gulls.Create(world, loc.Biome == Biome.Cave ? 3 : 5, loc.Id.GetHashCode());
 
             var dens = new GameObject("Dens").AddComponent<Dens>();
             dens.transform.SetParent(world, false);
@@ -519,7 +521,7 @@ namespace LastTide.Game
             if (_plants == null || _plants.parent != world) { _plants = new GameObject("Scanned plants").transform; _plants.SetParent(world, false); }
             var go = ModelRegistry.Spawn(ModelRegistry.Scan, id, _plants);
             go.transform.position = g;
-            go.transform.rotation = Quaternion.Euler(0, R() * 360, 0);
+            go.transform.rotation = Quaternion.Euler(0, R() * 360, 0) * go.transform.rotation;
             go.transform.localScale *= 0.5f + R() * 0.5f;
             return true;
         }

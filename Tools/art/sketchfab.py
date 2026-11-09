@@ -78,7 +78,7 @@ CAST = {
     "smuggler2": dict(uid="9ed1650abdce48d4a1a4d34a4a56cfc5", title='Skeleton Pirate " The Drunk "', author="ShadowCoffee",
                       role="drowned smugglers", height=1.75, tris=12000, cfg={"map": SKELETON_MAP, "hands": SKELETON_HANDS}),
 }
-FILES = {"snake": "stripesnake", "castaway": "castaway", "captain": "captain", "hunter": "hunter", "mara": "pirategirl", "tomas": "farmer",
+FILES = {"snake": "stripesnake", "gull": "seagull", "castaway": "castaway", "captain": "captain", "hunter": "hunter", "mara": "pirategirl", "tomas": "farmer",
          "ned": "svend", "revna": "revna", "smuggler": "skelcaptain", "smuggler2": "skeldrunk"}
 
 # Creatures (Tools/blender/creature_import.py -> Models/Creatures) and props (Tools/blender/scan_import.py ->
@@ -90,10 +90,15 @@ CREATURES = {
     "snake": dict(uid="0f4f583d5e3842eca1152c0bb021ec32", title="Striped Snake, Elaphe quadrivirgata",
                   author="ffishAsia-and-floraZia", license="CC0", role="the vipers (thickened, spine bent in code)",
                   size=2.4, tris=7000, cfg={"yaw": 90, "rest": 0, "girth": 1.8}),
+    "gull": dict(uid="985024328902444c8270c0f09acc897e", title="Low-Poly Seagull (with Animation & Rigged)",
+                 author="simonaskLDE", role="the gulls over the shore (wings flapped in code)", size=1.3, tris=1000,
+                 cfg={"pitch": -90}),
 }
 PROPS = {
     "rowboat": dict(uid="9922d5678af84adeb1c9b479856446ca", title="Old Rowboat", author="toomanydemons",
                     role="the rowboat, the beached boat on Driftwood Shore and the boat at the pier", kind="prop", size=3.6, tris=6000),
+    "ironore": dict(uid="93118b922cbb48caa4f45b16592fa519", title="Iron Ore (FREE)", author="vxdesigns",
+                    role="the iron veins", kind="prop", size=2.4, tris=2000),
     "lighthouse": dict(uid="9cc7e0ae47824e198ad5dd296644c125", title="Lighthouse", author="stnabeal",
                        role="the lighthouse on Lighthouse Point", kind="prop", size=17, tris=9000),
     "raft": dict(uid="48fb810caf0941328a6619a9a948b565", title="Raft", author="_SeF_",

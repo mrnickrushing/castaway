@@ -121,7 +121,10 @@ setting only.
   `Models/Scan` and are reached through `ModelRegistry.ScanFor` (the rowboat, also beached on Driftwood Shore and tied
   up at the pier; the lighthouse, turned by `WorldBuilder.LighthouseYaw` so its door faces the beach; the log raft
   that leaves every island). `scan_import.py` honours glTF's metallicFactor and gives specular-gloss materials a plain
-  finish (their maps aren't metallic/roughness). The pets stay Quaternius: no realistic dog
+  finish (their maps aren't metallic/roughness). The iron veins are a Sketchfab ore scan; gulls (`World/Gulls.cs`, a
+  rigged low-poly gull whose wings `CreatureArt.Wings` beats) circle each island's shore.
+- Scans import Z-up with a -90° X rotation on their root: turn them with `Quaternion.Euler(0, yaw, 0) * t.rotation`,
+  never by assigning a fresh rotation (that lays every fern, table and cliff on its side). The pets stay Quaternius: no realistic dog
   on Sketchfab has walk and run clips.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 

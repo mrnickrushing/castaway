@@ -5,6 +5,7 @@ clips kept or left out.
 
 size is the creature's length in metres (its longest side on the ground). cfg (all optional):
   yaw    degrees to turn it so its head faces -Y in Blender (+Z in Unity)
+  pitch  degrees about X first, for rigs modelled standing on end (the gull)
   clips  {source action name: game clip name}; actions not listed are dropped (none listed: no clips)
   drop   mesh name fragments to leave out
   girth  thicken the body around its bones by this factor (a real snake reads as a string from the game camera)
@@ -102,7 +103,7 @@ for act in list(bpy.data.actions):
         bpy.data.actions.remove(act)
 
 # Turn, stand on the ground at the origin (centred), scale to length.
-rot = Matrix.Rotation(math.radians(cfg.get("yaw", 0)), 4, "Z")
+rot = Matrix.Rotation(math.radians(cfg.get("yaw", 0)), 4, "Z") @ Matrix.Rotation(math.radians(cfg.get("pitch", 0)), 4, "X")
 pts = [rot @ (body.matrix_world @ v.co) for v in body.data.vertices]
 lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
 hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
@@ -208,7 +209,10 @@ for i, mat in enumerate(body.data.materials):
     entry = {"name": name, "alpha": False, "normal": False, "ms": False, "smooth": 0.3}
     base = image_of(mat, ["Base Color"])
     if base is None:
-        entry["color"] = [0.6, 0.6, 0.6]
+        # Flat-shaded models: the material's own colour.
+        bsdf = next((n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None) if mat and mat.use_nodes else None
+        c = bsdf.inputs["Base Color"].default_value if bsdf is not None else (0.6, 0.6, 0.6, 1)
+        entry["color"] = [round(c[0], 3), round(c[1], 3), round(c[2], 3)]
         slots.append(entry)
         continue
     save(px(base, MAP), os.path.join(texdir, name + "_albedo.jpg"))
