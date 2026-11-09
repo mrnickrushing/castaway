@@ -14,6 +14,7 @@ namespace LastTide.Game
         readonly List<Renderer> _tall = new List<Renderer>();
         readonly Dictionary<Renderer, float> _hidden = new Dictionary<Renderer, float>(); // renderer -> last time it blocked
         readonly List<Renderer> _drop = new List<Renderer>();
+        readonly Dictionary<Renderer, bool> _actor = new Dictionary<Renderer, bool>(); // rides on a character: never hide
         float _rescanAt;
 
         /// <summary>Call after the camera has moved this frame. target: the castaway's feet (or the build ghost).</summary>
@@ -26,7 +27,13 @@ namespace LastTide.Game
             {
                 var r = _tall[i];
                 if (r == null) continue;
-                if (Blocks(r.bounds, eye, target + Vector3.up * 0.9f) || Blocks(r.bounds, eye, target + Vector3.up * 1.7f))
+                var b = r.bounds;
+                // Only what stands on the camera's side (the camera looks north) and isn't what the castaway is at:
+                // the palm being chopped, a structure going up around its site, the lighthouse door stay drawn.
+                if (b.center.z > target.z - 0.5f) continue;
+                float dx = b.center.x - target.x, dz = b.center.z - target.z;
+                if (dx * dx + dz * dz < 2.5f * 2.5f) continue;
+                if (Blocks(b, eye, target + Vector3.up * 0.9f) || Blocks(b, eye, target + Vector3.up * 1.7f))
                 {
                     if (!_hidden.ContainsKey(r)) r.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
                     _hidden[r] = now;
@@ -59,19 +66,22 @@ namespace LastTide.Game
         }
 
         /// <summary>Collects the things tall enough to hide the castaway: taller than 2 m, but not the terrain, sea or
-        /// cliffs (wider than 16 m), nor anything that moves with an actor.</summary>
+        /// cliffs (wider than 16 m), nor anything that moves with an actor (worked out once per renderer).</summary>
         void Rescan()
         {
-            _rescanAt = Time.unscaledTime + 2f;
+            _rescanAt = Time.unscaledTime + 3f;
             var all = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None);
             _tall.Clear();
+            if (_actor.Count > all.Length * 2) _actor.Clear(); // islands come and go: forget the old ones now and then
             foreach (var r in all)
             {
                 var b = r.bounds;
                 if (b.size.y < 2f || Mathf.Max(b.size.x, b.size.z) > 16f) continue;
                 if (r.shadowCastingMode != ShadowCastingMode.On && !_hidden.ContainsKey(r)) continue; // effects, rings
-                if (r.GetComponentInParent<Player>() != null || r.GetComponentInParent<Enemy>() != null || r.GetComponentInParent<Pet>() != null) continue;
-                _tall.Add(r);
+                bool actor;
+                if (!_actor.TryGetValue(r, out actor))
+                    _actor[r] = actor = r.GetComponentInParent<Player>() != null || r.GetComponentInParent<Enemy>() != null || r.GetComponentInParent<Pet>() != null;
+                if (!actor) _tall.Add(r);
             }
         }
     }
