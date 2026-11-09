@@ -46,7 +46,12 @@ namespace LastTide.Game
             foreach (var b in All)
             {
                 if (!b.Alive) continue;
-                float d = Vector3.Distance(b.transform.position, p);
+                // Along the ground (with a sane height limit): on a slope one of them stands higher, and a 3D
+                // distance left foes a step apart, neither able to strike.
+                var off = b.transform.position - p;
+                if (Mathf.Abs(off.y) > 2.5f) continue;
+                off.y = 0;
+                float d = off.magnitude;
                 if (d < bd) { bd = d; best = b; }
             }
             return best;
@@ -88,7 +93,8 @@ namespace LastTide.Game
             var pos = transform.position;
             Vector3 goal = _wander;
             float speed = 1.4f;
-            float toPlayer = player != null ? Vector3.Distance(player.transform.position, pos) : 999;
+            float toPlayer = 999;
+            if (player != null) { var off = player.transform.position - pos; toPlayer = Mathf.Abs(off.y) > 2.5f ? 999 : new Vector2(off.x, off.z).magnitude; }
             bool alive = G.Session.State.health > 0;
             float aggro = _def.Aggro * G.Session.AggroScale(player != null && player.Sneaking);
             if (alive && (toPlayer < aggro || (_angry && toPlayer < _def.Aggro * 2.2f)) && Vector3.Distance(pos, _home) < 30f)
@@ -145,7 +151,12 @@ namespace LastTide.Game
             if (player != null)
             {
                 var gap = pos - player.transform.position; gap.y = 0;
-                if (gap.magnitude < 1.15f) pos = player.transform.position + (gap.sqrMagnitude > 1e-4f ? gap.normalized : -transform.forward) * 1.15f;
+                if (gap.magnitude < 1.15f)
+                {
+                    var out_ = player.transform.position + (gap.sqrMagnitude > 1e-4f ? gap.normalized : -transform.forward) * 1.15f;
+                    // Never shoved somewhere it couldn't walk to (a cliff edge it can't come back from).
+                    if (Island.Walkable(out_.x, out_.z) && Island.Height(out_.x, out_.z) >= 0.4f) pos = out_;
+                }
             }
             pos.y = Island.Ground(pos).y;
             transform.position = pos;
@@ -168,6 +179,26 @@ namespace LastTide.Game
     public sealed class Dens : MonoBehaviour
     {
         public const float Respawn = 75f;
+        /// <summary>The drowned smugglers rise again sooner: their gunpowder drives a story step.</summary>
+        static float RespawnOf(string kind) { return kind == "skeleton" ? 40f : Respawn; }
+
+        public static Dens Instance { get; private set; }
+        void Awake() { Instance = this; }
+
+        /// <summary>Where the next <paramref name="kind"/> will turn up (a den whose occupant is down), or null.</summary>
+        public Vector3? NextDen(string kind, Vector3 from)
+        {
+            Vector3? best = null; float bd = float.MaxValue;
+            for (int i = 0; i < _dens.Count; i++)
+            {
+                if (_kinds[i] != kind) continue;
+                Enemy b;
+                if (_boars.TryGetValue(i, out b) && b != null && b.Alive) continue;
+                float d = Vector3.Distance(_dens[i], from);
+                if (d < bd) { bd = d; best = _dens[i]; }
+            }
+            return best;
+        }
         readonly List<Vector3> _dens = new List<Vector3>();
         readonly List<string> _kinds = new List<string>();
         readonly Dictionary<int, Enemy> _boars = new Dictionary<int, Enemy>();
@@ -185,7 +216,7 @@ namespace LastTide.Game
                 if (b != null && !b.Alive) { _boars.Remove(i); _gone[i] = Time.time; continue; }
                 if (_kinds[i] == "redjack" && G.Session.Flag("redjack_dead")) continue; // the captain falls once
                 float since;
-                bool waited = !_gone.TryGetValue(i, out since) || Time.time - since > Respawn;
+                bool waited = !_gone.TryGetValue(i, out since) || Time.time - since > RespawnOf(_kinds[i]);
                 // Don't pop one into view right next to the player.
                 bool first = !_gone.ContainsKey(i);
                 bool far = first || player == null || Vector3.Distance(player.transform.position, _dens[i]) > 26f;

@@ -119,12 +119,14 @@ namespace LastTide.Game
             pos.y = Island.Ground(pos).y;
             transform.position = pos;
             s.State.px = pos.x; s.State.pz = pos.z; s.State.facing = transform.eulerAngles.y;
-            _move = Mathf.MoveTowards(_move, mag, dt * 6);
+            // Animate by how fast the castaway really moves: pushing into a wall or a cliff shouldn't run on the spot.
+            float actual = Mathf.Clamp01(new Vector2(Velocity.x, Velocity.z).magnitude / Speed);
+            _move = Mathf.MoveTowards(_move, Mathf.Min(mag, actual * 1.15f), dt * 6);
             _walk += dt * (2.5f + 8.5f * _move) * (_move > 0.05f ? 1 : 0);
 
             // Fight first: anything hostile in reach gets hit.
             _cooldown -= dt;
-            _target = Locked != null && Vector3.Distance(Locked.transform.position, pos) < AttackRange ? Locked : Enemy.Nearest(pos, AttackRange);
+            _target = Locked != null && Flat(Locked.transform.position - pos) < AttackRange ? Locked : Enemy.Nearest(pos, AttackRange);
             bool swingNow = _attackPressed || AutoAttack;
             _attackPressed = false;
             if (_swing >= 0)
@@ -133,7 +135,7 @@ namespace LastTide.Game
                 if (!_struck && _swing >= 0.5f)
                 {
                     _struck = true;
-                    if (_target != null && Vector3.Distance(_target.transform.position, pos) < AttackRange + 0.4f)
+                    if (_target != null && Flat(_target.transform.position - pos) < AttackRange + 0.4f)
                     {
                         _target.Hit(s.AttackDamage(), pos);
                         s.Swung();
@@ -189,6 +191,8 @@ namespace LastTide.Game
         }
 
         /// <summary>Steps along the ground, sliding along water's edge, cliffs and obstacles.</summary>
+        static float Flat(Vector3 v) { v.y = 0; return v.magnitude; }
+
         static Vector3 Move(Vector3 pos, Vector3 step)
         {
             var next = pos + step;

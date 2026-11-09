@@ -698,7 +698,17 @@ namespace LastTide.Game
             {
                 Enemy b = null; float eb = 400;
                 foreach (var e in Enemy.All) { if (!e.Alive || e.Kind != q.PointNode) continue; float d = Vector3.Distance(e.transform.position, from); if (d < eb) { eb = d; b = e; } }
-                return b != null ? b.transform.position : (Vector3?)null;
+                if (b != null) return b.transform.position;
+                // None up right now: lead toward where the next one rises, stopping short so it can (dens only refill
+                // when the castaway is over 26 m away).
+                var den = Dens.Instance != null ? Dens.Instance.NextDen(q.PointNode, from) : null;
+                if (den.HasValue)
+                {
+                    var away = from - den.Value; away.y = 0;
+                    if (away.magnitude < 30f) return null;   // close enough: wait here
+                    return den.Value;                        // walk toward it; the arrow stops at 30 m
+                }
+                return null;
             }
             string kind = q.PointBuild ?? q.PointNode;
             if (kind == null) return null;

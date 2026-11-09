@@ -236,6 +236,9 @@ namespace LastTide.Game
             var to = goal.Value - p.transform.position; to.y = 0;
             float dist = to.magnitude;
             if (dist < 1.0f || p.Working) return; // in the ring: the work happens
+            if (_blockedT > 0) { _blockedT -= Time.deltaTime; return; }
+            // Something hostile in reach: let go of the stick so auto-attack swings, as a player would.
+            if (Enemy.Nearest(p.transform.position, 2.2f) != null) return;
             // Standing in the goal's ring already (its centre is often blocked by the thing itself): let go of the stick.
             if (p.Current != null && Flat(p.Current.Pos - goal.Value) < 0.5f && !p.Current.Blocked) return;
             if (dist < _bestDist - 0.5f) { _bestDist = dist; _stuckT = 0; }
@@ -259,13 +262,23 @@ namespace LastTide.Game
             if (d.sqrMagnitude < 0.01f) return;
             d.Normalize();
             Player.BotStick = new Vector2(d.x, d.z);
+            // Pushing but not moving (a wall the planner missed): stop, log it, think again in a moment.
+            if (new Vector2(p.Velocity.x, p.Velocity.z).magnitude < 0.3f) _pushT += Time.deltaTime; else _pushT = 0;
+            if (_pushT > 2f) { _pushT = 0; _blockedT = 1.5f; _path = null; Log("blocked at " + p.transform.position.ToString("0") + " heading for " + goal.Value.ToString("0")); }
         }
+        float _pushT, _blockedT;
 
         static float Flat(Vector3 v) { v.y = 0; return v.magnitude; }
 
         static bool Open(float x, float z)
         {
+            // The cell and a ring half a metre out: thin steep strips (rock outcrops) fall between 1 m samples.
             if (!Island.Walkable(x, z)) return false;
+            for (int k = 0; k < 8; k++)
+            {
+                float a = k * Mathf.PI / 4;
+                if (!Island.Walkable(x + Mathf.Cos(a) * 0.55f, z + Mathf.Sin(a) * 0.55f)) return false;
+            }
             var q = new Vector3(x, 0, z);
             return Flat(Obstacles.Resolve(q, Player.BodyRadius) - q) < 0.05f;
         }
