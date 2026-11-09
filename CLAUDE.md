@@ -89,6 +89,10 @@ setting only.
   Balance check (2026-11-09): an iron harpoon + the hide set beats Red Jack and his raiders with health to spare.
 - Landmarks are photoscanned where possible (`Models.ScanCave`, `ScanPirateCamp`, `ScanRuins`); the cliffs are
   one-sided scans, so their faces must look at the player (yaw 0). The terrain's rock layer is Poly Haven `lichen_rock`.
+- Island outlines differ by biome (`Island.Shore`): Driftwood Shore is a long sandbar, the lighthouse sits on a point
+  running north, Red Jack's ship lies in a bay on the pirate island, Limestone Ridge has a second peak, Palm Grove a
+  lagoon (`Island.Lagoon`; scenery checks `Island.Height` so nothing floats in it). Keep noise inputs off whole
+  numbers: Unity's Perlin is flat on the lattice and drew a straight seam across the terrain.
 - Story cards use `Resources/UI/Story/<key>.jpg` (16:9, from `ai_media.py story`), else the small map painting.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 

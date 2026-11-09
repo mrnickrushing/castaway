@@ -514,7 +514,7 @@ namespace LastTide.Game
                 {
                     var p = RandomOnIsland();
                     float d = Island.Distance01(p.x, p.z);
-                    if (d > 0.76f || Island.Slope(p.x, p.z) > 0.4f || Near(p, 1.4f)) continue;
+                    if (d > 0.76f || Island.Slope(p.x, p.z) > 0.4f || Island.Height(p.x, p.z) < 0.5f || Near(p, 1.4f)) continue;
                     if (Vector3.Distance(p, Island.Camp) < Island.CampRadius + 2) continue;
                     var kind = Plants[(int)(R() * Plants.Length) % Plants.Length];
                     ModelRegistry.Free_(kind, holder, Island.Ground(p), R() * 360, 0.8f + R() * 0.5f);

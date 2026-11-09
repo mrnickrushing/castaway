@@ -51,9 +51,10 @@ namespace LastTide.Game
             s.State.health = 100; s.State.hunger = 100; s.State.thirst = 100;
             if (GameRoot.Instance.OnMap && s.State.travel == null) Hud.Instance.CloseMap();
             if (s.State.location == loc) return;
-            s.State.energy = World.EnergyMax;
-            s.State.travel = null;
-            if (s.Travel(World.Location(loc), true)) { s.State.travel.arriveAt = s.State.travel.leftAt; GameRoot.Instance.EnterArrived(); }
+            // Straight there, whatever the level: a journey that has already arrived.
+            double now = s.RealNow();
+            s.State.travel = new TravelState { from = s.State.location, to = loc, leftAt = now - 1, arriveAt = now - 1 };
+            GameRoot.Instance.EnterArrived();
         }
 
         public static void SetPhase(float phase)
@@ -225,6 +226,8 @@ namespace LastTide.Game
             var to = goal.Value - p.transform.position; to.y = 0;
             float dist = to.magnitude;
             if (dist < 1.0f || p.Working) return; // in the ring: the work happens
+            // Standing in the goal's ring already (its centre is often blocked by the thing itself): let go of the stick.
+            if (p.Current != null && Flat(p.Current.Pos - goal.Value) < 0.5f && !p.Current.Blocked) return;
             if (dist < _bestDist - 0.5f) { _bestDist = dist; _stuckT = 0; }
             else _stuckT += Time.deltaTime;
             // Plan around slopes, water and obstacles (A* on a 1 m grid); replan when the goal moves or progress stalls.

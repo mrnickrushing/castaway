@@ -170,7 +170,7 @@ Shader "LastTide/Terrain"
                 float3 albedo = 0; float4 n = 0; float total = 0;
                 [unroll] for (int k3 = 0; k3 < 6; k3++)
                 {
-                    float hw = w[k3] > 0.003 ? max(alb[k3].a + w[k3] - (hmax - (k3 <= 1 ? 0.6 : 0.25)), 0) : 0; // the two grasses mix softly (no speckle)
+                    float hw = w[k3] > 0.003 ? max(alb[k3].a + w[k3] - (hmax - (k3 <= 1 ? 0.6 : 0.25)), 0) * saturate(w[k3] * 6) : 0; // the two grasses mix softly (no speckle); a faint layer fades in instead of popping
                     albedo += alb[k3].rgb * hw; n += nrm[k3] * hw; total += hw;
                 }
                 albedo /= max(total, 1e-4); n /= max(total, 1e-4);

@@ -74,8 +74,28 @@ namespace LastTide.Game
             float a = Mathf.Atan2(z, x);
             float n = Mathf.PerlinNoise(Mathf.Cos(a) * 1.6f + 10 + _sx, Mathf.Sin(a) * 1.6f + 10 + _sz) - 0.5f;
             float m = Mathf.PerlinNoise(Mathf.Cos(a) * 4f + 30 + _sz, Mathf.Sin(a) * 4f + 30 + _sx) - 0.5f;
-            return Radius * (1 + n * (Location.Home ? 0.45f : 0.3f) + m * 0.12f);
+            float r = Radius * (1 + n * (Location.Home ? 0.45f : 0.3f) + m * 0.12f);
+            // Each island its own outline (angle 0 = east, 90 = north).
+            switch (Biome)
+            {
+                case Biome.Shore: r *= 1 + 0.38f * Mathf.Cos(2 * a); break;                               // a long sandbar, east to west
+                case Biome.Lighthouse: r *= 1 + 0.42f * Bump(a, 90, 26) - 0.12f * Bump(a, 90, 70); break; // a narrow point running out north
+                case Biome.PirateCamp: r *= 1 - 0.42f * Bump(a, 72, 24); break;                           // a sheltered bay for Jack's ship
+                case Biome.Ridge: r *= 1 + 0.18f * Mathf.Cos(2 * a - 0.3f); break;                       // stretched along its spine
+            }
+            return r;
         }
+
+        /// <summary>1 at <paramref name="deg"/> (degrees), fading to 0 about <paramref name="width"/> degrees either side.</summary>
+        static float Bump(float a, float deg, float width)
+        {
+            float d = Mathf.DeltaAngle(a * Mathf.Rad2Deg, deg) / width;
+            return Mathf.Exp(-d * d);
+        }
+
+        /// <summary>Palm Grove's lagoon: (centre, radius) of the pool of sea water inside the island.</summary>
+        static Vector3 Lagoon { get { return new Vector3(Radius * 0.18f, 0, Radius * 0.22f); } }
+        static float LagoonRadius { get { return Radius * 0.24f; } }
 
         /// <summary>0 at the island centre, 1 at the waterline, more out at sea.</summary>
         public static float Distance01(float x, float z) { return Mathf.Sqrt(x * x + z * z) / Shore(x, z); }
@@ -103,6 +123,20 @@ namespace LastTide.Game
             else h += ridge * ridge * (5f + crag * 12f);
             // Small rock outcrops through the jungle.
             h += Mathf.Max(0, Noise2.Ridged(x * 0.06f + 40 + _sx, z * 0.06f - 9 + _sz, 2) - 0.62f) * 14f * land * (1 - ridge);
+            // Palm Grove: a lagoon of clear water ringed with sand in the middle of the island.
+            if (Biome == Biome.Grove)
+            {
+                float lg = Vector2.Distance(new Vector2(x, z), new Vector2(Lagoon.x, Lagoon.z)) / LagoonRadius;
+                // Wide, gentle banks: sand down to the water, not a rock-walled crater.
+                float k = 1 - Smooth(Mathf.Clamp01((lg - 0.45f) / 1.4f));
+                h = Mathf.Lerp(h, -1.2f, k);
+            }
+            // Limestone Ridge: a second, higher peak at the west end of the spine.
+            if (Biome == Biome.Ridge)
+            {
+                float pk = Vector2.Distance(new Vector2(x, z), new Vector2(-Radius * 0.45f, Radius * 0.2f)) / (Radius * 0.3f);
+                h += Mathf.Exp(-pk * pk * 2.2f) * (7f + crag * 6f) * land;
+            }
             // A plateau for the lighthouse.
             if (Biome == Biome.Lighthouse)
             {
@@ -190,7 +224,9 @@ namespace LastTide.Game
             float sand = Mathf.Clamp01((d - 0.74f - n * 0.06f) / 0.06f);
             sand = Mathf.Max(sand, Mathf.Clamp01((1.3f - h) / 0.5f));
             float rock = Mathf.Clamp01((slope - 0.38f) / 0.22f);
-            float dry = Mathf.Clamp01((Mathf.PerlinNoise(x * 0.02f + 50, z * 0.02f) - 0.45f) * 3f);
+            // Offsets off the noise lattice: at a whole-number input Unity's Perlin sits flat, which drew a straight
+            // dry/green border down the middle of every island.
+            float dry = Mathf.Clamp01((Mathf.PerlinNoise(x * 0.017f + 50.37f, z * 0.019f + 13.71f) - 0.45f) * 3f);
             float camp = Vector2.Distance(new Vector2(x, z), new Vector2(Camp.x, Camp.z));
             float dirt = Mathf.Clamp01((CampRadius * 0.75f - camp) / 6f) * (0.55f + 0.45f * n);
             float grass = 1 - sand;
