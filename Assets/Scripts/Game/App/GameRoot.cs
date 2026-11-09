@@ -86,6 +86,8 @@ namespace LastTide.Game
         {
             Instance = this;
             Application.targetFrameRate = 60;
+            // LOD switch points are tuned for a bias of 1 (ModelRegistry.AddFarLod): trees near the castaway stay full detail.
+            QualitySettings.lodBias = 1f;
             QualitySettings.vSyncCount = 0;
             Input.multiTouchEnabled = true;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;

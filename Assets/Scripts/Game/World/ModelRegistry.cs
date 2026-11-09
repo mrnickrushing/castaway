@@ -99,13 +99,51 @@ namespace LastTide.Game
             var go = Object.Instantiate(prefab, parent, false);
             go.name = id;
             foreach (var c in go.GetComponentsInChildren<Collider>()) Object.Destroy(c);
-            if (category == Scan) { ScanMaterials(go, id); return go; }
-            var mat = Material(category, id);
-            // Free kit models and the Quaternius characters carry their colours in the vertices.
-            if (mat == null && (category == Free || category == People)) mat = Materials.Kit;
-            if (mat != null)
-                foreach (var r in go.GetComponentsInChildren<Renderer>()) r.sharedMaterial = mat;
+            if (category == Scan) ScanMaterials(go, id);
+            else
+            {
+                var mat = Material(category, id);
+                // Free kit models and the Quaternius characters carry their colours in the vertices.
+                if (mat == null && (category == Free || category == People)) mat = Materials.Kit;
+                if (mat != null)
+                    foreach (var r in go.GetComponentsInChildren<Renderer>()) r.sharedMaterial = mat;
+            }
+            if (!id.EndsWith("_far")) AddFarLod(go, category, id);
             return go;
+        }
+
+        /// <summary>
+        /// Trees drawn by the hundred carry a light stand-in (<c>id_far</c>, same textures) that takes over when the tree
+        /// is small on screen, including in the shadow pass. Keeps the jungle inside the phone's triangle budget.
+        /// </summary>
+        static void AddFarLod(GameObject go, string category, string id)
+        {
+            if (Prefab(category, id + "_far") == null) return;
+            var far = Spawn(category, id + "_far", go.transform);
+            if (far == null) return;
+            far.transform.localPosition = Vector3.zero;
+            far.transform.localRotation = Quaternion.identity;
+            far.transform.localScale = Vector3.one;
+            // A far model built at the same size as the near one, but imported with its own scale: match bounds.
+            var nb = RendererBoundsOf(go, far); var fb = RendererBounds(far);
+            if (fb.size.y > 0.01f) far.transform.localScale = Vector3.one * (nb.size.y / fb.size.y);
+            var nearR = new List<Renderer>();
+            foreach (var r in go.GetComponentsInChildren<Renderer>()) if (!r.transform.IsChildOf(far.transform)) nearR.Add(r);
+            var lod = go.AddComponent<LODGroup>();
+            lod.SetLODs(new[] { new LOD(0.6f, nearR.ToArray()), new LOD(0.0f, far.GetComponentsInChildren<Renderer>()) });
+            lod.RecalculateBounds();
+        }
+
+        /// <summary>Bounds of <paramref name="go"/>'s renderers, leaving out those under <paramref name="skip"/>.</summary>
+        static Bounds RendererBoundsOf(GameObject go, GameObject skip)
+        {
+            bool any = false; var b = new Bounds(go.transform.position, Vector3.zero);
+            foreach (var r in go.GetComponentsInChildren<Renderer>())
+            {
+                if (r.transform.IsChildOf(skip.transform)) continue;
+                if (!any) { b = r.bounds; any = true; } else b.Encapsulate(r.bounds);
+            }
+            return b;
         }
 
         static readonly Dictionary<string, Material> _mats = new Dictionary<string, Material>();

@@ -64,6 +64,9 @@ setting only.
   table with tools; `Span` lays a pole between two points whatever axis it was modelled along). `GrassField` draws
   GPU-instanced grass clumps by `Island.GrassAmount`. Budgets: trees ~22k tris, rocks 1-4k, plants 1-3k; check
   `UnityEditor.UnityStats.triangles` (about 1.2M at the default zoom) after adding art.
+- Far detail: any model with an `<id>_far` next to it (Scan or Trees category) gets a LODGroup in `ModelRegistry.Spawn`
+  (full detail above 0.6 of screen height; `GameRoot` sets lodBias 1). `island_tree_02_far` (6k tris, shares the near
+  tree's textures through its JSON slot names) and `Trees/palm_far` keep every island near 1.2M tris (was ~1.95M).
 - Look: ACES tonemapping, HDRI reflections (`Resources/Sky`), SSAO (radius 0.4), shadows to 50 m; the sea refracts
   the opaque texture with depth absorption and caustics (`Water.shader`, needs URP opaque + depth textures). Never add
   a negative lift to the grading: it crushes the night to black.
