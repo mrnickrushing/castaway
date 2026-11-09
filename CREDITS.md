@@ -27,6 +27,8 @@ Re-download and convert the free models with `python3 Tools/art/free_assets.py f
 - "Skeleton Pirate " The Drunk "" by ShadowCoffee (https://sketchfab.com/3d-models/9ed1650abdce48d4a1a4d34a4a56cfc5), CC BY 4.0. Used as drowned smugglers; rescaled, decimated, rig renamed.
 - "Japanese Freshwater Crab" by ffishAsia-and-floraZia (https://sketchfab.com/3d-models/35559c2236d04c1a80ccbe08cae863c6), CC0. Used as the giant crabs; rescaled, decimated, rig kept.
 - "Striped Snake, Elaphe quadrivirgata" by ffishAsia-and-floraZia (https://sketchfab.com/3d-models/0f4f583d5e3842eca1152c0bb021ec32), CC0. Used as the vipers (thickened, spine bent in code); rescaled, decimated, rig kept.
-- "Old Rowboat" by toomanydemons (https://sketchfab.com/3d-models/9922d5678af84adeb1c9b479856446ca), CC BY 4.0. Used as the rowboat and the beached boat on Driftwood Shore; rescaled, maps repacked.
+- "Old Rowboat" by toomanydemons (https://sketchfab.com/3d-models/9922d5678af84adeb1c9b479856446ca), CC BY 4.0. Used as the rowboat, the beached boat on Driftwood Shore and the boat at the pier; rescaled, maps repacked.
+- "Lighthouse" by stnabeal (https://sketchfab.com/3d-models/9cc7e0ae47824e198ad5dd296644c125), CC BY 4.0. Used as the lighthouse on Lighthouse Point; rescaled, maps repacked.
+- "Raft" by _SeF_ (https://sketchfab.com/3d-models/48fb810caf0941328a6619a9a948b565), CC BY 4.0. Used as the castaway's raft (to the map) on every island; rescaled, maps repacked.
 
 - Universal Animation Library by Quaternius (https://quaternius.com), CC0. Every character's moves.

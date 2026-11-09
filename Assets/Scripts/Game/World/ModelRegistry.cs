@@ -45,6 +45,8 @@ namespace LastTide.Game
             { "pirate_ship", new[] { "dutch_ship_large_01" } },
             { "rowboat", new[] { "rowboat" } },
             { "canoe", new[] { "rowboat" } },
+            { "lighthouse", new[] { "lighthouse" } },
+            { "raft", new[] { "raft" } },
         };
 
         static int _pick;

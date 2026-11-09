@@ -93,7 +93,11 @@ CREATURES = {
 }
 PROPS = {
     "rowboat": dict(uid="9922d5678af84adeb1c9b479856446ca", title="Old Rowboat", author="toomanydemons",
-                    role="the rowboat and the beached boat on Driftwood Shore", kind="prop", size=3.6, tris=6000),
+                    role="the rowboat, the beached boat on Driftwood Shore and the boat at the pier", kind="prop", size=3.6, tris=6000),
+    "lighthouse": dict(uid="9cc7e0ae47824e198ad5dd296644c125", title="Lighthouse", author="stnabeal",
+                       role="the lighthouse on Lighthouse Point", kind="prop", size=17, tris=9000),
+    "raft": dict(uid="48fb810caf0941328a6619a9a948b565", title="Raft", author="_SeF_",
+                 role="the castaway's raft (to the map) on every island", kind="prop", size=4.2, tris=7000),
 }
 OTHER = dict(CREATURES, **PROPS)
 

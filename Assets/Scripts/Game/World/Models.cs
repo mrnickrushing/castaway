@@ -586,8 +586,11 @@ namespace LastTide.Game
             return mb;
         }
 
+        /// <summary>Where the boat is tied up, from the pier's end (z is added to the pier's length).</summary>
+        public static readonly Vector3 PierBoat = new Vector3(2.8f, 0.15f, -4);
+
         /// <summary>An old wooden jetty on piles, running out from the beach (along +Z).</summary>
-        public static MeshBuilder Pier(float length)
+        public static MeshBuilder Pier(float length, bool boat = true)
         {
             var mb = new MeshBuilder();
             for (float z = -4; z < length; z += 0.55f)
@@ -600,14 +603,17 @@ namespace LastTide.Game
             for (float z = 0; z <= length; z += 4f)
                 foreach (float x in new[] { -1.5f, 1.5f })
                     mb.Cylinder(new Vector3(x, -4f, z), new Vector3(x, Island.PierDeck + (z % 8 == 0 ? 0.9f : 0.2f), z), 0.17f, 0.15f, 7, Palette.Hex(0x5E4632));
-            // A rowing boat tied up at the end, and a stack of lobster pots.
-            mb.Push().Translate(2.8f, 0.15f, length - 4).RotateY(8);
-            mb.Surf = SurfaceKind.Planks;
-            mb.Box(new Vector3(0, 0.25f, 0), new Vector3(1.3f, 0.5f, 3.6f), Palette.Hex(0x4E6A80));
-            mb.Box(new Vector3(0, 0.45f, 0), new Vector3(1.1f, 0.1f, 3.3f), Palette.WoodPale);
-            mb.Pop();
+            // A rowing boat tied up at the end and a stack of lobster pots (unless scanned ones are placed there).
+            if (boat)
+            {
+                mb.Push().Translate(PierBoat.x, PierBoat.y, length + PierBoat.z).RotateY(8);
+                mb.Surf = SurfaceKind.Planks;
+                mb.Box(new Vector3(0, 0.25f, 0), new Vector3(1.3f, 0.5f, 3.6f), Palette.Hex(0x4E6A80));
+                mb.Box(new Vector3(0, 0.45f, 0), new Vector3(1.1f, 0.1f, 3.3f), Palette.WoodPale);
+                mb.Pop();
+            }
             mb.Surf = SurfaceKind.None;
-            for (int i = 0; i < 3; i++) mb.Box(new Vector3(-0.9f, Island.PierDeck + 0.25f + i * 0.4f, length - 2.5f), new Vector3(0.7f, 0.4f, 0.5f), Tropic.Rope);
+            if (boat) for (int i = 0; i < 3; i++) mb.Box(new Vector3(-0.9f, Island.PierDeck + 0.25f + i * 0.4f, length - 2.5f), new Vector3(0.7f, 0.4f, 0.5f), Tropic.Rope);
             return mb;
         }
 

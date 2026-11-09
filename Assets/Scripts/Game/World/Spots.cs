@@ -618,6 +618,9 @@ namespace LastTide.Game
         public override string Label { get { return "To the map"; } }
         public override float Fill { get { return Mathf.Clamp01(_t / 0.8f); } }
 
+        /// <summary>Lines the scanned raft up with the painted one (long side along its z).</summary>
+        const float RaftYaw = 0f;
+
         public static ExitSpot Create(Transform parent, Vector3 pos, float yaw)
         {
             var go = new GameObject("Raft");
@@ -625,7 +628,8 @@ namespace LastTide.Game
             go.transform.position = pos;
             go.transform.rotation = Quaternion.Euler(0, yaw, 0);
             var s = go.AddComponent<ExitSpot>();
-            Models.Raft().ToObject("Raft", go.transform);
+            // The scanned log raft (Sketchfab, CC BY), else the painted one.
+            if (ModelRegistry.Free_("raft", go.transform, pos, yaw + RaftYaw) == null) Models.Raft().ToObject("Raft", go.transform);
             Obstacles.Add(pos, 1.2f, s);
             s.MakeRing(3.0f);
             return s;

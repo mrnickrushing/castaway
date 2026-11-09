@@ -118,7 +118,10 @@ setting only.
   `Resources/Models/Creatures`): the giant crab plays its own scuttle clip faster with its pace and rears to strike; the
   viper (a CC0 snake scan, thickened by `girth`) has no usable clip, so `Actors/CreatureArt.cs` bends its ~100 spine
   bones into a travelling S and raises the neck to strike. Props from Sketchfab go through `sketchfab.py prop` into
-  `Models/Scan` (the rowboat, also the beached boat on Driftwood Shore). The pets stay Quaternius: no realistic dog
+  `Models/Scan` and are reached through `ModelRegistry.ScanFor` (the rowboat, also beached on Driftwood Shore and tied
+  up at the pier; the lighthouse, turned by `WorldBuilder.LighthouseYaw` so its door faces the beach; the log raft
+  that leaves every island). `scan_import.py` honours glTF's metallicFactor and gives specular-gloss materials a plain
+  finish (their maps aren't metallic/roughness). The pets stay Quaternius: no realistic dog
   on Sketchfab has walk and run clips.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
