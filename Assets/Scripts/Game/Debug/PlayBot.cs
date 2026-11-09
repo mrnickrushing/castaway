@@ -197,8 +197,18 @@ namespace LastTide.Game
                     break;
             }
 
-            // Build sites: the guide arrow leads to the missing materials; only hand them over if that stalls.
             var q = s.CurrentQuest;
+            // A blueprint short of something crafted (rope, nails): craft it as the quest card says, once the
+            // ingredients are in the pack (the guide arrow fetches those).
+            if (q.PointBuild != null && Content.Builds.ContainsKey(q.PointBuild) && !s.Built(q.PointBuild))
+                foreach (var c in s.Remaining(q.PointBuild))
+                {
+                    var r = GuideArrow.RecipeFor(c.id);
+                    if (r == null || GuideArrow.Gatherable(c.id) || s.Count(c.id) >= c.n) continue;
+                    if (r.Station != "hand" && s.Job(r.Station) != null) continue;
+                    if (s.CraftBlocked(r.Id) == null && s.Craft(r.Id)) Log("crafted " + r.Output + " for the " + q.PointBuild);
+                }
+            // Build sites: the guide arrow leads to the missing materials; only hand them over if that stalls.
             if (q.PointBuild != null && Content.Builds.ContainsKey(q.PointBuild) && !s.Built(q.PointBuild) && !s.CanDeliver(q.PointBuild) && _questT > 90)
                 foreach (var c in s.Remaining(q.PointBuild)) Need(c.id, c.n, "build " + q.PointBuild);
 

@@ -253,7 +253,7 @@ namespace LastTide.Game
                 var shore = Island.Landmark;
                 for (float z = Island.Landmark.z; z < Island.Radius * 1.5f; z += 1) { shore = new Vector3(Island.Radius * 0.35f, 0, z); if (Island.Distance01(shore.x, shore.z) > 0.9f) break; }
                 var ship = ModelRegistry.Free_("pirate_ship", world, new Vector3(shore.x + 6, -0.6f, shore.z + 20), 70);
-                if (ship != null) ship.AddComponent<Bob>();
+                if (ship != null) { ship.AddComponent<Bob>(); ModelRegistry.BlackSails(ship); }
                 ShipSpot.Create(nodes, Island.Ground(shore));
             }
         }
@@ -630,7 +630,49 @@ namespace LastTide.Game
         public static Vector3? GoalPosition(Vector3 from) { return Target(from); }
 
         /// <summary>The nearest node the castaway can work right now that yields one of <paramref name="need"/>.</summary>
+        /// <summary>The recipe that makes <paramref name="item"/>, or null.</summary>
+        public static RecipeDef RecipeFor(string item)
+        {
+            foreach (var r in Content.Recipes.Values) if (r.Output == item) return r;
+            return null;
+        }
+
+        /// <summary>
+        /// What the castaway should go and get for <paramref name="need"/>: things a node yields as they are, and for
+        /// crafted things (rope, nails, planks) the ingredients the backpack is short of. Crafted things the castaway
+        /// can make right now at a station point at that station.
+        /// </summary>
         static Vector3? SourceFor(List<ItemCount> need, Vector3 from)
+        {
+            var s = G.Session;
+            var expanded = new List<ItemCount>();
+            foreach (var c in need)
+            {
+                var r = RecipeFor(c.id);
+                if (r == null || NodeYields(c.id)) { expanded.Add(c); continue; }
+                int batches = Mathf.CeilToInt(c.n / (float)Mathf.Max(1, r.Count));
+                bool short_ = false;
+                foreach (var inp in r.Inputs)
+                {
+                    int want = inp.n * batches - s.Count(inp.id);
+                    if (want > 0) { expanded.Add(new ItemCount(inp.id, want)); short_ = true; }
+                }
+                // Ingredients in hand: a station recipe is made at the station (hand recipes from CRAFT anywhere).
+                if (!short_ && r.Station != "hand")
+                    foreach (var sp in Spot.All) if (sp.Kind == r.Station && sp.Active) return sp.Pos;
+            }
+            return NearestYielding(expanded, from);
+        }
+
+        public static bool Gatherable(string item) { return NodeYields(item); }
+
+        static bool NodeYields(string item)
+        {
+            foreach (var d in Content.Nodes.Values) foreach (var y in d.Yield) if (y.id == item) return true;
+            return false;
+        }
+
+        static Vector3? NearestYielding(List<ItemCount> need, Vector3 from)
         {
             Spot best = null;
             float bd = float.MaxValue;

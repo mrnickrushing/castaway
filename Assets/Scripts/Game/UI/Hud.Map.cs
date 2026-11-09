@@ -19,6 +19,26 @@ namespace LastTide.Game
         LocationDef _selected;
         RectTransform _rush, _enterBox;
         readonly Dictionary<string, RectTransform> _pins = new Dictionary<string, RectTransform>();
+        RectTransform _mapTop, _mapBottom;
+
+        /// <summary>True when a map pin or its name sits behind the energy box, the quest card or the bottom bar.</summary>
+        bool UnderMapHud(RectTransform pin)
+        {
+            var name = (RectTransform)pin.GetChild(1);
+            foreach (var r in new[] { _mapTop, _questCard, _mapBottom })
+            {
+                if (r == null || !r.gameObject.activeInHierarchy) continue;
+                var c = new Vector3[4]; r.GetWorldCorners(c);
+                var box = new Rect(c[0].x, c[0].y, c[2].x - c[0].x, c[2].y - c[0].y);
+                foreach (var t in new[] { pin, name })
+                {
+                    var p = new Vector3[4]; t.GetWorldCorners(p);
+                    var pr = new Rect(p[0].x, p[0].y, p[2].x - p[0].x, p[2].y - p[0].y);
+                    if (box.Overlaps(pr)) return true;
+                }
+            }
+            return false;
+        }
         public bool MapOpen { get { return GameRoot.Instance != null && GameRoot.Instance.OnMap; } }
 
         public void OpenMap()
@@ -45,7 +65,7 @@ namespace LastTide.Game
             _travelDots = UIKit.Rect("Travel", _pinLayer); _travelDots.Fill();
 
             // Energy and doubloons, top left.
-            var top = UIKit.Rect("Energy", _mapUi).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -26), new Vector2(460, 180));
+            var top = _mapTop = UIKit.Rect("Energy", _mapUi).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -26), new Vector2(460, 180));
             var bolt = UIKit.Img("Bolt", top, UIKit.Symbol("bolt"), UIKit.Amber);
             bolt.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -4), new Vector2(46, 56));
             var el = UIKit.Outlined(UIKit.Label("Label", top, "Energy", 38, Color.white), 1.5f);
@@ -73,6 +93,7 @@ namespace LastTide.Game
 
             // Current location, bottom bar.
             var strip = UIKit.Img("Bottom", _mapUi, null, new Color(0.13f, 0.15f, 0.16f, 0.96f));
+            _mapBottom = strip.rectTransform;
             strip.rectTransform.anchorMin = new Vector2(0, 0); strip.rectTransform.anchorMax = new Vector2(1, 0);
             strip.rectTransform.pivot = new Vector2(0.5f, 0); strip.rectTransform.offsetMin = new Vector2(-200, -200); strip.rectTransform.offsetMax = new Vector2(200, 150);
             strip.raycastTarget = true;
@@ -313,6 +334,10 @@ namespace LastTide.Game
                 pin.anchoredPosition = c;
                 var name = pin.GetChild(1).GetComponent<RectTransform>();
                 name.anchoredPosition = new Vector2(0, -MapPixels(MapView.IslandRadius(l)) * 0.8f - 40);
+                // Fade a pin that has slid behind the HUD (pan to bring it out) instead of drawing it under the panels.
+                var cg = pin.GetComponent<CanvasGroup>();
+                if (cg == null) cg = pin.gameObject.AddComponent<CanvasGroup>();
+                cg.alpha = Mathf.MoveTowards(cg.alpha, UnderMapHud(pin) ? 0f : 1f, Time.unscaledDeltaTime * 6);
             }
             // The castaway: on the island they're at, or along the way.
             Vector3 me;

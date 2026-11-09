@@ -322,10 +322,18 @@ namespace LastTide.Game
             const float step = 4f, reach = 900f;
             // Open ocean round the terrain: four big flat slabs of deep water.
             var deep = new Color(1, 0, 0);
+            // In 60 m tiles: fog is worked out per vertex, and one 900 m quad drew the far haze right up to the island's
+            // sea floor, a hard pale line across the water.
             void Slab(float x0, float z0, float x1, float z1)
             {
-                mb.QuadSmooth(new Vector3(x0, Sea, z0), new Vector3(x0, Sea, z1), new Vector3(x1, Sea, z1), new Vector3(x1, Sea, z0),
-                    Vector3.up, Vector3.up, Vector3.up, Vector3.up, deep, deep, deep, deep);
+                const float tile = 60f;
+                for (float z = z0; z < z1 - 0.01f; z += tile)
+                    for (float x = x0; x < x1 - 0.01f; x += tile)
+                    {
+                        float xe = Mathf.Min(x + tile, x1), ze = Mathf.Min(z + tile, z1);
+                        mb.QuadSmooth(new Vector3(x, Sea, z), new Vector3(x, Sea, ze), new Vector3(xe, Sea, ze), new Vector3(xe, Sea, z),
+                            Vector3.up, Vector3.up, Vector3.up, Vector3.up, deep, deep, deep, deep);
+                    }
             }
             Slab(-reach, -reach, reach, -Half);
             Slab(-reach, Half, reach, reach);

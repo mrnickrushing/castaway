@@ -167,17 +167,43 @@ namespace LastTide.Game
         }
 
         /// <summary>The Dutch ship's sailcloth (for the castaway's lean-to), or null before the ship is imported.</summary>
+        static Material _sail;
         public static Material SailMaterial
         {
             get
             {
+                if (_sail != null) return _sail;
                 if (Prefab(Scan, "dutch_ship_large_01") == null) return null;
+                // Found once (the probe is a whole ship) and kept.
                 var probe = Spawn(Scan, "dutch_ship_large_01", null);
-                Material sail = null;
                 foreach (var r in probe.GetComponentsInChildren<Renderer>())
-                    foreach (var m in r.sharedMaterials) if (m != null && m.name.Contains("sail")) sail = m;
+                    foreach (var m in r.sharedMaterials) if (m != null && m.name.Contains("sail")) _sail = m;
                 Object.Destroy(probe);
-                return sail;
+                return _sail;
+            }
+        }
+
+        /// <summary>Red Jack's ship: the same sailcloth dyed black.</summary>
+        public static void BlackSails(GameObject ship)
+        {
+            if (ship == null) return;
+            Material black = null;
+            foreach (var r in ship.GetComponentsInChildren<Renderer>())
+            {
+                var mats = r.sharedMaterials;
+                bool changed = false;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null || !mats[i].name.Contains("sail")) continue;
+                    if (black == null)
+                    {
+                        black = new Material(mats[i]) { name = "Black sails" };
+                        black.SetColor("_BaseColor", new Color(0.16f, 0.14f, 0.14f));
+                        black.SetFloat("_Smoothness", 0.05f);
+                    }
+                    mats[i] = black; changed = true;
+                }
+                if (changed) r.sharedMaterials = mats;
             }
         }
 

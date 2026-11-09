@@ -92,6 +92,9 @@ Shader "LastTide/Water"
                 float thickR = LinearEyeDepth(SampleSceneDepth(ruv), _ZBufferParams) - waterZ;
                 if (thickR < 0) { ruv = suv; } else { thick = thickR; }
                 float3 under = SampleSceneColor(ruv);
+                // Past the edge of the sea floor nothing is under the water (the depth is the sky): read it as deep
+                // ocean, not the sky showing through, or the open sea turns pale beyond a hard line.
+                under = lerp(under, c.rgb * 0.45, saturate((thick - 25) / 25));
                 // Caustics: two drifting cell patterns on the bottom, strongest in the shallows.
                 float2 cuv = i.positionWS.xz * 0.45;
                 float ca = SAMPLE_TEXTURE2D(_WaveTex, sampler_WaveTex, cuv * 0.6 + _Time.y * float2(0.03, 0.02)).r;

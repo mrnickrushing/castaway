@@ -207,7 +207,17 @@ namespace LastTide.Game
             if (q.PointBuild != null && Content.Builds.ContainsKey(q.PointBuild) && !s.Built(q.PointBuild) && !s.CanDeliver(q.PointBuild))
             {
                 var r = s.Remaining(q.PointBuild);
-                if (r.Count > 0) need = "  <size=24><color=#8FE3A8>need " + r[0].n + " " + Content.Items[r[0].id].Name + "</color></size>";
+                if (r.Count > 0)
+                {
+                    var it = r[0];
+                    int short_ = it.n - s.Count(it.id);
+                    var recipe = GuideArrow.RecipeFor(it.id);
+                    string name = Content.Items[it.id].Name;
+                    // Crafted materials say so: "craft 2 Rope", and where (CRAFT anywhere, or at the workbench).
+                    if (short_ > 0 && recipe != null && !GuideArrow.Gatherable(it.id))
+                        need = "  <size=24><color=#8FE3A8>craft " + short_ + " " + name + (recipe.Station == "hand" ? " (CRAFT)" : " at the " + Session.StationName(recipe.Station).ToLower()) + "</color></size>";
+                    else need = "  <size=24><color=#8FE3A8>need " + it.n + " " + name + "</color></size>";
+                }
             }
             _questText.text = "<color=#FFC24A>\u2022</color>  " + q.Label(s) + need;
             _questText.gameObject.SetActive(!_questFolded);
