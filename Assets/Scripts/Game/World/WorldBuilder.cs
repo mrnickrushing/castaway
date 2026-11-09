@@ -324,23 +324,35 @@ namespace LastTide.Game
                 }
                 case Biome.Cave:
                 {
-                    var go = ModelRegistry.Free_("cliff_cave", world, at + new Vector3(0, -0.3f, 2.5f), 180, 1.3f);
-                    if (go != null)
+                    var go = Models.ScanCave(world, at);
+                    bool scanned = go != null;
+                    if (!scanned) go = ModelRegistry.Free_("cliff_cave", world, at + new Vector3(0, -0.3f, 2.5f), 180, 1.3f);
+                    if (go != null && !scanned)
                     {
                         ModelRegistry.Free_("cliff", world, at + new Vector3(-10.5f, -0.3f, 3.5f), 180, 1.2f);
                         ModelRegistry.Free_("cliff", world, at + new Vector3(10.5f, -0.3f, 3.5f), 180, 1.2f);
                         ModelRegistry.Free_("crate", world, Island.Ground(at + new Vector3(-3, 0, -2)), 15);
                         ModelRegistry.Free_("barrel", world, Island.Ground(at + new Vector3(3.2f, 0, -1.5f)));
                     }
-                    else { go = Models.CaveMouth().ToObject("Cave", world); go.transform.position = at; }
+                    else if (!scanned) { go = Models.CaveMouth().ToObject("Cave", world); go.transform.position = at; }
                     foreach (float x in new[] { -6f, -3.5f, 3.5f, 6f }) Obstacles.Add(at + new Vector3(x, 0, 1.5f), 1.8f);
-                    Take(at, 10f);
+                    Take(at, 10f); Take(at + new Vector3(0, 0, -9), 9f); // a clear view of the mouth from the path
                     break;
                 }
                 case Biome.PirateCamp:
                 {
-                    GameObject go;
-                    if (ModelRegistry.Has(ModelRegistry.Free, "tent"))
+                    GameObject go = Models.ScanPirateCamp(world, at);
+                    if (go != null)
+                    {
+                        Obstacles.Add(at + new Vector3(11, 0, 9), 0.1f);
+                        foreach (var c in new[] { new Vector3(-5, 0, -8), new Vector3(5, 0, -8) }) Obstacles.Add(at + c, 1.1f);
+                        for (int i = 0; i < 9; i++)
+                        {
+                            float a = Mathf.Lerp(20, 160, i / 8f) * Mathf.Deg2Rad;
+                            Obstacles.Add(at + new Vector3(Mathf.Cos(a) * 15, 0, Mathf.Sin(a) * 15), 1.6f);
+                        }
+                    }
+                    else if (ModelRegistry.Has(ModelRegistry.Free, "tent"))
                     {
                         go = new GameObject("Pirate camp");
                         go.transform.SetParent(world, false);
@@ -376,6 +388,13 @@ namespace LastTide.Game
                 {
                     // Ancient ruins in the pass: whoever lived here before the pirates.
                     var r0 = Island.Ground(new Vector3(-6, 0, Island.Radius * 0.15f));
+                    if (Models.ScanRuins(world) != null)
+                    {
+                        Obstacles.Add(r0, 1.6f); Take(r0, 6f);
+                        foreach (var (x, zf, r) in new[] { (7f, 0.12f, 2.6f), (3f, 0.24f, 2.2f), (-12f, 0.05f, 2.2f), (12f, 0.22f, 2.2f), (-1f, 0.32f, 2.4f) })
+                        { var q = new Vector3(x, 0, Island.Radius * zf); Obstacles.Add(q, r); Take(q, r + 2); }
+                        break;
+                    }
                     ModelRegistry.Free_("statue_head", world, r0 + Vector3.down * 0.3f, 160);
                     ModelRegistry.Free_("obelisk", world, Island.Ground(new Vector3(7, 0, Island.Radius * 0.12f)), 10);
                     ModelRegistry.Free_("ruin_column", world, Island.Ground(new Vector3(3, 0, Island.Radius * 0.22f)), 70);
@@ -610,6 +629,25 @@ namespace LastTide.Game
 
         public static Vector3? GoalPosition(Vector3 from) { return Target(from); }
 
+        /// <summary>The nearest node the castaway can work right now that yields one of <paramref name="need"/>.</summary>
+        static Vector3? SourceFor(List<ItemCount> need, Vector3 from)
+        {
+            Spot best = null;
+            float bd = float.MaxValue;
+            foreach (var sp in Spot.All)
+            {
+                var n = sp as NodeSpot;
+                if (n == null || !n.Active || n.Blocked) continue;
+                var def = Content.Nodes[n.NodeKind];
+                bool useful = false;
+                foreach (var y in def.Yield) foreach (var c in need) if (y.id == c.id) useful = true;
+                if (!useful) continue;
+                float d = Vector3.Distance(n.Pos, from);
+                if (d < bd) { bd = d; best = n; }
+            }
+            return best != null ? best.Pos : (Vector3?)null;
+        }
+
         /// <summary>The nearest working spot for the current guide step (a boar for the hunt).</summary>
         static Vector3? Target(Vector3 from)
         {
@@ -622,6 +660,13 @@ namespace LastTide.Game
             }
             string kind = q.PointBuild ?? q.PointNode;
             if (kind == null) return null;
+            // A blueprint short of materials the backpack doesn't hold: point at where to get them instead.
+            var s0 = G.Session;
+            if (q.PointBuild != null && Content.Builds.ContainsKey(kind) && !s0.Built(kind) && !s0.CanDeliver(kind))
+            {
+                var source = SourceFor(s0.Remaining(kind), from);
+                if (source.HasValue) return source;
+            }
             Spot best = null;
             float bd = float.MaxValue;
             foreach (var s in Spot.All)

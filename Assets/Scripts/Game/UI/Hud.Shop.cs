@@ -45,12 +45,17 @@ namespace LastTide.Game
             Clear(_shopGrid);
             var s = G.Session;
             var items = Catalog.Products;
+            // Two rows: three cards a row, four when there are more than six products.
+            int cols = items.Count > 6 ? 4 : 3;
+            float step = 1560f / cols, cw = step - 20;
             for (int i = 0; i < items.Count; i++)
             {
                 var p = items[i];
-                int c = i % 3, r = i / 3;
+                int c = i % cols, r = i / cols;
+                int inRow = Mathf.Min(cols, items.Count - r * cols);
+                float x0 = (cols - inRow) * step / 2; // centre a short last row
                 var card = UIKit.Img("Card", _shopGrid, UIKit.Round, new Color(0.22f, 0.26f, 0.25f, 1)).rectTransform;
-                card.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(c * 520, -r * 390), new Vector2(500, 370));
+                card.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x0 + c * step, -r * 385), new Vector2(cw, 365));
                 if (p.Best)
                 {
                     var rib = UIKit.Img("Best", card, UIKit.Round, UIKit.Amber);
@@ -72,9 +77,11 @@ namespace LastTide.Game
                     }
                 }
                 var name = UIKit.Label("Name", card, p.Name, 36, Color.white, TextAnchor.UpperCenter);
-                name.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -176), new Vector2(470, 46));
+                name.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -176), new Vector2(cw - 24, 46));
+                name.resizeTextForBestFit = true; name.resizeTextMinSize = 24; name.resizeTextMaxSize = 36;
                 var blurb = UIKit.Label("Blurb", card, p.Blurb, 24, new Color(1, 1, 1, 0.75f), TextAnchor.UpperCenter, false);
-                blurb.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -222), new Vector2(460, 60));
+                blurb.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -216), new Vector2(cw - 34, 52));
+                blurb.resizeTextForBestFit = true; blurb.resizeTextMinSize = 14; blurb.resizeTextMaxSize = 24; blurb.verticalOverflow = VerticalWrapMode.Truncate;
                 bool owned = !p.Consumable && s.Owns(p.Id);
                 string id = p.Id;
                 var buy = UIKit.Button("Buy", card, owned ? "OWNED" : Store.PriceOf(p.Id), owned ? new Color(0.3f, 0.3f, 0.3f) : new Color(0.8f, 0.62f, 0.12f), () =>
@@ -82,7 +89,7 @@ namespace LastTide.Game
                     if (owned) return;
                     Store.Buy(id, (ok, msg) => { if (ok) Sfx.Play("buy"); else if (!string.IsNullOrEmpty(msg)) Toast(msg); _dirty = true; RefreshShop(); });
                 }, 36);
-                ((RectTransform)buy.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 18), new Vector2(300, 76));
+                ((RectTransform)buy.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(Mathf.Min(300, cw - 60), 68));
             }
         }
 

@@ -24,11 +24,11 @@ namespace LastTide.Core
                 Drops = new[] { Content.I("crab", 2) } } },
             { "snake", new EnemyDef { Id = "snake", Name = "Island Viper", Health = 30, Damage = 11, Speed = 4.8f, AttackEvery = 1.0f, Aggro = 7f, Xp = 9,
                 Drops = new[] { Content.I("raw_meat", 1) } } },
-            { "skeleton", new EnemyDef { Id = "skeleton", Name = "Drowned Smuggler", Health = 110, Damage = 14, Speed = 3.6f, AttackEvery = 1.2f, Aggro = 10f, Xp = 26,
+            { "skeleton", new EnemyDef { Id = "skeleton", Name = "Drowned Smuggler", Health = 110, Damage = 11, Speed = 3.6f, AttackEvery = 1.25f, Aggro = 10f, Xp = 26,
                 Drops = new[] { Content.I("gunpowder", 1), Content.I("doubloon", 3) } } },
-            { "redjack", new EnemyDef { Id = "redjack", Name = "Red Jack", Health = 650, Damage = 22, Speed = 4.4f, AttackEvery = 1.0f, Aggro = 14f, Xp = 300,
+            { "redjack", new EnemyDef { Id = "redjack", Name = "Red Jack", Health = 440, Damage = 14, Speed = 4.4f, AttackEvery = 1.3f, Aggro = 14f, Xp = 300,
                 Drops = new[] { Content.I("doubloon", 120), Content.I("cutlass", 1), Content.I("pirate_coat", 1) } } },
-            { "pirate", new EnemyDef { Id = "pirate", Name = "Red Jack's Raider", Health = 130, Damage = 15, Speed = 4.6f, AttackEvery = 1.1f, Aggro = 11f, Xp = 30,
+            { "pirate", new EnemyDef { Id = "pirate", Name = "Red Jack's Raider", Health = 130, Damage = 11, Speed = 4.6f, AttackEvery = 1.2f, Aggro = 11f, Xp = 30,
                 Drops = new[] { Content.I("rum", 1), Content.I("gunpowder", 1), Content.I("doubloon", 4) }, Rare = Content.I("tricorn", 1) } },
         };
     }

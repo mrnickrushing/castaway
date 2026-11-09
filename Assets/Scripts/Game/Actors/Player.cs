@@ -18,6 +18,10 @@ namespace LastTide.Game
         public bool Sneaking;
         /// <summary>Swing at anything that comes close by yourself (off: only when the weapon button is pressed).</summary>
         public bool AutoAttack = true;
+#if UNITY_EDITOR
+        /// <summary>Stick input from the editor play bot (null: the real stick).</summary>
+        public static Vector2? BotStick;
+#endif
         bool _attackPressed;
         Spot _walkTo;
         Enemy _locked;
@@ -85,6 +89,9 @@ namespace LastTide.Game
 #if UNITY_EDITOR || UNITY_STANDALONE
             var kb = new Vector2((Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0), (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0));
             if (kb.sqrMagnitude > 0) input = kb.normalized;
+#endif
+#if UNITY_EDITOR
+            if (BotStick.HasValue) input = BotStick.Value; // PlayBot (editor playtests)
 #endif
             if (Hud.Instance != null && Hud.Instance.Blocking) input = Vector2.zero;
 

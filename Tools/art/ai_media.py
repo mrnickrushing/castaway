@@ -62,6 +62,54 @@ M = {
 }
 
 
+# Story-card paintings (Resources/UI/Story/<key>.jpg): full-screen backdrops behind the story lines, art keys in Core/Story.cs.
+# Keys without one here fall back to a movie still (STORY_FROM) or the small map painting.
+STORY = {
+    "story_home": "The castaway's camp on a tropical beach in warm afternoon light: a palm-thatch lean-to shelter, a stone-ringed campfire, "
+                  "a workbench of driftwood with tools, crates and a sea chest, palms, and the wrecked two-masted brig on the reef beyond. " + STYLE,
+    "story_grove": "A shady jungle grove of tall palms and ferns: an old grey-bearded fisherman in a faded blue coat and straw hat sits wounded "
+                   "against a palm trunk, a bandage on his leg, a battered tin radio receiver beside him, shafts of sunlight through the leaves. " + STYLE,
+    "story_shore": "A wild beach piled with bleached driftwood and wreckage after a storm, foam on the sand, and a small ginger-and-white "
+                   "shiba-like dog standing on a driftwood log barking toward the viewer, the sea and distant islands behind. " + STYLE,
+    "story_pier": "An old weathered wooden fishing pier on stilts reaching into a turquoise bay at golden hour, nets and lobster pots, a "
+                  "fishing hut; a determined young woman with dark braided hair, a sailcloth shirt and a knife at her belt stands on it. " + STYLE,
+    "story_jungle": "Deep tropical jungle in green morning light: huge ferns and broad leaves torn up and trampled, fresh hoof prints in "
+                    "the mud, and a big bristly wild boar with curved tusks half hidden in the undergrowth, staring at the viewer. " + STYLE,
+    "story_cave": "Inside a sea cave used by smugglers: torchlight on wet rock, stacked barrels and crates of gunpowder, chains on the wall, "
+                  "seawater pooling on the floor, and the ragged silhouettes of drowned sailors shambling out of the dark. " + STYLE,
+}
+# Story art key -> painting id.
+STORY_KEYS = {"home": "story_home", "tomas": "story_grove", "shore": "story_shore", "pier": "story_pier", "cave": "story_cave",
+              "jungle": "story_jungle"}
+# Story keys that reuse a movie still or the loading art instead of a painting of their own.
+STORY_FROM = {"keyart": "loading", "pirates": "redjack", "lighthouse": "lasttide", "wreck": "wreck"}
+
+
+def story(i):
+    p = os.path.join(SRC, i + ".png")
+    if os.path.exists(p):
+        return print("have", p)
+    url = hf("generate", "create", "gpt_image_2_5", "--aspect_ratio", "16:9", "--quality", "high", "--resolution", "2k",
+             "--background", "opaque", "--prompt", STORY[i], "--wait")
+    fetch(url, p)
+    print("story", i, url)
+
+
+def install_story():
+    from PIL import Image
+    d = os.path.join(ROOT, "Assets", "Resources", "UI", "Story")
+    os.makedirs(d, exist_ok=True)
+    pairs = list(STORY_KEYS.items()) + list(STORY_FROM.items())
+    for key, src in pairs:
+        p = os.path.join(SRC, src + ".png")
+        if not os.path.exists(p):
+            continue
+        im = Image.open(p).convert("RGB")
+        im.thumbnail((1920, 1920))
+        im.save(os.path.join(d, key + ".jpg"), quality=86)
+    print("installed story art")
+
+
 def still(i):
     p = os.path.join(SRC, i + ".png")
     if os.path.exists(p):
@@ -126,6 +174,13 @@ if __name__ == "__main__":
     cmd, ids = sys.argv[1], sys.argv[2:] or list(M)
     if cmd == "install":
         install()
+        install_story()
+    elif cmd == "story":           # ai_media.py story [story_home ...]   (2.75 credits each)
+        for i in (sys.argv[2:] or list(STORY)):
+            try:
+                story(i)
+            except Exception as e:
+                print("FAILED", i, e)
     else:
         for i in ids:
             try:

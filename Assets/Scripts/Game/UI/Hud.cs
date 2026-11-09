@@ -149,7 +149,10 @@ namespace LastTide.Game
             _questTitle.rectTransform.Fill(); _questTitle.rectTransform.offsetMin = new Vector2(40, 0); _questTitle.rectTransform.offsetMax = new Vector2(-60, -10);
             _questText = UIKit.Outlined(UIKit.Label("Text", _questCard, "", 30, Color.white, TextAnchor.LowerLeft, false), 1.2f);
             _questText.supportRichText = true;
-            _questText.rectTransform.Fill(); _questText.rectTransform.offsetMin = new Vector2(40, 12); _questText.rectTransform.offsetMax = new Vector2(-60, 0);
+            // Below the chapter title; long steps shrink to fit instead of running up into it.
+            _questText.rectTransform.Fill(); _questText.rectTransform.offsetMin = new Vector2(40, 8); _questText.rectTransform.offsetMax = new Vector2(-60, -46);
+            _questText.resizeTextForBestFit = true; _questText.resizeTextMinSize = 18; _questText.resizeTextMaxSize = 30;
+            _questText.verticalOverflow = VerticalWrapMode.Truncate;
             var fold = UIKit.Button("Fold", _questCard, "<<", new Color(0, 0, 0, 0), () => { _questFolded = !_questFolded; }, 40);
             ((RectTransform)fold.transform).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(70, 100));
             fold.GetComponentInChildren<Text>().color = new Color(1, 1, 1, 0.6f);
@@ -199,7 +202,14 @@ namespace LastTide.Game
         {
             var s = G.Session;
             var q = s.CurrentQuest;
-            _questText.text = "<color=#FFC24A>\u2022</color>  " + q.Label(s);
+            string need = "";
+            // A blueprint step the backpack can't feed yet: say what to fetch (the guide arrow points at it).
+            if (q.PointBuild != null && Content.Builds.ContainsKey(q.PointBuild) && !s.Built(q.PointBuild) && !s.CanDeliver(q.PointBuild))
+            {
+                var r = s.Remaining(q.PointBuild);
+                if (r.Count > 0) need = "  <size=24><color=#8FE3A8>need " + r[0].n + " " + Content.Items[r[0].id].Name + "</color></size>";
+            }
+            _questText.text = "<color=#FFC24A>\u2022</color>  " + q.Label(s) + need;
             _questText.gameObject.SetActive(!_questFolded);
             _questCard.anchoredPosition = new Vector2(_questFolded ? -540 : 0, MapOpen ? -215 : -170);
             if (_questFlash > 0)
@@ -364,7 +374,7 @@ namespace LastTide.Game
                 _refresh = 0.2f;
                 RefreshPanels();
                 RefreshRadio();
-                if (_offersOpen) RefreshOffers();
+                RefreshOffers(); // also hides it once closed
                 if (_shopOpen) RefreshShop(); else _shop.gameObject.SetActive(false);
                 if (_bpOpen) RefreshBlueprints(); else _bp.gameObject.SetActive(false);
                 if (_pathOpen) RefreshPath(); else _path.gameObject.SetActive(false);

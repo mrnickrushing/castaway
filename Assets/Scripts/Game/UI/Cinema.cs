@@ -54,6 +54,9 @@ namespace LastTide.Game
 
         bool _skip;
 
+        /// <summary>Ends the playing movie as if SKIP was pressed.</summary>
+        public static void Skip() { if (_current != null) _current._skip = true; }
+
         IEnumerator Run(string id, Action done)
         {
             var root = (RectTransform)transform;

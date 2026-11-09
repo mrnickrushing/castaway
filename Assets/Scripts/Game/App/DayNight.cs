@@ -34,9 +34,11 @@ namespace LastTide.Game
             d._grade.priority = 1;
             var prof = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>();
             var ca = prof.Add<UnityEngine.Rendering.Universal.ColorAdjustments>(true);
-            ca.postExposure.Override(-0.15f);
-            ca.saturation.Override(-25f);
-            ca.colorFilter.Override(new Color(0.62f, 0.75f, 1f));
+            // A light touch: the moon and sky already make the night blue. A strong blue filter here would turn the
+            // campfire and torches grey, and firelight against the dark is the look we want.
+            ca.postExposure.Override(-0.1f);
+            ca.saturation.Override(-8f);
+            ca.colorFilter.Override(new Color(0.86f, 0.9f, 1f));
             d._grade.profile = prof;
             d._grade.weight = 0;
 #endif
