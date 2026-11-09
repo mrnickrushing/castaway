@@ -7,9 +7,8 @@
 #
 #   asc-lookup      read only: prints the app's Apple ID, name, SKU and the in-app purchases already created.
 #   ios-testflight  downloads the Xcode project exported by Tools/ios-export.sh (the `ios-latest` release asset),
-#                   archives it, signs it with an App Store profile Xcode creates through the key, and uploads to TestFlight. Run it only
-#                   when a TestFlight build is wanted. The repository is private, so the app needs a GITHUB_TOKEN
-#                   (read-only, this repository) in the variable group `github` to download the release asset.
+#                   archives it, signs it with an App Store profile Xcode creates through
+#                   the key, and uploads to TestFlight. Run it only when a TestFlight build is wanted.
 
 workflows:
   asc-lookup:
@@ -68,7 +67,6 @@ workflows:
     environment:
       groups:
         - ios_credentials
-        - github
       vars:
         BUNDLE_ID: com.rushingtech.lasttide
         APPLE_TEAM_ID: PH4AKDQ4Q7
@@ -79,11 +77,7 @@ workflows:
       - name: Download the exported Xcode project
         script: |
           set -euo pipefail
-          [ -n "${GITHUB_TOKEN:-}" ] || { echo "Add GITHUB_TOKEN to the variable group 'github'"; exit 1; }
-          ASSET=$(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" \
-            https://api.github.com/repos/mrnickrushing/castaway/releases/tags/ios-latest \
-            | python3 -c "import sys,json; print([a['url'] for a in json.load(sys.stdin)['assets'] if a['name']=='ios-xcode.zip'][0])")
-          curl -fL --retry 3 -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/octet-stream" -o /tmp/ios-xcode.zip "$ASSET"
+          curl -fL --retry 3 -o /tmp/ios-xcode.zip "https://github.com/mrnickrushing/castaway/releases/download/ios-latest/ios-xcode.zip"
           rm -rf ios && unzip -q /tmp/ios-xcode.zip -d .
       - name: Build number after the latest one on App Store Connect
         script: |
