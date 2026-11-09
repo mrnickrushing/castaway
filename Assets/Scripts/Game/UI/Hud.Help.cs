@@ -113,6 +113,9 @@ namespace LastTide.Game
             ((RectTransform)replay.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, -40), new Vector2(420, 76));
         }
 
+        /// <summary>The game's web pages (GitHub Pages, branch gh-pages): privacy policy and support.</summary>
+        public const string Site = "https://mrnickrushing.github.io/castaway/";
+
         void HelpSettings()
         {
             var s = G.Session;
@@ -128,6 +131,7 @@ namespace LastTide.Game
                 });
             Setting(ref y, "Restore purchases", "RESTORE", RestorePurchases);
             Setting(ref y, "Shop", "OPEN", () => { _helpOpen = false; OpenShop(); });
+            Setting(ref y, "Privacy policy and support", "OPEN", () => Application.OpenURL(Site));
             Setting(ref y, "Start a new game (erases this one)", "START OVER", () => Confirm("Start over?", "Your island, camp and backpack will be gone for good. Purchases stay with your Apple account and can be restored.", "START OVER", () =>
             {
                 SaveSystem.Delete();
@@ -151,12 +155,12 @@ namespace LastTide.Game
         void Setting(ref float y, string label, string button, System.Action act)
         {
             var row = UIKit.Img("Row", _helpBody, UIKit.Round, new Color(1, 1, 1, 0.06f)).rectTransform;
-            row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y), new Vector2(1600, 110));
+            row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y), new Vector2(1600, 96));
             var t = UIKit.Label("Label", row, label, 36, Color.white, TextAnchor.MiddleLeft);
             t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(30, 0);
             var b = UIKit.Button("Button", row, button, new Color(0.25f, 0.45f, 0.45f), act, 30);
-            ((RectTransform)b.transform).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(300, 80));
-            y += 124;
+            ((RectTransform)b.transform).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(300, 72));
+            y += 106; // six rows (with a companion to choose) still leave room for the credits
         }
     }
 }

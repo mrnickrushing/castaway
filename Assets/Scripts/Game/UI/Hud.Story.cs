@@ -100,7 +100,10 @@ namespace LastTide.Game
             _radioOpen = _offersOpen = _shopOpen = _helpOpen = _bpOpen = _pathOpen = false;
             if (_building) ExitBuild();
             _story.gameObject.SetActive(true);
-            int qi = Quests.All.FindIndex(q => q.Id == G.Session.CurrentQuest.Id);
+            // The chapter of the step this scene opens (a replay from Settings shows its own chapter, not today's).
+            string step = G.Session.CurrentQuest.Id;
+            foreach (var kv in Story.Scenes) if (kv.Value == sc) step = kv.Key;
+            int qi = Quests.All.FindIndex(q => q.Id == step);
             var ch = Story.ChapterOf(qi);
             int n = Story.Chapters.IndexOf(ch) + 1;
             _storyChapter.text = (n < Story.Chapters.Count ? "CHAPTER " + n + "  ·  " : "") + sc.Title.ToUpper();

@@ -38,8 +38,9 @@ namespace LastTide.Game
             var scaler = gameObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(RefW, RefH);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 1;
+            // Never narrower or shorter than 1920x1080: phones (wider than 16:9) keep 1080 high, an iPad (4:3) gets
+            // 1920x1440, so the inventory and station panels side by side still fit across it.
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             gameObject.AddComponent<GraphicRaycaster>();
             _root = (RectTransform)transform;
             var safe = UIKit.Rect("Safe", _root);

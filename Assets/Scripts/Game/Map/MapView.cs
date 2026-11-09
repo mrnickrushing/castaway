@@ -149,7 +149,9 @@ namespace LastTide.Game
             go.transform.position = Origin + Vector3.down * 3;
             go.transform.rotation = Quaternion.Euler(90, 0, 0);
             go.transform.localScale = new Vector3(2400, 2400, 1);
-            var mat = new Material(Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Texture"));
+            // URP Unlit is in the Always Included shaders (ProjectSetup): a build only has the shaders it references.
+            var sh = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Texture") ?? Shader.Find("LastTide/VertexLit");
+            var mat = new Material(sh);
             mat.mainTexture = tex;
             mat.mainTextureScale = new Vector2(3, 3);
             if (mat.HasProperty("_BaseMap")) { mat.SetTexture("_BaseMap", tex); mat.SetTextureScale("_BaseMap", new Vector2(3, 3)); }

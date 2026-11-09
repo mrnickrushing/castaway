@@ -128,6 +128,11 @@ setting only.
 - Scans import Z-up with a -90° X rotation on their root: turn them with `Quaternion.Euler(0, yaw, 0) * t.rotation`,
   never by assigning a fresh rotation (that lays every fern, table and cliff on its side). The pets stay Quaternius: no realistic dog
   on Sketchfab has walk and run clips.
+- Trees, roofs and towers between the camera and the castaway (or the build ghost) switch to shadows-only while they
+  block the view (`App/SeeThrough.cs`, ticked by `CameraRig`; bounds rays, no shader change, so the scans' URP Lit
+  variants stay as they are). The HUD canvas uses `Expand` from 1920x1080: an iPad gets 1920x1440 and the panels fit.
+- App Store listing: `docs/appstore/listing.json` + `screens/`, written by `Tools/appstore/listing.py` (Codemagic
+  `lasttide-listing` in the train app); see `docs/STORE.md`.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

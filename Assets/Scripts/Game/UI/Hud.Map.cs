@@ -325,6 +325,12 @@ namespace LastTide.Game
             _coinText.text = s.State.coins.ToString();
             _hereName.text = (s.State.travel != null ? "AT SEA" : s.Here.Name.ToUpper());
 
+            // ENTER under the island you can step onto now (placed first: that island's name goes below it).
+            var enterAt = s.State.travel != null ? (s.Arrived ? World.Location(s.State.travel.to) : null) : s.Here;
+            var ec = enterAt != null
+                ? MapToCanvas(MapView.World(enterAt) - new Vector3(0, 0, MapView.IslandRadius(enterAt) * 0.6f))
+                : Vector3.zero;
+
             // Pins and names over the islands.
             foreach (var l in World.Locations)
             {
@@ -333,7 +339,10 @@ namespace LastTide.Game
                 pin.gameObject.SetActive(c.z > 0);
                 pin.anchoredPosition = c;
                 var name = pin.GetChild(1).GetComponent<RectTransform>();
-                name.anchoredPosition = new Vector2(0, -MapPixels(MapView.IslandRadius(l)) * 0.8f - 40);
+                float ny = -MapPixels(MapView.IslandRadius(l)) * 0.8f - 40;
+                // Zoomed out, the island is small and ENTER (84 high, hanging from ec) would cover its name.
+                if (l == enterAt) ny = Mathf.Min(ny, ec.y - 84 - 32 - c.y);
+                name.anchoredPosition = new Vector2(0, ny);
                 // Fade a pin that has slid behind the HUD (pan to bring it out) instead of drawing it under the panels.
                 var cg = pin.GetComponent<CanvasGroup>();
                 if (cg == null) cg = pin.gameObject.AddComponent<CanvasGroup>();
@@ -377,12 +386,9 @@ namespace LastTide.Game
                 _travelText.text = "";
                 _rush.gameObject.SetActive(false);
             }
-            // ENTER under the island you can step onto now.
-            var enterAt = tr != null ? (s.Arrived ? World.Location(tr.to) : null) : s.Here;
             _enterBox.gameObject.SetActive(enterAt != null);
             if (enterAt != null)
             {
-                var ec = MapToCanvas(MapView.World(enterAt) - new Vector3(0, 0, MapView.IslandRadius(enterAt) * 0.6f));
                 _enterBox.anchoredPosition = ec;
                 _enterBox.localScale = Vector3.one * (tr != null ? 1 + 0.05f * Mathf.Sin(UnityEngine.Time.time * 6) : 1);
             }

@@ -27,6 +27,14 @@ To go live:
    `RevenueCatStore.ApiKey`. The game buys and restores by product id, so no entitlements or offerings are needed.
 4. Before the first sandbox purchase: the Paid Apps Agreement must be active (App Store Connect → Business), then
    buy in a TestFlight build with a sandbox account; the purchase shows under Customers in RevenueCat.
+5. The store listing lives in `docs/appstore/listing.json` (subtitle, description, keywords, promotional text, URLs,
+   categories, age rating answers) with the screenshots in `docs/appstore/screens/` (iPhone 6.9" 2868x1320 and
+   iPad 13" 2752x2064, taken in Play mode with `Tools/store-shot.sh`). `Tools/appstore/listing.py` (Codemagic
+   `lasttide-listing`, LASTTIDE_REF picks the castaway branch) writes them to the version being prepared, sets the
+   app free in every territory if it has no price yet, and replaces screenshots only when they changed. The paid
+   Season premium track gives gold chests with random contents, so the age rating answers yes to loot boxes.
+   Done on the website: App Privacy (purchase history and user ID, linked to the player, app functionality, no
+   tracking), the build, the eight in-app purchases on the version page, review contact, then Submit for Review.
 
 Grants are idempotent per App Store transaction; a purchase interrupted by a crash is delivered on the next launch
 (`Session.ReconcilePurchases`). One-time products come back with Restore Purchases.

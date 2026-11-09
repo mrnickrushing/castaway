@@ -14,6 +14,7 @@ namespace LastTide.Game
         /// <summary>When set, the camera looks here instead of at the castaway (build mode follows the ghost).</summary>
         public Vector3? Focus;
         const float MinDist = 11f, MaxDist = 32f;
+        readonly SeeThrough _seeThrough = new SeeThrough();
 
         public static CameraRig Create(Transform target)
         {
@@ -60,6 +61,9 @@ namespace LastTide.Game
             }
             Distance = Mathf.Clamp(Distance - Input.mouseScrollDelta.y, MinDist, MaxDist);
             Snap();
+            // Trees and roofs between the camera and the castaway (or the build ghost) step aside.
+            if (GameRoot.Instance != null && GameRoot.Instance.OnMap) _seeThrough.ShowAll();
+            else _seeThrough.Tick(Cam, Focus ?? _target.position);
         }
     }
 }

@@ -41,8 +41,34 @@ namespace LastTide.EditorTools
             UrpSetup.Run();
 #endif
             AppIcon.Generate();
+            IncludeShaders();
             AssetDatabase.SaveAssets();
             Debug.Log("[LastTide] Project set up. Open " + ScenePath + " and press Play.");
+        }
+
+        /// <summary>Shaders the code finds by name at runtime (Shader.Find) but no asset references. A build only
+        /// carries referenced shaders, so without this Shader.Find returns null on device (the map's parchment).</summary>
+        public static readonly string[] RuntimeShaders = { "Universal Render Pipeline/Unlit" };
+
+        /// <summary>Adds <see cref="RuntimeShaders"/> to Graphics settings → Always Included Shaders.</summary>
+        public static void IncludeShaders()
+        {
+            var gs = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("ProjectSettings/GraphicsSettings.asset");
+            var so = new SerializedObject(gs);
+            var list = so.FindProperty("m_AlwaysIncludedShaders");
+            bool changed = false;
+            foreach (var name in RuntimeShaders)
+            {
+                var sh = Shader.Find(name);
+                if (sh == null) { Debug.LogError("[LastTide] Shader not found: " + name); continue; }
+                bool has = false;
+                for (int i = 0; i < list.arraySize; i++) if (list.GetArrayElementAtIndex(i).objectReferenceValue == sh) has = true;
+                if (has) continue;
+                list.InsertArrayElementAtIndex(list.arraySize);
+                list.GetArrayElementAtIndex(list.arraySize - 1).objectReferenceValue = sh;
+                changed = true;
+            }
+            if (changed) { so.ApplyModifiedPropertiesWithoutUndo(); AssetDatabase.SaveAssets(); }
         }
 
         public static void EnsureScene()
@@ -96,7 +122,10 @@ namespace LastTide.EditorTools
         }
     }
 
-    /// <summary>Paints a placeholder app icon (a sunset over the sea with a wrecked mast) until real art exists.</summary>
+    /// <summary>
+    /// The app icon, Assets/Art/AppIcon.png: Red Jack's black-sailed ship at sunset, a square crop of the ending still
+    /// (art-src/media/ending.png, made by Tools/art/ai_media.py). If the file is missing it paints a plain placeholder.
+    /// </summary>
     public static class AppIcon
     {
         public const string Path_ = "Assets/Art/AppIcon.png";
