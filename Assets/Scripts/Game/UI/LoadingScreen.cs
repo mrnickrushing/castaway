@@ -89,20 +89,34 @@ namespace LastTide.Game
             var sub = UIKit.Outlined(UIKit.Label("Sub", root, "SHIPWRECK  SURVIVAL", 40, UIKit.Amber, TextAnchor.UpperCenter), 2f);
             sub.rectTransform.Fill(); sub.rectTransform.offsetMax = new Vector2(0, -232);
 
+            // Bar, status and tip sit centred, unless the screen is too narrow (16:9 iPhones, iPads) to keep them clear of
+            // the studio badge in the bottom-right corner: then they fit in the room to its left.
+            float cw = Hud.RefH * Screen.width / (float)Mathf.Max(1, Screen.height); // canvas width (matched by height)
+            float right = BrandWidth() + 36 + 30, room = cw - right - 40;
+            float cx = cw / 2 + 650 <= cw - right ? 0 : (40 + cw - right) / 2 - cw / 2;
             var track = UIKit.Img("Track", root, UIKit.Round, new Color(0.02f, 0.05f, 0.07f, 0.9f));
-            track.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 150), new Vector2(1000, 30));
+            track.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(cx, 150), new Vector2(Mathf.Min(1000, room), 30));
             var fill = UIKit.Img("Fill", track.transform, UIKit.Round, UIKit.Amber);
             _fill = fill.rectTransform;
             _fill.anchorMin = Vector2.zero; _fill.anchorMax = new Vector2(0, 1);
             _fill.offsetMin = new Vector2(4, 4); _fill.offsetMax = new Vector2(-4, -4);
 
             _status = UIKit.Outlined(UIKit.Label("Status", root, status, 32, new Color(1f, 0.95f, 0.85f), TextAnchor.MiddleCenter), 2f);
-            _status.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 196), new Vector2(1200, 46));
+            _status.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(cx, 196), new Vector2(Mathf.Min(1200, room), 46));
             var tip = UIKit.Label("Tip", root, "TIP: " + Tips[Random.Range(0, Tips.Length)], 28, new Color(1, 1, 1, 0.85f), TextAnchor.MiddleCenter, false);
-            tip.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 92), new Vector2(1300, 40));
+            tip.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(cx, 92), new Vector2(Mathf.Min(1300, room), 40));
 
             Brand(root);
             _shown = Time.realtimeSinceStartup;
+        }
+
+        const float LogoHeight = 250;
+
+        /// <summary>Width of the studio badge in canvas units.</summary>
+        static float BrandWidth()
+        {
+            var logo = Resources.Load<Texture2D>("UI/Brand/rushingtech");
+            return logo != null ? LogoHeight * logo.width / (float)logo.height : 460;
         }
 
         /// <summary>The studio badge, bottom right: the logo if it's in the project, else the site's text mark.</summary>
@@ -112,7 +126,7 @@ namespace LastTide.Game
             if (logo != null)
             {
                 // The neon logo (cut out of its black background; it carries the name) in the bottom-right corner.
-                float h = 250, w = h * logo.width / (float)logo.height;
+                float h = LogoHeight, w = h * logo.width / (float)logo.height;
                 var raw = UIKit.Rect("Brand", root).gameObject.AddComponent<RawImage>();
                 raw.texture = logo;
                 raw.raycastTarget = false;

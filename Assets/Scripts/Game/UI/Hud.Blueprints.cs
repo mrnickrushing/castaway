@@ -54,6 +54,11 @@ namespace LastTide.Game
             _bp.gameObject.SetActive(_bpOpen);
             if (!_bpOpen) return;
             var s = G.Session;
+            // The grid ends 1060 from the left and the card takes 970 from the right: on a canvas narrower than that
+            // (16:9 phones, iPads) the grid moves left so the card doesn't cover its last column.
+            float gx = _root.rect.width >= 2050 ? 220 : 60;
+            _bpGrid.anchoredPosition = new Vector2(gx, _bpGrid.anchoredPosition.y);
+            _bpTabs.anchoredPosition = new Vector2(gx, _bpTabs.anchoredPosition.y);
             Clear(_bpGrid); Clear(_bpTabs); Clear(_bpCard);
             for (int i = 0; i < BpTabs.Length; i++)
             {

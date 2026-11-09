@@ -311,6 +311,16 @@ namespace LastTide.Game
 
         float Scale { get { return _root.rect.height / Screen.height; } }
 
+        /// <summary>Shrinks a stretched panel body uniformly from its top-left corner when it's narrower than the
+        /// width its fixed layout needs (the canvas is 1920 wide on 16:9 phones and iPads, ~2340 on newer iPhones).</summary>
+        static void FitWidth(RectTransform body, float need)
+        {
+            Vector2 min = body.offsetMin, max = body.offsetMax;
+            body.pivot = new Vector2(0, 1);
+            body.offsetMin = min; body.offsetMax = max;
+            body.localScale = Vector3.one * Mathf.Min(1, body.rect.width / need);
+        }
+
         void UpdateJoystick()
         {
             Vector2 pos = Vector2.zero;
