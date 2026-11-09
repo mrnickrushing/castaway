@@ -91,7 +91,8 @@ setting only.
   `PlayBot.Visit(loc, phase)` lands on an island at a time of day for screenshots; `PlayBot.Heal = false` for fair fights.
   Balance check (2026-11-09): an iron harpoon + the hide set beats Red Jack and his raiders with health to spare.
 - Landmarks are photoscanned where possible (`Models.ScanCave`, `ScanPirateCamp`, `ScanRuins`); the cliffs are
-  one-sided scans, so their faces must look at the player (yaw 0). The terrain's rock layer is Poly Haven `lichen_rock`.
+  one-sided scans, so their faces must look at the player (yaw 0). Red Jack's palisade stands straight `palisade_log`s
+  (`dead_tree_trunk` cut to 300 tris by `Tools/blender/lod.py`, sharing its textures through the JSON slot name). The terrain's rock layer is Poly Haven `lichen_rock`.
 - Island outlines differ by biome (`Island.Shore`): Driftwood Shore is a long sandbar, the lighthouse sits on a point
   running north, Red Jack's ship lies in a bay on the pirate island, Limestone Ridge has a second peak, Palm Grove a
   lagoon (`Island.Lagoon`; scenery checks `Island.Height` so nothing floats in it). Keep noise inputs off whole

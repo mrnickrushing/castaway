@@ -172,14 +172,20 @@ def main():
         if png is None:
             png = screenshot_bytes()
         shot = call("GET", "/v2/inAppPurchases/%s/appStoreReviewScreenshot" % iap, ok404=True)
-        attrs = ((shot or {}).get("data") or {}).get("attributes", {})
-        done = (attrs.get("assetDeliveryState") or {}).get("state") in ("UPLOAD_COMPLETE", "COMPLETE")
-        if not (done and attrs.get("sourceFileChecksum") == hashlib.md5(png).hexdigest()):
-            if shot and shot.get("data"):
-                # A different picture, or a reservation that never finished uploading: replace it.
+        have_shot = bool(shot and shot.get("data"))
+        attrs = shot["data"].get("attributes", {}) if have_shot else {}
+        state = (attrs.get("assetDeliveryState") or {}).get("state")
+        checksum = attrs.get("sourceFileChecksum")
+        # Replace a screenshot that failed, never finished uploading, or is a different picture; leave one that
+        # Apple is still processing (its checksum can be missing until then) or that already matches.
+        stale = state in ("FAILED", "AWAITING_UPLOAD") or (checksum and checksum != hashlib.md5(png).hexdigest())
+        if not have_shot or stale:
+            if have_shot:
                 call("DELETE", "/v1/inAppPurchaseAppStoreReviewScreenshots/" + shot["data"]["id"])
             upload_screenshot(iap, png)
             print("  review screenshot (%d bytes)" % len(png))
+        elif state != "COMPLETE":
+            print("  review screenshot still processing (%s)" % state)
 
     print("IAP done")
     for i in pages("/v1/apps/%s/inAppPurchasesV2?limit=200" % app):
