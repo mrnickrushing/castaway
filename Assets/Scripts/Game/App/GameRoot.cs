@@ -85,6 +85,8 @@ namespace LastTide.Game
         void Awake()
         {
             Instance = this;
+            // Real time, whatever the project settings carry (the editor play bot runs the game at 3x).
+            Time.timeScale = 1f;
             Application.targetFrameRate = 60;
             // LOD switch points are tuned for a bias of 1 (ModelRegistry.AddFarLod): trees near the castaway stay full detail.
             QualitySettings.lodBias = 1f;

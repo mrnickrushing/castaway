@@ -150,6 +150,11 @@ In the Editor: WASD walks, F9 deletes the save.
 
 ## iPhone builds
 
-`Tools/ios-export.sh` exports the Xcode project and uploads it as the `ios-latest` release asset (same flow as
-Ironhorse Frontier's Codemagic setup). Bundle id `com.rushingtech.lasttide`; the App Store Connect app and a
-Codemagic workflow still need creating before the first TestFlight build.
+App Store Connect app "Last Tide", Apple ID 6832382482, bundle `com.rushingtech.lasttide`, team PH4AKDQ4Q7.
+`Tools/ios-export.sh` exports the Xcode project and uploads it as the public `ios-latest` release asset. The App Store
+Connect API key lives only in the Codemagic app **train** (variable group `ios_credentials`; Codemagic can't copy secure
+values), so Last Tide's jobs run there from the train repo's branch `codemagic/lasttide`: `lasttide-testflight`
+(downloads the export, numbers the build after the latest TestFlight one, signs, uploads) and `lasttide-iap`
+(`Tools/appstore/iap.py`, creates the in-app purchases; safe to rerun). This repo's `codemagic.yaml` has the same
+workflows for the day the key is added to the castaway app. The plan has Mac mini M2 machines only; a Mac can take
+several minutes to free up. Only send TestFlight builds when asked.
