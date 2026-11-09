@@ -16,10 +16,10 @@ Editor and development builds, nothing in a release build until RevenueCat is co
 | lasttide.captain | Consumable | $19.99 | 3,500 doubloons, cutlass, harpoon, full energy |
 
 To go live:
-1. Create the app in App Store Connect (bundle id `com.rushingtech.lasttide`).
-2. Create the eight in-app purchases above with the same ids: the Codemagic workflow `asc-iap` runs
-   `Tools/appstore/iap.py` (names, descriptions, USA base prices, every territory; safe to rerun). Each still needs a
-   review screenshot in App Store Connect before its first review.
+1. Done: the app exists in App Store Connect (bundle id `com.rushingtech.lasttide`, Apple ID 6832382482).
+2. Done 2026-11-09: all eight in-app purchases exist in App Store Connect with en-US names and descriptions, USA
+   base prices and every territory (`Tools/appstore/iap.py`, Codemagic `lasttide-iap`; safe to rerun). Each still
+   needs a review screenshot (state MISSING_METADATA) before it can go to review with the first app version.
 3. Create the app in RevenueCat, attach the products, and put its Apple public key (`appl_...`) in
    `RevenueCatStore.ApiKey`.
 
