@@ -40,7 +40,7 @@ namespace LastTide.Core
             new ProductDef { Id = "lasttide.starter", Name = "Castaway Starter Pack", Blurb = "300 doubloons, a full meal, medicine, rope and a bamboo spear. Once only.", FallbackPrice = "$1.99",
                 Coins = 300, Energy = 100, Consumable = false, Art = "offer_starter",
                 Items = new[] { Content.I("spear", 1), Content.I("bandage", 5), Content.I("meat", 6), Content.I("water", 6), Content.I("rope", 6) } },
-            new ProductDef { Id = "lasttide.bigpack", Name = "Sailor's Big Backpack", Blurb = "10 more backpack slots, for good.", FallbackPrice = "$2.99", Consumable = false, Perk = "bigpack", Art = "pack" },
+            new ProductDef { Id = "lasttide.bigpack", Name = "Sailor's Big Backpack", Blurb = "10 more backpack slots, for good.", FallbackPrice = "$2.99", Consumable = false, Perk = "bigpack", Art = "offer_bigpack" },
             new ProductDef { Id = "lasttide.ultra", Name = "Survivor's Path: Ultra", Blurb = "Unlocks the golden Ultra rewards on every step of the Survivor's Path, past and future.", FallbackPrice = "$4.99",
                 Consumable = false, Perk = "ultra", Art = "keyart" },
             new ProductDef { Id = Season.PremiumProduct, Name = "Season Pass: Premium", Blurb = "Unlocks the premium reward on every level of this season, including the companions.", FallbackPrice = "$4.99",

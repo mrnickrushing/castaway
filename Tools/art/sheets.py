@@ -4,8 +4,10 @@ apart for the UI. One image instead of one per icon keeps the credits down.
 
   python3 Tools/art/sheets.py gen <sheet>       # paid: skips a sheet that already exists in art-src/sheets
   python3 Tools/art/sheets.py install <sheet>   # free: cut the grid -> Assets/Resources/UI/<folder>/<id>.png
+  python3 Tools/art/sheets.py card <id>         # paid (2.75): one painting from CARDS, straight to UI/Places/<id>.jpg
 
 Sheets: items (30 inventory icons, transparent) and places (8 location postcards, 3 offer pictures, key art).
+Cards: single shop pictures added later, in the places sheet's style (skips one that already exists in art-src).
 """
 import os
 import sys
@@ -58,6 +60,29 @@ SHEETS = {
         "on tropical islands, warm sunlight, rich colour, no people unless named. No text, no letters, no borders inside the "
         "tiles. {rows}")),
 }
+
+CARDS = {
+    "offer_bigpack": "a big weathered canvas sailor's backpack with leather straps and brass buckles, stuffed full, a rolled "
+                     "blanket strapped on top and a coil of rope and a tin cup hanging from the side, standing on sand by a "
+                     "piece of driftwood, palm shadows",
+}
+
+
+def card(pid):
+    os.makedirs(SRC, exist_ok=True)
+    p = os.path.join(SRC, pid + ".png")
+    if not os.path.exists(p):
+        prompt = ("A single painted illustration filling the whole square frame. Painterly semi-realistic concept art for a "
+                  "premium mobile survival game set on tropical islands, warm sunlight, rich colour, no people. No text, no "
+                  "letters, no border. " + CARDS[pid] + ".")
+        url = hf("generate", "create", "gpt_image_2_5", "--aspect_ratio", "1:1", "--quality", "high", "--resolution", "2k",
+                 "--background", "opaque", "--prompt", prompt, "--wait")
+        fetch(url, p)
+        print("card", pid, url)
+    im = Image.open(p).convert("RGB")
+    im.thumbnail((640, 640), Image.LANCZOS)
+    im.save(os.path.join(ROOT, "Assets", "Resources", "UI", "Places", pid + ".jpg"), quality=88)
+    print(pid, im.size)
 
 
 def describe(rows):
@@ -117,4 +142,4 @@ def install(name):
 
 
 if __name__ == "__main__":
-    {"gen": gen, "install": install}[sys.argv[1]](sys.argv[2])
+    {"gen": gen, "install": install, "card": card}[sys.argv[1]](sys.argv[2])

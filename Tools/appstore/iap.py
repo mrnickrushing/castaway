@@ -6,8 +6,9 @@
 For every product in PRODUCTS (the same ids, names and prices as Catalog.Products in Core/Session.Store.cs) it makes
 sure there is: the in-app purchase, an en-US display name and description, a price (set in the USA, other storefronts
 follow Apple's equivalents), availability in every territory and the App Store review screenshot (the in-game SHOP,
-docs/appstore/iap_review.png, read from this repo's main branch on GitHub or from IAP_SCREENSHOT, a path or URL).
-Anything already there is left alone, so running it again is safe.
+docs/appstore/iap_review.png, read from this repo's main branch on GitHub or from IAP_SCREENSHOT, a path or URL; a
+screenshot whose checksum differs from that file is replaced). Anything already there is left alone, so running it
+again is safe.
 """
 import hashlib
 import json
@@ -168,16 +169,15 @@ def main():
                     "availableTerritories": {"data": [{"type": "territories", "id": t} for t in territories]}}}})
             print("  available in %d territories" % len(territories))
 
+        if png is None:
+            png = screenshot_bytes()
         shot = call("GET", "/v2/inAppPurchases/%s/appStoreReviewScreenshot" % iap, ok404=True)
-        state = ((shot or {}).get("data") or {}).get("attributes", {}).get("assetDeliveryState") or {}
-        if state.get("state") in ("UPLOAD_COMPLETE", "COMPLETE"):
-            pass
-        else:
+        attrs = ((shot or {}).get("data") or {}).get("attributes", {})
+        done = (attrs.get("assetDeliveryState") or {}).get("state") in ("UPLOAD_COMPLETE", "COMPLETE")
+        if not (done and attrs.get("sourceFileChecksum") == hashlib.md5(png).hexdigest()):
             if shot and shot.get("data"):
-                # A reservation that never finished uploading: drop it and start again.
+                # A different picture, or a reservation that never finished uploading: replace it.
                 call("DELETE", "/v1/inAppPurchaseAppStoreReviewScreenshots/" + shot["data"]["id"])
-            if png is None:
-                png = screenshot_bytes()
             upload_screenshot(iap, png)
             print("  review screenshot (%d bytes)" % len(png))
 
