@@ -172,7 +172,7 @@ namespace LastTide.Game
                 "From Sketchfab (sketchfab.com), CC BY 4.0, adapted for the game: characters \"Castaway\" by katarzynaszemla, " +
                 "\"Pirate Captain\" by byenbyen, \"Pirate Hunter\" by chenuka_wy (jacket \"Gambeson\" by Leon.Steiner), \"Pirate Girl\" by Anriil_Kl, " +
                 "\"Farmer\" by LxNazarov, \"Svend\" and \"Revna\" by chambersu1996, \"Skeleton Pirate\" captain and drunk by ShadowCoffee; " +
-                "props \"Old Rowboat\" by toomanydemons, \"Lighthouse\" by stnabeal, \"Raft\" by _SeF_ and \"Iron Ore\" by vxdesigns; " +
+                "props \"Old Rowboat\" by toomanydemons, \"Lighthouse\" by stnabeal, \"Raft\" by _SeF_, \"Iron Ore\" by vxdesigns, \"Fishing Net\" by dark_alice and \"Wooden Planks\" by shtran; " +
                 "gulls \"Low-Poly Seagull\" by simonaskLDE. " +
                 "Crab and snake: scans by ffishAsia-and-floraZia, CC0. Dog bark: \"Ladrido de un perro\" by Edo.pt2 (Wikimedia Commons), CC0. " +
                 "Story art, movies, icons, boar and palms made for this game. Fonts: Barlow (SIL Open Font License).",

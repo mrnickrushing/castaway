@@ -113,6 +113,8 @@ namespace LastTide.Game
                 if (id.StartsWith("iron_")) t.transform.localRotation = Quaternion.Euler(0, 0, 45) * t.transform.localRotation;
                 return holder;
             }
+            var scanned = IslandModels.IconArt(id);   // free scans where there are some
+            if (scanned != null) return scanned;
             var isl = IslandModels.Icon(id);
             if (isl != null) { var ig = isl.ToObject(id, null); ig.GetComponent<MeshRenderer>().sharedMaterial = Materials.Kit; return ig; }
             var mb = new MeshBuilder();

@@ -33,5 +33,8 @@ Re-download and convert the free models with `python3 Tools/art/free_assets.py f
 - "Iron Ore (FREE)" by vxdesigns (https://sketchfab.com/3d-models/93118b922cbb48caa4f45b16592fa519), CC BY 4.0. Used as the iron veins; rescaled, maps repacked.
 - "Lighthouse" by stnabeal (https://sketchfab.com/3d-models/9cc7e0ae47824e198ad5dd296644c125), CC BY 4.0. Used as the lighthouse on Lighthouse Point; rescaled, maps repacked.
 - "Raft" by _SeF_ (https://sketchfab.com/3d-models/48fb810caf0941328a6619a9a948b565), CC BY 4.0. Used as the castaway's raft (to the map) on every island; rescaled, maps repacked.
+- "Skep - Straw Beehive - Rothe House" by Kilkenny3D (https://sketchfab.com/3d-models/1c7fcf31196b42cdb6fdcafe7200b64a), CC0. Used as the old beehives on Palm Grove; rescaled, maps repacked.
+- "Fishing Net" by dark_alice (https://sketchfab.com/3d-models/0d6b1bac6f7d4ad2b80e60537e2a90b5), CC BY 4.0. Used as the tangled nets on the Fisherman's Pier and the fish weir; rescaled, maps repacked.
+- "Wooden Planks" by shtran (https://sketchfab.com/3d-models/3299d83456eb44e0b07da3f31428330e), CC BY 4.0. Used as ship's timber and the hull wreckage on Driftwood Shore; rescaled, maps repacked.
 
 - Universal Animation Library by Quaternius (https://quaternius.com), CC0. Every character's moves.

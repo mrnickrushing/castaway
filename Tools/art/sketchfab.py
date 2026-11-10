@@ -104,6 +104,13 @@ PROPS = {
                        role="the lighthouse on Lighthouse Point", kind="prop", size=17, tris=9000),
     "raft": dict(uid="48fb810caf0941328a6619a9a948b565", title="Raft", author="_SeF_",
                  role="the castaway's raft (to the map) on every island", kind="prop", size=4.2, tris=7000),
+    # The islands' own harvest nodes and items.
+    "skep": dict(uid="1c7fcf31196b42cdb6fdcafe7200b64a", title="Skep - Straw Beehive - Rothe House", author="Kilkenny3D",
+                 license="CC0", role="the old beehives on Palm Grove", kind="prop", size=0.75, tris=2500),
+    "fishnet": dict(uid="0d6b1bac6f7d4ad2b80e60537e2a90b5", title="Fishing Net", author="dark_alice",
+                    role="the tangled nets on the Fisherman's Pier and the fish weir", kind="prop", size=1.9, tris=4000),
+    "planks": dict(uid="3299d83456eb44e0b07da3f31428330e", title="Wooden Planks", author="shtran",
+                   role="ship's timber and the hull wreckage on Driftwood Shore", kind="prop", size=1.6, tris=300),
 }
 OTHER = dict(CREATURES, **PROPS)
 
