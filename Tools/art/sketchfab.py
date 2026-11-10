@@ -111,6 +111,12 @@ PROPS = {
                     role="the tangled nets on the Fisherman's Pier and the fish weir", kind="prop", size=1.9, tris=4000),
     "planks": dict(uid="3299d83456eb44e0b07da3f31428330e", title="Wooden Planks", author="shtran",
                    role="ship's timber and the hull wreckage on Driftwood Shore", kind="prop", size=1.6, tris=300),
+    "sack": dict(uid="e3b01fcc08e745758e65b1a997d52bf2", title="Burlap Sack", author="clockworkcreations",
+                 role="the sailors' bags", kind="prop", size=0.9, tris=1500),
+    "radioset": dict(uid="8307bd59dabe42a78a2ae08fca038a00", title="Military Radio", author="ivan.rybalkin",
+                     role="the ship's radio at camp", kind="prop", size=0.8, tris=4000),
+    "forge": dict(uid="64f344213c084424ba438875e62bd452", title="Furnace", author="kosmotron",
+                  role="the furnace you build at camp", kind="prop", size=2.2, tris=4000),
 }
 OTHER = dict(CREATURES, **PROPS)
 

@@ -70,6 +70,7 @@ MODELS = {
     # The islands' own items (icons and camp improvements).
     "ceramic_pot": ("prop", 0.45, 1500),
     "wooden_bowl_02": ("prop", 0.4, 1200),
+    "painted_wooden_chair_02": ("prop", 1.0, 1246),
 }
 
 
