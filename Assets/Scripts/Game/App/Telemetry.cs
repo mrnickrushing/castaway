@@ -12,18 +12,17 @@ using UnityEngine.Networking;
 namespace LastTide.Game
 {
     /// <summary>
-    /// Anonymous play statistics (TelemetryDeck, ingest v2, plain HTTP), to see where players stop: launches and how
+    /// Anonymous play statistics, sent to the game's own Cloudflare Worker (`Tools/stats-worker`, stored in D1), to see
+    /// where players stop: launches and how
     /// long a sitting lasts, each guide step reached, level-ups, islands landed on, passing out, camp structures,
     /// island plans and improvements, and a frame-rate sample every five minutes. The player is a random id made on
-    /// this device, hashed before it leaves it (TelemetryDeck hashes it again); nothing about the person, no
-    /// advertising id, no tracking. Off in the Editor, until <see cref="AppId"/> is set, and when the player turns
-    /// it off in Settings. Events wait in a small queue (kept across launches) and go out in batches.
+    /// this device, hashed before it leaves it; nothing about the person, no advertising id, no IP kept, no tracking.
+    /// Off in the Editor and when the player turns it off in Settings. Events wait in a small queue (kept across launches) and go out in batches.
     /// </summary>
     public sealed class Telemetry : MonoBehaviour
     {
-        /// <summary>The TelemetryDeck app's id (not a secret: it only lets events in). Empty: nothing is sent.</summary>
-        public const string AppId = "";
-        const string Endpoint = "https://nom.telemetrydeck.com/v2/";
+        /// <summary>Where the events go (the Worker in Tools/stats-worker). Empty: nothing is sent.</summary>
+        public const string Endpoint = "https://lasttide-stats.mrnickrushing.workers.dev/v1/events";
         const string Salt = "lasttide-7c1f";     // fixed: the same player keeps the same hash across launches
         const string IdKey = "lt_stats_id", OffKey = "lt_stats_off", QueueKey = "lt_stats_queue";
         const int QueueMax = 200, BatchMax = 50;
@@ -55,7 +54,7 @@ namespace LastTide.Game
             Instance._user = Hash(PlayerPrefs.GetString(IdKey) + Salt);
         }
 
-        static bool Active { get { return !Application.isEditor && AppId.Length > 0 && Sharing; } }
+        static bool Active { get { return !Application.isEditor && Endpoint.Length > 0 && Sharing; } }
 
         /// <summary>The last events made, sent or not (the Editor and tests read these).</summary>
         public static readonly List<string> Recent = new List<string>();
@@ -138,12 +137,12 @@ namespace LastTide.Game
             var s = G.Session;
             var p = new List<(string, string)>
             {
-                ("TelemetryDeck.AppInfo.version", Application.version),
-                ("TelemetryDeck.Device.platform", Application.platform == RuntimePlatform.IPhonePlayer ? (SystemInfo.deviceModel.StartsWith("iPad") ? "iPadOS" : "iOS") : Application.platform.ToString()),
-                ("TelemetryDeck.Device.modelName", SystemInfo.deviceModel),
-                ("TelemetryDeck.Device.operatingSystem", SystemInfo.operatingSystem),
-                ("TelemetryDeck.RunContext.locale", CultureInfo.CurrentCulture.Name),
-                ("TelemetryDeck.RunContext.isDebug", Debug.isDebugBuild ? "true" : "false"),
+                ("App.version", Application.version),
+                ("Device.platform", Application.platform == RuntimePlatform.IPhonePlayer ? (SystemInfo.deviceModel.StartsWith("iPad") ? "iPadOS" : "iOS") : Application.platform.ToString()),
+                ("Device.model", SystemInfo.deviceModel),
+                ("Device.os", SystemInfo.operatingSystem),
+                ("Device.locale", CultureInfo.CurrentCulture.Name),
+                ("App.debug", Debug.isDebugBuild ? "true" : "false"),
             };
             if (s != null)
             {
@@ -159,7 +158,7 @@ namespace LastTide.Game
             foreach (var e in extra) p.Add(e);
 
             var j = new StringBuilder(512);
-            j.Append("{\"appID\":").Append(Str(AppId)).Append(",\"clientUser\":").Append(Str(_user))
+            j.Append("{\"clientUser\":").Append(Str(_user))
              .Append(",\"sessionID\":").Append(Str(_sessionId)).Append(",\"type\":").Append(Str(type))
              .Append(",\"isTestMode\":").Append(_test ? "true" : "false")
              .Append(",\"receivedAt\":").Append(Str(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture)));
@@ -196,7 +195,7 @@ namespace LastTide.Game
                 long code = req.responseCode;
                 // Stored, or refused for good (bad input would fail again): either way they leave the queue. A full
                 // server queue (503) or no connection keeps them for the next try.
-                if (code == 200 || code == 422 || code == 400) _queue.RemoveRange(0, Mathf.Min(n, _queue.Count));
+                if (code == 200 || code == 400 || code == 413 || code == 422) _queue.RemoveRange(0, Mathf.Min(n, _queue.Count));
                 if (code == 503) _sendIn = 10f;
             }
             _sending = false;

@@ -71,12 +71,14 @@ setting only.
 - Far detail: any model with an `<id>_far` next to it (Scan or Trees category) gets a LODGroup in `ModelRegistry.Spawn`
   (full detail above 0.6 of screen height; `GameRoot` sets lodBias 1). `island_tree_02_far` (6k tris, shares the near
   tree's textures through its JSON slot names) and `Trees/palm_far` keep every island near 1.2M tris (was ~1.95M).
-- Play statistics (`App/Telemetry.cs`, TelemetryDeck ingest v2 over HTTP, no SDK): Session.started/paused,
-  Guide.stepReached, Progress.levelUp, Travel.arrived, Survival.passedOut, Camp.built, Island.planFound,
-  Island.improvementBuilt, Performance.sample (every 5 min), each with step/level/location/day/minutes played. The
-  player is a random id hashed on the device; TestFlight/debug builds are marked test mode (`Plugins/iOS/LastTideEnv.mm`).
-  Off in the Editor (`Telemetry.Recent` keeps the last events to inspect), until `Telemetry.AppId` is set, and when the
-  player turns it off in Settings; Delete account gives a new id and keeps a "no". Privacy policy: gh-pages `privacy.html`.
+- Play statistics (`App/Telemetry.cs` -> the Cloudflare Worker `lasttide-stats` in `Tools/stats-worker`, D1 database
+  `lasttide-stats`; deploy and query with wrangler, see its README): Session.started/paused, Guide.stepReached,
+  Progress.levelUp, Travel.arrived, Survival.passedOut, Camp.built, Island.planFound, Island.improvementBuilt,
+  Performance.sample (every 5 min), each with step/level/location/day/minutes played. The player is a random id hashed
+  on the device; no IPs are stored; events older than a year are deleted daily. TestFlight/debug builds are marked
+  test (`Plugins/iOS/LastTideEnv.mm`). Off in the Editor (`Telemetry.Recent` keeps the last events to inspect) and
+  when the player turns it off in Settings; Delete account gives a new id and keeps a "no". Privacy policy: gh-pages
+  `privacy.html`.
 - Tests: build sessions with `TestGame.New()` (fixed clock, seeded dice) so a run never depends on the machine's clock
   or luck.
 - Phone performance (`App/FrameBudget.cs`, device only): the 3D view renders at most ~2000 px across (URP

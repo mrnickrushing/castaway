@@ -34,7 +34,7 @@ To go live:
    app free in every territory if it has no price yet, and replaces screenshots only when they changed. The paid
    Season premium track gives gold chests with random contents, so the age rating answers yes to loot boxes.
    Done on the website: App Privacy (purchase history and user ID, linked to the player, app functionality, no
-   tracking; plus, for the TelemetryDeck play statistics, Identifiers > Device ID and Usage Data > Product
+   tracking; plus, for the anonymous play statistics (our own Cloudflare Worker), Identifiers > Device ID and Usage Data > Product
    Interaction, purpose Analytics, not linked to the player, not used for tracking), the build, the eight in-app purchases on the version page, review contact, then Submit for Review.
 
 Grants are idempotent per App Store transaction; a purchase interrupted by a crash is delivered on the next launch
