@@ -18,6 +18,20 @@ namespace LastTide.Tests
         }
 
         [Test]
+        public void TheShopsWaitUntilTheShelterStandsAndANightHasPassed()
+        {
+            var g = new Session(GameState.New());
+            Assert.IsFalse(g.Settled);
+            g.State.time = Session.DayLength * 1.2;
+            Assert.IsFalse(g.Settled, "a night alone isn't enough: no roof yet");
+            g.State.builds.Add(new BuildState { id = "shelter", done = true });
+            Assert.IsTrue(g.Settled);
+            var old = new Session(GameState.New());
+            old.State.level = 3;
+            Assert.IsTrue(old.Settled, "saves from before this rule keep everything");
+        }
+
+        [Test]
         public void SailorsBagsHoldLootUntilEmptied()
         {
             var g = new Session(GameState.New());

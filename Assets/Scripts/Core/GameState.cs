@@ -63,6 +63,18 @@ namespace LastTide.Core
         public double leftAt, arriveAt;     // real unix seconds
     }
 
+    /// <summary>What happened on a trip away from home, for the summary shown on getting back.</summary>
+    [Serializable]
+    public sealed class TripLog
+    {
+        public bool active;                 // JsonUtility can't store null: an empty log loads with this false
+        public List<string> places = new List<string>();
+        public List<ItemCount> gained = new List<ItemCount>(), kills = new List<ItemCount>();
+        public List<string> knew = new List<string>(), rescuedBefore = new List<string>();   // at the start
+        public List<string> learned = new List<string>(), rescued = new List<string>();     // filled in at the end
+        public int xp, coins, falls;
+    }
+
     /// <summary>When a location was last left (its loot grows back after a while).</summary>
     [Serializable]
     public sealed class VisitState
@@ -98,6 +110,7 @@ namespace LastTide.Core
         public double energyStamp;          // real unix seconds when energy was last topped up
         public string location = World.HomeId;
         public TravelState travel;
+        public TripLog trip, lastTrip;      // the trip under way, and the finished one the HUD hasn't shown yet
         public List<VisitState> visits = new List<VisitState>();
         public List<ItemCount> offers = new List<ItemCount>();   // offer id -> times bought
         public double offerStart;           // real time the current offer rotation started
@@ -150,6 +163,8 @@ namespace LastTide.Core
             if (level < 1) level = 1;
             if (string.IsNullOrEmpty(location) || World.Location(location) == null) location = World.HomeId;
             if (travel != null && string.IsNullOrEmpty(travel.to)) travel = null;
+            if (trip != null && !trip.active) trip = null;
+            if (lastTrip != null && !lastTrip.active) lastTrip = null;
             // JsonUtility can't store null for a class field: a save written with no bag on the ground loads an empty one.
             if (lostBags == null) lostBags = new List<LostBag>();
             if (lostBag != null && lostBag.slots != null && lostBag.slots.Exists(s => !s.Empty)) lostBags.Add(lostBag);

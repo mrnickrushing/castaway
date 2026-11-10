@@ -235,10 +235,10 @@ namespace LastTide.Core
 
         int Put(string id, int n)
         {
-            if (id == "doubloon") { State.coins += n; Gained?.Invoke(id, n); Changed?.Invoke(); return n; }
+            if (id == "doubloon") { State.coins += n; TripGained(id, n); Gained?.Invoke(id, n); Changed?.Invoke(); return n; }
             if (id.StartsWith("pet_")) { UnlockPet(id.Substring(4)); Changed?.Invoke(); return n; }
             int got = Inventory.Add(State.backpack, id, n);
-            if (got > 0) Gained?.Invoke(id, got);
+            if (got > 0) { TripGained(id, got); Gained?.Invoke(id, got); }
             if (got > 0 && Content.Item(id) != null && Content.Item(id).Kind == ItemKind.Weapon && State.equipped < 0) AutoEquip();
             return got;
         }
@@ -463,6 +463,7 @@ namespace LastTide.Core
         public void Killed(string enemy)
         {
             State.kills++;
+            if (State.trip != null) AddTo(State.trip.kills, enemy, 1);
             if (enemy == "pirate") State.pirates++;
             if (enemy == "redjack") SetFlag("redjack_dead");
             Tally("kill:" + enemy);
@@ -490,6 +491,7 @@ namespace LastTide.Core
         void Die()
         {
             State.deaths++;
+            if (State.trip != null) State.trip.falls++;
             var bag = new LostBag { x = State.px, z = State.pz, location = State.location };
             // Pockets stay with you; the backpack proper is left where you fell.
             for (int i = Content.PocketSlots; i < State.backpack.Count; i++)

@@ -25,6 +25,7 @@ namespace LastTide.Core
         public void AddXp(int n)
         {
             if (n <= 0) return;
+            if (State.trip != null) State.trip.xp += n;
             AddSeasonPoints(n);
             State.xp += n;
             while (State.xp >= XpToNext(State.level))
@@ -118,6 +119,12 @@ namespace LastTide.Core
             State.travel = null;
             Leave(from);
             State.location = to.Id;
+            if (to.Home) TripEnd();
+            else
+            {
+                TripStart();
+                if (!State.trip.places.Contains(to.Id)) State.trip.places.Add(to.Id);
+            }
             if (!to.Home)
             {
                 var v = State.visits.FirstOrDefault(x => x.id == to.Id);

@@ -21,6 +21,11 @@ namespace LastTide.Core
         public bool IsNight { get { return DayPhase > 1 - NightShare; } }
         public int Day { get { return 1 + (int)((State.time + DayLength * 0.1) / DayLength); } }
 
+        /// <summary>The first stretch of a new game keeps to survival: the season pass, the trading post, the shop and
+        /// the radio stay out of sight until the shelter stands and a night has passed (or level 3, for older saves).
+        /// Days and levels only go up, so once settled always settled.</summary>
+        public bool Settled { get { return (Built("shelter") && Day >= 2) || State.level >= 3; } }
+
         /// <summary>How far an animal or raider notices the castaway: further at night, much less when sneaking.</summary>
         public float AggroScale(bool sneaking) { return (IsNight ? 1.35f : 1f) * (sneaking ? 0.45f : 1f); }
 
@@ -85,7 +90,7 @@ namespace LastTide.Core
                 if (s.Empty) continue;
                 if (s.id == "doubloon") { Give("doubloon", s.n); got += s.n; s.Clear(); continue; }
                 int k = Inventory.Add(State.backpack, s.id, s.n, s.wear);
-                if (k > 0) { Gained?.Invoke(s.id, k); Tally("loot", k); }
+                if (k > 0) { TripGained(s.id, k); Gained?.Invoke(s.id, k); Tally("loot", k); }
                 s.n -= k; got += k;
                 if (s.n <= 0) s.Clear();
             }
