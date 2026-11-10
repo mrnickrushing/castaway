@@ -138,6 +138,12 @@ setting only.
   and lay Help out as a scrolling page (`UIKit.Scroller`). Check new screens at 1800x830 as well as 1440x1080.
 - App Store listing: `docs/appstore/listing.json` + `screens/`, written by `Tools/appstore/listing.py` (Codemagic
   `lasttide-listing` in the train app); see `docs/STORE.md`.
+- Accounts (`Game/Platform`): Sign in with Apple (`AppleAccount`, lupidan package; links RevenueCat purchases, names
+  the castaway), the save in the player's iCloud key-value store (`CloudSave` + `Plugins/iOS/LastTideCloud.mm`; no
+  server; `Core/CloudRules`: a new phone adopts it, a newer save from another device is offered, never overwritten),
+  local reminders (`Reminders`, `Session.ReminderPlan`; permission asked on the first voyage), Settings rows for all
+  of it plus Name and Delete account (erases iCloud + local, signs out). `Editor/IosCapabilities.cs` writes
+  `LastTide.entitlements` with literal ids; the bundle id's capabilities come from `Tools/appstore/capabilities.py`.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

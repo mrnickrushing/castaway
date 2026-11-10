@@ -144,6 +144,16 @@ namespace LastTide.Game
                     s.ChoosePet(pets[(i + 1) % pets.Count].Id);
                     RefreshHelp();
                 });
+            // Sign in with Apple: purchases follow the Apple ID to any device.
+            if (AppleAccount.SignedIn) Setting(ref y, "Signed in with Apple: purchases follow your Apple ID", "SIGN OUT", () => { AppleAccount.SignOut(); RefreshHelp(); });
+            else AppleSignIn(Setting(ref y, "Keep your purchases with your Apple ID", "Sign in with Apple", () =>
+                AppleAccount.SignIn((ok, msg) => { if (!string.IsNullOrEmpty(msg)) Toast(msg); RefreshHelp(); })));
+            Setting(ref y, CloudLine(), "SAVE NOW", () =>
+            {
+                if (!CloudSave.Available) { Toast("Sign in to iCloud in your iPhone's Settings to back up your island"); return; }
+                GameRoot.Instance.Save(); CloudSave.Push(s.State, true); Toast("Saved to iCloud"); RefreshHelp();
+            });
+            Setting(ref y, "Reminders (raft landed, energy full)", s.State.noReminders ? "OFF" : "ON", () => { s.State.noReminders = !s.State.noReminders; if (!s.State.noReminders) Reminders.AskOnce(); RefreshHelp(); });
             Setting(ref y, "Restore purchases", "RESTORE", RestorePurchases);
             Setting(ref y, "Shop", "OPEN", () => { _helpOpen = false; OpenShop(); });
             Setting(ref y, "Privacy policy and support", "OPEN", () => Application.OpenURL(Site));
@@ -152,6 +162,7 @@ namespace LastTide.Game
                 SaveSystem.Delete();
                 GameRoot.Instance.Restart();
             }));
+            Setting(ref y, "Delete your account and data", "DELETE", ConfirmDeleteAccount);
             var credits = UIKit.Label("Credits", _helpIn,
                 "LAST TIDE  ·  a Rushing Technologies game\n" +
                 "Photoscanned models, ground and sky: Poly Haven (polyhaven.com) and ambientCG (ambientcg.com), CC0. " +
@@ -161,7 +172,7 @@ namespace LastTide.Game
                 "\"Farmer\" by LxNazarov, \"Svend\" and \"Revna\" by chambersu1996, \"Skeleton Pirate\" captain and drunk by ShadowCoffee; " +
                 "props \"Old Rowboat\" by toomanydemons, \"Lighthouse\" by stnabeal, \"Raft\" by _SeF_ and \"Iron Ore\" by vxdesigns; " +
                 "gulls \"Low-Poly Seagull\" by simonaskLDE. " +
-                "Crab and snake: scans by ffishAsia-and-floraZia, CC0. " +
+                "Crab and snake: scans by ffishAsia-and-floraZia, CC0. Dog bark: \"Ladrido de un perro\" by Edo.pt2 (Wikimedia Commons), CC0. " +
                 "Story art, movies, icons, boar and palms made for this game. Fonts: Barlow (SIL Open Font License).",
                 26, new Color(1, 1, 1, 0.6f), TextAnchor.UpperLeft, false);
             // The page scrolls: the credits take the room they need at full size.
@@ -172,7 +183,54 @@ namespace LastTide.Game
             UIKit.ScrollHeight(_helpIn, y + 30 + h + 20);
         }
 
-        void Setting(ref float y, string label, string button, System.Action act)
+        /// <summary>"iCloud save: saved 3 min ago", or why there's none.</summary>
+        static string CloudLine()
+        {
+            if (!CloudSave.Available) return "iCloud save: sign in to iCloud on this device to back up";
+            double at = CloudSave.LastPushed;
+            if (at <= 0) return "iCloud save: not yet";
+            double ago = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds() - at;
+            return "iCloud save: " + (ago < 90 ? "just now" : ago < 3600 ? Mathf.RoundToInt((float)(ago / 60)) + " min ago" : ago < 86400 ? Mathf.RoundToInt((float)(ago / 3600)) + " h ago" : "over a day ago");
+        }
+
+        static Font _systemFont;
+
+        /// <summary>The row's button as Apple's black "Sign in with Apple" button: mixed case and the Apple logo, in the
+        /// iOS system font (which has the logo glyph); elsewhere the game font without it.</summary>
+        static void AppleSignIn(Button b)
+        {
+            b.GetComponent<Image>().color = Color.black;
+            var t = b.GetComponentInChildren<Text>();
+            if (Application.platform == RuntimePlatform.IPhonePlayer)
+            {
+                if (_systemFont == null) _systemFont = Font.CreateDynamicFontFromOSFont(new[] { "Helvetica Neue", "Helvetica" }, 30);
+                t.font = _systemFont;
+                t.text = "\uF8FF  Sign in with Apple";
+            }
+            var o = t.GetComponent<Outline>();
+            if (o != null) o.enabled = false;
+            t.resizeTextForBestFit = true; t.resizeTextMinSize = 20;
+        }
+
+        /// <summary>Account deletion (App Store guideline 5.1.1(v)): ends the Sign in with Apple link, unlinks purchases
+        /// from it and erases the island here and in iCloud. Last Tide keeps nothing on a server of its own.</summary>
+        void ConfirmDeleteAccount()
+        {
+            Confirm("Delete your account?",
+                "This signs you out of Sign in with Apple, unlinks your purchases and erases your island, camp and backpack on this device and in iCloud. "
+                + "Purchases come back with Restore purchases. This cannot be undone.\n<size=26>To remove the app from your Apple ID too: iPhone Settings > your name > Sign in with Apple.</size>",
+                "DELETE", () =>
+                {
+                    CloudSave.Erase();
+                    AppleAccount.SignOut();
+                    SaveSystem.Delete();
+                    PlayerPrefs.DeleteAll();
+                    PlayerPrefs.Save();
+                    GameRoot.Instance.Restart();
+                }, null, "KEEP IT");
+        }
+
+        Button Setting(ref float y, string label, string button, System.Action act)
         {
             var row = UIKit.Img("Row", _helpIn, UIKit.Round, new Color(1, 1, 1, 0.06f)).rectTransform;
             row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y), new Vector2(_helpBody.sizeDelta.x, 96));
@@ -180,7 +238,9 @@ namespace LastTide.Game
             t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(30, 0);
             var b = UIKit.Button("Button", row, button, new Color(0.25f, 0.45f, 0.45f), act, 30);
             ((RectTransform)b.transform).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(300, 72));
+            t.rectTransform.offsetMax = new Vector2(-340, 0); // long labels stop short of the button
             y += 106;
+            return b;
         }
     }
 }

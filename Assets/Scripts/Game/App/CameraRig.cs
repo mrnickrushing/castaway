@@ -29,6 +29,8 @@ namespace LastTide.Game
             rig.Cam.clearFlags = CameraClearFlags.SolidColor;
             rig.Cam.backgroundColor = new Color(0.62f, 0.8f, 0.86f);
             go.tag = "MainCamera";
+            var restart = GameObject.Find("Restart"); // a game started over: its stand-in listener goes as this one comes
+            if (restart != null && restart.GetComponent<AudioListener>() != null) DestroyImmediate(restart.GetComponent<AudioListener>());
             go.AddComponent<AudioListener>();
 #if LASTTIDE_URP
             var data = go.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();

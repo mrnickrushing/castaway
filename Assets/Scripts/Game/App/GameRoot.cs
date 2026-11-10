@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System;
 using System.IO;
 using LastTide.Core;
@@ -43,6 +44,7 @@ namespace LastTide.Game
             string tmp = Main + ".tmp";
             try
             {
+                s.savedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0; // the iCloud copy compares these
                 File.WriteAllText(tmp, JsonUtility.ToJson(s));
                 var check = JsonUtility.FromJson<GameState>(File.ReadAllText(tmp));
                 if (check == null || check.backpack == null || check.backpack.Count != s.backpack.Count) throw new IOException("save did not read back");
@@ -96,7 +98,18 @@ namespace LastTide.Game
             foreach (var cam in FindObjectsByType<Camera>(FindObjectsSortMode.None)) Destroy(cam.gameObject);
             foreach (var l in FindObjectsByType<Light>(FindObjectsSortMode.None)) Destroy(l.gameObject);
 
-            var state = SaveSystem.Load() ?? GameState.New();
+            var state = SaveSystem.Load();
+            // The island in iCloud: a new phone (nothing saved here) continues from it at once; a newer one from
+            // another device is offered once the island is up (see CloudRules).
+            var meta = CloudSave.Meta();
+            var step = CloudRules.Decide(state != null, meta, CloudSave.Me, CloudSave.Seen);
+            if (step != CloudStep.Upload)
+            {
+                var cloud = CloudSave.Fetch();
+                if (cloud != null && step == CloudStep.Adopt) { state = cloud; CloudSave.Seen = meta.SavedAt; Debug.Log("[LastTide] continued from the iCloud save"); }
+                else if (cloud != null) _offer = new KeyValuePair<CloudMeta, GameState>(meta, cloud);
+            }
+            if (state == null) state = GameState.New();
             Session.UtcOffsetSeconds = (int)System.TimeZoneInfo.Local.GetUtcOffset(System.DateTime.Now).TotalSeconds;
             G.Session = new Session(state);
             G.Session.PetChanged += OnPetChanged;
@@ -143,9 +156,35 @@ namespace LastTide.Game
             Guard("quests", G.Session.CheckQuests);
             // Closed the app mid-journey: open on the map to finish it.
             Guard("journey", () => { if (state.travel != null && Hud.Instance != null) Hud.Instance.OpenMap(); });
+            Guard("platform", () => gameObject.AddComponent<PlatformServices>());
+            CloudSave.NewerElsewhere += OfferCloud;
             _ready = true;
             yield return _loading.Finish();
+            if (_offer.Value != null) OfferCloud(_offer.Key, _offer.Value);
         }
+
+        KeyValuePair<CloudMeta, GameState> _offer;
+        bool _offering;
+
+        /// <summary>Asks whether to switch to a newer island from iCloud (saved on another device).</summary>
+        void OfferCloud(CloudMeta meta) { var cloud = CloudSave.Fetch(); if (cloud != null) OfferCloud(meta, cloud); }
+
+        void OfferCloud(CloudMeta meta, GameState cloud)
+        {
+            if (_offering || Hud.Instance == null) return;
+            _offering = true;
+            var when = DateTimeOffset.FromUnixTimeMilliseconds((long)(meta.SavedAt * 1000)).ToLocalTime();
+            Hud.Instance.Confirm("Newer save in iCloud",
+                "Another device saved your island at level " + cloud.level + " on " + when.ToString("MMM d, h:mm tt") + ". Continue from it? This device's island (level " + G.Session.State.level + ") will be replaced.",
+                "USE ICLOUD SAVE", () =>
+                {
+                    CloudSave.Seen = meta.SavedAt;
+                    SaveSystem.Save(cloud);
+                    Restart();
+                }, () => { CloudSave.Seen = meta.SavedAt; _offering = false; Save(); CloudSave.Push(G.Session.State, true); }, "KEEP THIS ONE");
+        }
+
+        void OnDestroy() { CloudSave.NewerElsewhere -= OfferCloud; }
 
         /// <summary>Runs one start-up step, logging (not rethrowing) what it throws.</summary>
         static void Guard(string step, System.Action act)
@@ -315,7 +354,7 @@ namespace LastTide.Game
 #endif
         }
 
-        public void Save() { SaveSystem.Save(G.Session.State); }
+        public void Save() { if (SaveSystem.Save(G.Session.State)) CloudSave.Push(G.Session.State); }
 
         /// <summary>After passing out: wake at the shelter if there is one, else back on the beach.</summary>
         public void Respawn()
@@ -335,6 +374,7 @@ namespace LastTide.Game
         public void Restart()
         {
             var boot = new GameObject("Restart").AddComponent<Restarter>();
+            boot.gameObject.AddComponent<AudioListener>(); // something to hear with until the new island has its camera
             if (Hud.Instance != null) Destroy(Hud.Instance.gameObject);
             if (MapView.Instance != null) Destroy(MapView.Instance.gameObject);
             if (CameraRig.Instance != null) Destroy(CameraRig.Instance.gameObject);
@@ -346,10 +386,16 @@ namespace LastTide.Game
         sealed class Restarter : MonoBehaviour
         {
             int _frames;
-            void Update() { if (++_frames < 2) return; new GameObject("Last Tide").AddComponent<GameRoot>(); Destroy(gameObject); }
+            bool _booted;
+            void Update()
+            {
+                if (++_frames < 2) return;
+                if (!_booted) { _booted = true; new GameObject("Last Tide").AddComponent<GameRoot>(); return; }
+                if (CameraRig.Instance != null || _frames > 600) Destroy(gameObject); // its listener hands over to the new camera's
+            }
         }
 
-        void OnApplicationPause(bool paused) { if (paused && G.Session != null) Save(); }
-        void OnApplicationQuit() { if (G.Session != null) Save(); }
+        void OnApplicationPause(bool paused) { if (paused && G.Session != null && SaveSystem.Save(G.Session.State)) CloudSave.Push(G.Session.State, true); }
+        void OnApplicationQuit() { if (G.Session != null && SaveSystem.Save(G.Session.State)) CloudSave.Push(G.Session.State, true); }
     }
 }

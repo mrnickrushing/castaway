@@ -113,6 +113,8 @@ namespace LastTide.Core
         public List<int> seasonFree = new List<int>(), seasonPrem = new List<int>();
         public List<EventProgress> events = new List<EventProgress>();
         public string pet;                  // companion at heel
+        public double savedAt;              // real time (unix seconds) of the last save, for the iCloud copy
+        public bool noReminders;            // the player turned reminder notifications off (settings)
 
         public static GameState New()
         {

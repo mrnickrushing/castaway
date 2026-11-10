@@ -108,7 +108,7 @@ namespace LastTide.Game
         RectTransform _confirm;
 
         /// <summary>A small yes/no box ("Refill energy for 40 doubloons?").</summary>
-        public void Confirm(string title, string body, string yes, System.Action onYes)
+        public void Confirm(string title, string body, string yes, System.Action onYes, System.Action onNo = null, string noLabel = "NOT NOW")
         {
             if (_confirm != null) Destroy(_confirm.gameObject);
             _confirm = UIKit.Img("Confirm", _root, null, new Color(0, 0, 0, 0.8f)).rectTransform;
@@ -120,9 +120,13 @@ namespace LastTide.Game
             t.rectTransform.Fill(); t.rectTransform.offsetMax = new Vector2(0, -30);
             var b = UIKit.Label("Body", box, body, 32, Color.white, TextAnchor.UpperCenter, false);
             b.rectTransform.Fill(); b.rectTransform.offsetMin = new Vector2(40, 0); b.rectTransform.offsetMax = new Vector2(-40, -110);
-            var no = UIKit.Button("No", box, "NOT NOW", new Color(0.35f, 0.35f, 0.36f), () => Destroy(_confirm.gameObject), 32);
+            // Taller for long messages (deleting the account), so the text never runs under the buttons.
+            float textH = b.cachedTextGeneratorForLayout.GetPreferredHeight(body, b.GetGenerationSettings(new Vector2(780, 0))) / b.pixelsPerUnit;
+            box.sizeDelta = new Vector2(860, Mathf.Max(420, 110 + textH + 150));
+            var no = UIKit.Button("No", box, noLabel, new Color(0.35f, 0.35f, 0.36f), () => { Destroy(_confirm.gameObject); onNo?.Invoke(); }, 32);
             ((RectTransform)no.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 34), new Vector2(330, 84));
-            var ok = UIKit.Button("Yes", box, yes, new Color(0.8f, 0.62f, 0.12f), () => { Destroy(_confirm.gameObject); onYes(); }, 32);
+            bool harm = yes == "DELETE" || yes == "START OVER" || yes == "THROW AWAY"; // can't be undone: red, not gold
+            var ok = UIKit.Button("Yes", box, yes, harm ? new Color(0.72f, 0.2f, 0.16f) : new Color(0.8f, 0.62f, 0.12f), () => { Destroy(_confirm.gameObject); onYes(); }, 32);
             ((RectTransform)ok.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 34), new Vector2(330, 84));
         }
     }

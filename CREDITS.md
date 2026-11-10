@@ -9,6 +9,7 @@
   ground textures (leaf litter, forest floor, beach sand, rock face, pebbled sand) and the sky HDRI
   (kloofendal_48d_partly_cloudy_puresky). Re-download with `python3 Tools/art/polyhaven.py terrain|fetch|install|slim`.
 - **ambientCG** (https://ambientcg.com), CC0: Grass001 ground texture.
+- **Wikimedia Commons**: "Ladrido de un perro" by Edo.pt2 (https://commons.wikimedia.org/wiki/File:Ladrido_perro.ogg), CC0: Biscuit's bark.
 - The castaway, boar and palm models, item icons and location paintings were made for this game (Higgsfield).
 - Fonts: Barlow by Jeremy Tribby (SIL Open Font License).
 
