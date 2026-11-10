@@ -126,6 +126,21 @@ namespace LastTide.Tests
         }
 
         [Test]
+        public void NoGhostBagAfterLoadingASave()
+        {
+            // JsonUtility writes a null class field as an empty object, so a save with no bag loads with an empty one.
+            var st = GameState.New();
+            st.lostBag = new LostBag { location = "" };
+            var g = new Session(st);
+            Assert.IsNull(g.State.lostBag, "nothing to recover");
+            g.Give("doubloon", 20);
+            g.Damage(500);                          // passing out with nothing past the pockets drops no bag
+            Assert.IsNull(g.State.lostBag);
+            Assert.IsFalse(g.RecoverBag());
+            Assert.AreEqual(20, g.State.coins, "no doubloons for an empty bag");
+        }
+
+        [Test]
         public void WeaponsWearOutAndBreak()
         {
             var g = Fresh();

@@ -84,6 +84,55 @@ namespace LastTide.Tests
         }
 
         [Test]
+        public void ABoxIsOnlyTakenDownWhenItsContentsFit()
+        {
+            var g = Fresh();
+            g.Give("wood", 10); g.Give("fiber", 5);
+            var box = g.Place("small_box", 1, 1, 0);
+            Assert.IsNotNull(box);
+            g.Give("bandage", 6);
+            g.StoreSlotTo(box.slots, g.State.backpack.FindIndex(s => s.id == "bandage"));
+            foreach (var s in g.State.backpack) { s.id = "stone"; s.n = 40; }   // a full backpack
+            Assert.IsFalse(g.Demolish(box), "the bandages would be lost with the box");
+            Assert.Contains(box, g.State.pieces);
+            Assert.AreEqual(6, Inventory.Count(box.slots, "bandage"));
+            g.State.backpack[7].Clear();
+            Assert.IsTrue(g.Demolish(box));
+            Assert.AreEqual(6, g.Count("bandage"), "what was stored comes back first");
+        }
+
+        [Test]
+        public void AHugeBatchCannotWrapAroundTheCost()
+        {
+            var g = Fresh();
+            g.Give("fiber", 4);
+            Assert.AreEqual("Missing materials", g.CraftBlocked("rope", int.MaxValue / 2), "4 fibre x a billion wraps to a negative cost in int");
+            Assert.IsFalse(g.Craft("rope", int.MaxValue / 2));
+            Assert.AreEqual(4, g.Count("fiber"));
+            Assert.IsNull(g.Job("hand"));
+        }
+
+        [Test]
+        public void ClothesAreWornNotHeld()
+        {
+            var g = Fresh();
+            g.Give("palm_hat", 1);
+            int slot = g.State.backpack.FindIndex(s => s.id == "palm_hat");
+            Assert.IsTrue(g.Use(slot));
+            Assert.AreEqual("palm_hat", g.GearIn(GearSlot.Head).id, "using a hat puts it on");
+            Assert.AreEqual(-1, g.State.equipped);
+
+            // Clothes that were held (an old save) and then put on don't leave their slot held for whatever lands there.
+            g.Give("hide_boots", 1);
+            slot = g.State.backpack.FindIndex(s => s.id == "hide_boots");
+            g.State.equipped = slot;
+            Assert.IsTrue(g.PutOn(slot));
+            g.Give("bandage", 1);
+            Assert.AreEqual(-1, g.State.equipped);
+            Assert.AreEqual(Content.FistDamage, g.AttackDamage(), "fists, not a bandage");
+        }
+
+        [Test]
         public void TheUltraTrackPaysExtra()
         {
             var g = Fresh();

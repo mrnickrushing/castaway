@@ -43,6 +43,7 @@ namespace LastTide.Core
             var old = new Slot { id = g.id, n = g.n, wear = g.wear };
             g.id = s.id; g.n = 1; g.wear = s.wear;
             s.Clear();
+            if (State.equipped == slot) State.equipped = -1;   // whatever lands in this slot next isn't held
             if (!old.Empty) { s.id = old.id; s.n = 1; s.wear = old.wear; }
             Changed?.Invoke();
             return true;
@@ -228,7 +229,7 @@ namespace LastTide.Core
             if (lv == 0) return r.Station == "furnace" ? "Build a furnace first" : "Build the " + Content.Builds[r.Station].Name.ToLower() + " first";
             if (lv < r.MinLevel) return "Needs " + StationName(r.Station) + " level " + r.MinLevel;
             if (Job(r.Station) != null) return "Busy";
-            foreach (var c in r.Inputs) if (Count(c.id) < c.n * qty) return "Missing materials";
+            foreach (var c in r.Inputs) if (Count(c.id) < (long)c.n * qty) return "Missing materials";   // long: a huge qty must not wrap
             return null;
         }
 
@@ -308,8 +309,12 @@ namespace LastTide.Core
         public bool Demolish(PieceState p)
         {
             if (!State.pieces.Contains(p)) return false;
-            foreach (var c in Content.Pieces[p.id].Cost) Inventory.Add(State.backpack, c.id, Math.Max(1, c.n / 2));
+            // What's stored in it comes out first and must all fit, or the box stays up (it would be lost with it).
+            var room = State.backpack.Select(s => new Slot { id = s.id, n = s.n, wear = s.wear }).ToList();
+            foreach (var s in p.slots)
+                if (!s.Empty && Inventory.Add(room, s.id, s.n, s.wear) < s.n) { Toast?.Invoke("Backpack full: empty the " + Content.Pieces[p.id].Name.ToLower() + " first"); return false; }
             foreach (var s in p.slots) if (!s.Empty) Inventory.Add(State.backpack, s.id, s.n, s.wear);
+            foreach (var c in Content.Pieces[p.id].Cost) Inventory.Add(State.backpack, c.id, Math.Max(1, c.n / 2));
             State.pieces.Remove(p);
             Changed?.Invoke();
             return true;

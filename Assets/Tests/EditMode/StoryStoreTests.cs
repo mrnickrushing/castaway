@@ -83,6 +83,34 @@ namespace LastTide.Tests
         }
 
         [Test]
+        public void RushingACraftCostsWhatTheSkipButtonSays()
+        {
+            var g = Fresh();
+            g.Give("doubloon", 50);
+            g.Give("fiber", 40);
+            Assert.IsTrue(g.Craft("rope", 10));         // 20 seconds
+            g.Tick(19);
+            Assert.AreEqual(1, g.RushCost("hand"));
+            Assert.IsTrue(g.RushCraft("hand"));
+            Assert.AreEqual(49, g.State.coins);
+            g.Tick(0.1f);
+            Assert.AreEqual(10, g.Count("rope"));
+
+            g.Give("fiber", 40); g.Give("fiber", 40);
+            Assert.IsTrue(g.Craft("rope", 20));         // 40 seconds: two half-minutes
+            Assert.AreEqual(2, g.RushCost("hand"));
+            Assert.IsTrue(g.RushCraft("hand"));
+            Assert.AreEqual(47, g.State.coins, "the price on the button, not a flat five");
+
+            // A finished job only waiting for room in the backpack isn't charged again.
+            foreach (var s in g.State.backpack) if (s.Empty) { s.id = "stone"; s.n = 40; }
+            g.Tick(0.1f);
+            Assert.IsNotNull(g.Job("hand"));
+            Assert.IsFalse(g.RushCraft("hand"));
+            Assert.AreEqual(47, g.State.coins);
+        }
+
+        [Test]
         public void DefeatingRedJackOpensTheVoyageHome()
         {
             var g = Fresh();
