@@ -158,7 +158,7 @@ namespace LastTide.Tests
                 O("recover bag", 2, (t, g, r, c) =>
                 {
                     int coins = g.State.coins;
-                    bool had = g.State.lostBag != null;
+                    bool had = g.NewestBag != null;
                     var before = Totals(g);
                     bool ok = g.RecoverBag();
                     AssertSame(before, Totals(g), c);
@@ -268,14 +268,15 @@ namespace LastTide.Tests
 
         // ------------------------------------------------------------------ conservation
 
-        /// <summary>Every item the castaway owns: backpack, clothes, the chest, the boxes and the lost bag.</summary>
+        /// <summary>Every item the castaway owns: backpack, clothes, the chest, the boxes, the lost bags and what waits for room.</summary>
         static Dictionary<string, int> Totals(Session g)
         {
             var d = new Dictionary<string, int>();
             void Add(List<Slot> slots) { if (slots == null) return; foreach (var s in slots) if (!s.Empty) d[s.id] = Get(d, s.id) + s.n; }
             Add(g.State.backpack); Add(g.State.gear); Add(g.State.chest);
             foreach (var p in g.State.pieces) Add(p.slots);
-            if (g.State.lostBag != null) Add(g.State.lostBag.slots);
+            foreach (var b in g.State.lostBags) Add(b.slots);
+            foreach (var w in g.State.waiting) d[w.id] = Get(d, w.id) + w.n;
             return d;
         }
 
@@ -349,11 +350,12 @@ namespace LastTide.Tests
                 Assert.That(d.Kind == ItemKind.Weapon || d.Kind == ItemKind.Tool, ctx + ": holding " + d.Id);
             }
 
-            if (st.lostBag != null)
+            foreach (var bag in st.lostBags)
             {
-                Assert.IsTrue(st.lostBag.slots.Any(s => !s.Empty), ctx + ": an empty lost bag is still lying about");
-                Slots(st.lostBag.slots, ctx + " lost bag");
+                Assert.IsTrue(bag.slots.Any(s => !s.Empty), ctx + ": an empty lost bag is still lying about");
+                Slots(bag.slots, ctx + " lost bag");
             }
+            foreach (var w in st.waiting) Assert.That(w.n > 0 && Content.Item(w.id) != null, ctx + ": waiting " + w.n + " " + w.id);
 
             Assert.AreEqual(st.builds.Count, st.builds.Select(b => b.id).Distinct().Count(), ctx + ": a structure twice");
             foreach (var b in st.builds)
@@ -505,6 +507,7 @@ namespace LastTide.Tests
                     Assert.AreEqual(premiumSeason == season, g.SeasonPremium);
 
                     // Claims: once each, only up to the season level, premium only with the pass.
+                    foreach (var sl in g.State.backpack) sl.Clear(); // room for every reward (RoomTests covers a full backpack)
                     int lv = g.SeasonLevel, coins = g.State.coins;
                     for (int l = 0; l <= Season.Levels + 1; l++)
                     {
@@ -529,6 +532,7 @@ namespace LastTide.Tests
                         if (!running) Assert.AreEqual(counts[r.Key], g.EventCount(r), r.Key + " counted on " + day);
                         else Assert.Greater(g.EventCount(r), counts[r.Key], r.Key + " missed a count on " + day);
                     }
+                    foreach (var sl in g.State.backpack) sl.Clear();
                     foreach (var r in g.EventRuns(day - 20, day + 1))
                     {
                         g.ClaimEvent(r);

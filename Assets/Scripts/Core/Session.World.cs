@@ -175,7 +175,7 @@ namespace LastTide.Core
         {
             if (!Heard(s) || Rescued(s) || !CanRescue(s)) return false;
             foreach (var c in s.Need) Inventory.Remove(State.backpack, c.id, c.n);
-            foreach (var r in s.Reward) Give(r.id, r.n);
+            foreach (var r in s.Reward) GiveOrHold(r.id, r.n);
             State.coins += s.RewardCoins;
             if (s.Unlocks != null) SetFlag("recipe_" + s.Unlocks);
             SetFlag("done_" + s.Id);
@@ -210,6 +210,7 @@ namespace LastTide.Core
         {
             if (Bought(o) >= o.Limit) return "Sold out";
             if (State.coins < o.Price) return "Not enough doubloons";
+            if (!Fits(o.Items)) return "Make room in your backpack";
             return null;
         }
 

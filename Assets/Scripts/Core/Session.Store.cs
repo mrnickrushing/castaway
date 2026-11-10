@@ -95,8 +95,8 @@ namespace LastTide.Core
         {
             State.coins += p.Coins;
             if (p.Energy > 0) State.energy = Math.Min(World.EnergyMax, State.energy + p.Energy);
-            foreach (var i in p.Items) Give(i.id, i.n);
-            if (p.Perk == "bigpack") State.Repair(BackpackSize);
+            if (p.Perk == "bigpack") State.Repair(BackpackSize); // the new slots first: the pack's items may need them
+            foreach (var i in p.Items) GiveOrHold(i.id, i.n);
             if (p.Perk == "season") GrantSeasonPremium();
         }
 
@@ -175,9 +175,11 @@ namespace LastTide.Core
 
         public bool RecoverBag()
         {
-            if (State.lostBag == null || !Spend(RecoverBagCost)) return false;
-            State.lostBag.location = State.location;
-            TakeBag();
+            var bag = NewestBag;
+            if (bag == null || !Spend(RecoverBagCost)) return false;
+            // Whatever doesn't fit lands at the castaway's feet.
+            bag.location = State.location; bag.x = State.px; bag.z = State.pz;
+            TakeBag(bag);
             return true;
         }
     }

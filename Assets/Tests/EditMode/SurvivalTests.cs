@@ -117,11 +117,11 @@ namespace LastTide.Tests
             Assert.AreEqual(1, g.Count("bandage"), "pockets are kept");
             Assert.IsTrue(died);
             Assert.AreEqual(0, g.Count("wood"));
-            Assert.IsNotNull(g.State.lostBag);
-            Assert.AreEqual(5, g.State.lostBag.x);
+            Assert.AreEqual(1, g.State.lostBags.Count);
+            Assert.AreEqual(5, g.NewestBag.x);
             Assert.AreEqual(60, g.State.health);
             Assert.AreEqual(10, g.TakeBag());
-            Assert.IsNull(g.State.lostBag);
+            Assert.AreEqual(0, g.State.lostBags.Count);
             Assert.AreEqual(10, g.Count("wood"));
         }
 
@@ -132,10 +132,10 @@ namespace LastTide.Tests
             var st = GameState.New();
             st.lostBag = new LostBag { location = "" };
             var g = new Session(st);
-            Assert.IsNull(g.State.lostBag, "nothing to recover");
+            Assert.IsNull(g.NewestBag, "nothing to recover");
             g.Give("doubloon", 20);
             g.Damage(500);                          // passing out with nothing past the pockets drops no bag
-            Assert.IsNull(g.State.lostBag);
+            Assert.IsNull(g.NewestBag);
             Assert.IsFalse(g.RecoverBag());
             Assert.AreEqual(20, g.State.coins, "no doubloons for an empty bag");
         }

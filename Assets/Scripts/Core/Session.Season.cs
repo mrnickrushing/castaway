@@ -106,6 +106,7 @@ namespace LastTide.Core
             var got = new List<ItemCount>();
             if (level < 1 || level > Season.Levels || !SeasonClaimable(level, premium)) return got;
             var r = premium ? Season.Premium[level] : Season.Free[level];
+            if (!Fits(new[] { r })) { NoRoom(); return got; } // stays on the track until there's room
             (premium ? State.seasonPrem : State.seasonFree).Add(level);
             Give(r.id, r.n);
             got.Add(r);
@@ -177,6 +178,7 @@ namespace LastTide.Core
             var p = Progress(r, true);
             while (p.claimed < r.Def.Targets.Length && p.n >= r.Def.Targets[p.claimed])
             {
+                if (!Fits(r.Def.Rewards[p.claimed])) { NoRoom(); break; }
                 foreach (var it in r.Def.Rewards[p.claimed]) { Give(it.id, it.n); got.Add(it); }
                 p.claimed++;
                 AddSeasonPoints(60);
@@ -208,11 +210,13 @@ namespace LastTide.Core
             var s = State.backpack[slot];
             if (s.Empty || (s.id != "supply_crate" && s.id != "gold_chest")) return null;
             bool gold = s.id == "gold_chest";
-            s.n--;
-            if (s.n <= 0) s.Clear();
             var got = new List<ItemCount> { Content.I("doubloon", gold ? 40 + _rng.Next(41) : 5 + _rng.Next(11)) };
             var pool = gold ? Season.ChestLoot : Season.CrateLoot;
             for (int i = 0, rolls = gold ? 2 : 3; i < rolls; i++) got.Add(pool[_rng.Next(pool.Length)]);
+            // Opened only when what's inside fits: else it stays shut in the backpack.
+            if (!Fits(got, s.id)) { NoRoom(); return new List<ItemCount>(); }
+            s.n--;
+            if (s.n <= 0) s.Clear();
             foreach (var g in got) Give(g.id, g.n);
             Changed?.Invoke();
             return got;

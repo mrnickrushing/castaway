@@ -119,6 +119,7 @@ namespace LastTide.Core
             while (LevelRewardsWaiting > 0)
             {
                 int lv = 2 + State.levelsClaimed;
+                if (!Fits(LevelReward(lv))) { NoRoom(); break; } // waits under the quest card until there's room
                 foreach (var r in LevelReward(lv)) Give(r.id, r.n);
                 State.energy = Math.Min(World.EnergyMax, State.energy + 20);
                 State.levelsClaimed++;

@@ -44,7 +44,7 @@ namespace LastTide.Game
             _prefix = Session.ZonePrefix(Island.Location.Id);
             var nodes = new GameObject("Island things").transform;
             nodes.SetParent(world, false);
-            BagSpot.Create(nodes);
+            for (int i = 0; i < BagSpot.Max; i++) BagSpot.Create(nodes, i);
             if (!Island.Location.Home) { PopulateZone(world, nodes); return; }
 
             PieceViews.Create(world);

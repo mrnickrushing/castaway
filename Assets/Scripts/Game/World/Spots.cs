@@ -485,20 +485,36 @@ namespace LastTide.Game
         }
     }
 
-    /// <summary>The backpack the castaway dropped when they fell.</summary>
+    /// <summary>A backpack the castaway dropped when they fell: the island has a few of these, the first shows the
+    /// oldest bag lying here, the second the next one, and so on.</summary>
     public sealed class BagSpot : Spot
     {
+        /// <summary>How many lost bags one island can show at once.</summary>
+        public const int Max = 6;
         float _t;
+        int _nth;
         public override string Kind { get { return "bag"; } }
-        public override bool Active { get { var b = G.Session.State.lostBag; return b != null && (b.location ?? LastTide.Core.World.HomeId) == G.Session.State.location; } }
+        public override bool Active { get { return Bag != null; } }
+
+        LostBag Bag
+        {
+            get
+            {
+                int k = 0;
+                foreach (var b in G.Session.State.lostBags)
+                    if ((b.location ?? LastTide.Core.World.HomeId) == G.Session.State.location && k++ == _nth) return b;
+                return null;
+            }
+        }
         public override string Label { get { return "Your lost backpack"; } }
         public override float Fill { get { return Mathf.Clamp01(_t / 0.8f); } }
 
-        public static BagSpot Create(Transform parent)
+        public static BagSpot Create(Transform parent, int nth)
         {
-            var go = new GameObject("Lost bag");
+            var go = new GameObject("Lost bag " + nth);
             go.transform.SetParent(parent, false);
             var s = go.AddComponent<BagSpot>();
+            s._nth = nth;
             var mb = new MeshBuilder();
             mb.Box(new Vector3(0, 0.3f, 0), new Vector3(0.7f, 0.6f, 0.45f), Tropic.Pack);
             mb.Box(new Vector3(0, 0.62f, 0), new Vector3(0.6f, 0.12f, 0.4f), MeshBuilder.Darken(Tropic.Pack, 0.8f));
@@ -510,14 +526,15 @@ namespace LastTide.Game
         public override Act Work(Player p, float dt)
         {
             _t += dt;
-            if (_t >= 0.8f) { _t = 0; if (G.Session.TakeBag() > 0) Sfx.Play("gather", Pos); }
+            var bag = Bag;
+            if (_t >= 0.8f) { _t = 0; if (bag != null && G.Session.TakeBag(bag) > 0) Sfx.Play("gather", Pos); }
             return Act.Gather;
         }
 
         void Update()
         {
-            var bag = G.Session.State.lostBag;
-            bool on = Active;
+            var bag = Bag;
+            bool on = bag != null;
             for (int i = 0; i < transform.childCount; i++) transform.GetChild(i).gameObject.SetActive(on || transform.GetChild(i).GetComponent<Ring>() != null);
             if (on) transform.position = Island.Ground(bag.x, bag.z);
         }

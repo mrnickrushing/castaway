@@ -326,7 +326,7 @@ namespace LastTide.Game
             if (bed != null) { Quaternion r; CampGrid.Pose(bed, out p, out r); p += r * new Vector3(1.6f, 0, 0); }
             Player.Instance.Place(p, 0);
             Save();
-            if (G.Session.State.lostBag != null)
+            if (G.Session.NewestBag != null)
                 Hud.Instance.Confirm("Recover your backpack?", "Everything you carried lies where you fell. Get it back right now for " + Session.RecoverBagCost + " doubloons, or walk back for it.", "RECOVER " + Session.RecoverBagCost,
                     () => { if (G.Session.RecoverBag()) Sfx.Play("coin"); });
         }
