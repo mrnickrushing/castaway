@@ -113,7 +113,7 @@ namespace LastTide.Game
                     for (int i = 0; i < 8; i++)
                     {
                         var c = _home + new Vector3(Random.Range(-12f, 12f), 0, Random.Range(-12f, 12f));
-                        if (Island.Walkable(c.x, c.z) && Island.Height(c.x, c.z) > 0.6f) { _wander = c; break; }
+                        if (Island.CanStep(c.x, c.z) && Island.Height(c.x, c.z) > 0.6f) { _wander = c; break; }
                     }
                 }
                 if (_def.Id == "boar" && Random.value < dt * 0.15f) Sfx.Play("grunt", pos, 0.4f);
@@ -155,7 +155,7 @@ namespace LastTide.Game
                 {
                     var out_ = player.transform.position + (gap.sqrMagnitude > 1e-4f ? gap.normalized : -transform.forward) * 1.15f;
                     // Never shoved somewhere it couldn't walk to (a cliff edge it can't come back from).
-                    if (Island.Walkable(out_.x, out_.z) && Island.Height(out_.x, out_.z) >= 0.4f) pos = out_;
+                    if (Island.CanStep(out_.x, out_.z) && Island.Height(out_.x, out_.z) >= 0.4f) pos = out_;
                 }
             }
             pos.y = Island.Ground(pos).y;
@@ -170,7 +170,7 @@ namespace LastTide.Game
         static Vector3 Step(Vector3 pos, Vector3 step)
         {
             var next = pos + step;
-            if (!Island.Walkable(next.x, next.z) || Island.Height(next.x, next.z) < 0.4f) return pos;
+            if (!Island.CanStep(next.x, next.z) || Island.Height(next.x, next.z) < 0.4f) return pos;
             return Obstacles.Resolve(next, 0.6f);
         }
     }

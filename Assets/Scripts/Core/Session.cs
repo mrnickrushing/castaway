@@ -321,6 +321,7 @@ namespace LastTide.Core
             if (s.Empty) return false;
             var d = Content.Item(s.id);
             if (d == null) return false;
+            if (d.Gear != GearSlot.None) return PutOn(slot);   // clothes are worn, not held (they count as tools)
             if (d.Kind == ItemKind.Weapon || d.Kind == ItemKind.Tool)
             {
                 State.equipped = State.equipped == slot ? -1 : slot;

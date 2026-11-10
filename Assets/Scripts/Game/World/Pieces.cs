@@ -9,6 +9,30 @@ namespace LastTide.Game
     {
         public static Vector3 Cell(int i, int j) { return Island.Ground(Island.Camp + new Vector3(i * Content.CellSize, 0, j * Content.CellSize)); }
 
+        /// <summary>
+        /// Why a piece can't stand here because of the island itself (a palm, standing or felled, a rock, a camp
+        /// structure or its site, the wreck), or null. Session.PlaceBlocked only knows about other pieces.
+        /// </summary>
+        public static string InTheWay(string id, int i, int j, int r)
+        {
+            var d = Content.Pieces[id];
+            Vector3 pos; Quaternion rot;
+            Pose(id, i, j, r, out pos, out rot);
+            float half = Content.CellSize / 2, hx, hz;
+            if (d.Kind == PieceKind.Edge) { hx = half - 0.1f; hz = 0.2f; }
+            else if (d.Kind == PieceKind.Floor) hx = hz = half - 0.05f;
+            else hx = hz = 0.9f;
+            if (Mathf.Abs(Mathf.Sin(rot.eulerAngles.y * Mathf.Deg2Rad)) > 0.5f) { float t = hx; hx = hz; hz = t; }
+            foreach (var s in Spot.All)
+            {
+                float reach = s is NodeSpot ? ((NodeSpot)s).Footprint : s is SiteSpot ? ((SiteSpot)s).Footprint : 0;
+                if (reach > 0 && Obstacles.RectTouches(pos, hx, hz, new Vector2(s.Pos.x, s.Pos.z), reach)) return "Something is in the way";
+            }
+            // Scenery and the wreck (spots and pieces were dealt with above / by the rules).
+            if (Obstacles.Overlaps(pos, hx, hz, o => o is Spot)) return "Something is in the way";
+            return null;
+        }
+
         /// <summary>Where a piece stands and which way it faces.</summary>
         public static void Pose(PieceState p, out Vector3 pos, out Quaternion rot)
         {
@@ -73,7 +97,12 @@ namespace LastTide.Game
             {
                 case "small_box": kit = Kit("box", parent, 1.1f); break;
                 case "storage_chest": kit = Kit("chest", parent, 1.25f); break;
-                case "bed": kit = Kit("bedframe", parent, 1f); break;
+                case "bed":
+                    // The kit's cot frame is bare legs: lay its bedroll on top.
+                    kit = Kit("bedframe", parent, 1f);
+                    if (kit != null && ModelRegistry.Has(ModelRegistry.Free, "bedroll"))
+                        ModelRegistry.Spawn(ModelRegistry.Free, "bedroll", kit.transform).transform.localPosition += new Vector3(0, 0.42f, 0);
+                    break;
             }
             if (kit != null) return kit;
             var mb = new MeshBuilder();
@@ -137,6 +166,20 @@ namespace LastTide.Game
                     mb.Surf = SurfaceKind.None;
                     mb.Box(new Vector3(0, 0.52f, 0), new Vector3(1.1f, 0.14f, 2.0f), Tropic.Sail);
                     break;
+                case "doghouse":
+                {
+                    // A plank kennel with a sailcloth roof; the door faces the camp side (-Z).
+                    mb.Surf = SurfaceKind.Planks;
+                    mb.Box(new Vector3(0, 0.06f, 0), new Vector3(1.5f, 0.12f, 1.2f), PlankDark);
+                    mb.Box(new Vector3(0, 0.55f, 0.55f), new Vector3(1.5f, 0.9f, 0.1f), Plank);
+                    foreach (float x in new[] { -0.7f, 0.7f }) mb.Box(new Vector3(x, 0.55f, 0), new Vector3(0.1f, 0.9f, 1.2f), MeshBuilder.Darken(Plank, 0.93f));
+                    foreach (float x in new[] { -0.48f, 0.48f }) mb.Box(new Vector3(x, 0.55f, -0.55f), new Vector3(0.54f, 0.9f, 0.1f), Plank);
+                    mb.Box(new Vector3(0, 0.9f, -0.55f), new Vector3(0.42f, 0.2f, 0.1f), Plank);
+                    mb.Surf = SurfaceKind.None;
+                    mb.Box(new Vector3(0, 0.5f, -0.4f), new Vector3(0.42f, 0.7f, 0.02f), Palette.Hex(0x2A1E14)); // the dark inside
+                    mb.GableRoof(new Vector3(0, 1.0f, 0), new Vector3(1.5f, 0.55f, 1.2f), MeshBuilder.Darken(Tropic.Sail, 0.78f), Plank, 0.15f);
+                    break;
+                }
                 case "table":
                     mb.Surf = SurfaceKind.Planks;
                     mb.Box(new Vector3(0, 0.85f, 0), new Vector3(1.8f, 0.1f, 1.1f), Plank);

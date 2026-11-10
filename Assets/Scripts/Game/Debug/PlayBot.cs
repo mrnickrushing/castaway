@@ -285,11 +285,11 @@ namespace LastTide.Game
         static bool Open(float x, float z)
         {
             // The cell and a ring half a metre out: thin steep strips (rock outcrops) fall between 1 m samples.
-            if (!Island.Walkable(x, z)) return false;
+            if (!Island.CanStep(x, z)) return false;
             for (int k = 0; k < 8; k++)
             {
                 float a = k * Mathf.PI / 4;
-                if (!Island.Walkable(x + Mathf.Cos(a) * 0.55f, z + Mathf.Sin(a) * 0.55f)) return false;
+                if (!Island.CanStep(x + Mathf.Cos(a) * 0.55f, z + Mathf.Sin(a) * 0.55f)) return false;
             }
             var q = new Vector3(x, 0, z);
             return Flat(Obstacles.Resolve(q, Player.BodyRadius) - q) < 0.05f;

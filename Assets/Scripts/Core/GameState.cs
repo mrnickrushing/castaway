@@ -146,6 +146,8 @@ namespace LastTide.Core
             if (level < 1) level = 1;
             if (string.IsNullOrEmpty(location) || World.Location(location) == null) location = World.HomeId;
             if (travel != null && string.IsNullOrEmpty(travel.to)) travel = null;
+            // JsonUtility can't store null for a class field: a save written with no bag on the ground loads an empty one.
+            if (lostBag != null && (lostBag.slots == null || !lostBag.slots.Exists(s => !s.Empty))) lostBag = null;
             foreach (var b in builds) if (b.delivered == null) b.delivered = new List<ItemCount>();
             if (equipped >= backpack.Count) equipped = -1;
         }

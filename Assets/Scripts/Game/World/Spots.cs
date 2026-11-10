@@ -65,6 +65,8 @@ namespace LastTide.Game
     public sealed class NodeSpot : Spot
     {
         public string Key, NodeKind;
+        /// <summary>Ground it keeps clear for building, standing or not (a felled palm grows back).</summary>
+        public float Footprint { get; private set; }
         GameObject _model, _stump;
         float _timer, _shake, _fall;
         bool _standing = true;
@@ -84,6 +86,7 @@ namespace LastTide.Game
             s._model = art ?? model.ToObject("Model", go.transform);
             s._baseScale = s._model.transform.localScale;
             s.MakeRing(ring);
+            s.Footprint = Mathf.Max(obstacle, 0.5f);
             if (obstacle > 0) Obstacles.Add(pos, obstacle, s);
             if (kind == "palm")
             {
@@ -307,6 +310,8 @@ namespace LastTide.Game
         }
 
         float _obstacle;
+        /// <summary>Ground the structure takes, built or not yet (kept clear for building pieces).</summary>
+        public float Footprint { get { return _obstacle > 0 ? _obstacle : 1.5f; } }
         bool _wasBuilt;
         Assembly _asm;
         int _level = -1;
@@ -832,7 +837,10 @@ namespace LastTide.Game
             go.transform.position = pos;
             var s = go.AddComponent<PetSpot>();
             s._art = CharacterArt.TryCreate("shiba", go.transform);
-            s.MakeRing(1.8f);
+            // Sized like the Biscuit who follows you (the free model comes in at 3.6 m tall).
+            var def = Season.Pet("biscuit");
+            if (s._art != null) Pet.FitHeight(s._art.gameObject, def != null ? def.Height : 0.55f);
+            s.MakeRing(1.6f);
             return s;
         }
 

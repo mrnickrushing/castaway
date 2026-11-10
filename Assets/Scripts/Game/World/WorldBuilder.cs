@@ -231,7 +231,7 @@ namespace LastTide.Game
                 var b = Find(q => Island.Distance01(q.x, q.z) < 0.9f && Vector3.Distance(q, Island.Camp) > 8, 6f, new Vector3(k * 7 - 7, 0, 0));
                 LootSpot.Create(nodes, _prefix + "lootbag#" + k, Island.Ground(b), k * 91);
                 Take(b, 5f);
-                if (k == 0 && loc.Biome == Biome.Shore) PetSpot.Create(nodes, Island.Ground(b + new Vector3(1.8f, 0, 0.6f)));
+                if (k == 0 && loc.Biome == Biome.Shore) PetSpot.Create(nodes, Island.Ground(b + new Vector3(3.6f, 0, 0.8f))); // clear of the bag's ring
             }
             Jungle(world, loc.Biome == Biome.Grove ? 50 : loc.Biome == Biome.Shore || loc.Biome == Biome.Pier ? 14 : 28, 0.45f);
             Undergrowth(world, 600);

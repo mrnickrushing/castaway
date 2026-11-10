@@ -167,7 +167,8 @@ namespace LastTide.Core
         public bool RushCraft(string station)
         {
             var j = Job(station);
-            if (j == null || !Spend(RushCraftCost)) return false;
+            // Charge what the SKIP button shows; a job that is already done (waiting for room) needs no rush.
+            if (j == null || j.doneAt <= Now || !Spend(RushCost(station))) return false;
             j.doneAt = Now;
             return true;
         }

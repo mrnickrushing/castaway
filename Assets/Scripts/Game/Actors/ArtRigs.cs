@@ -128,10 +128,12 @@ namespace LastTide.Game
             if (_act == Act.Gather || _act == Act.Drink) { _human.Loop("Crouch_Idle_Loop", 1, 0.25f); return; }
             if (_act != Act.None) { _human.Loop("Idle_Loop", 1, 0.2f); return; }
             if (_move <= 0.08f) { _human.Loop(Sneak ? "Crouch_Idle_Loop" : "Idle_Loop", 1, 0.2f); return; }
-            if (Sneak) _human.Loop("Crouch_Fwd_Loop", Mathf.Clamp(v / 1.3f, 0.6f, 2f), 0.18f);
-            else if (v < 2.4f) _human.Loop("Walk_Loop", Mathf.Clamp(v / 1.4f, 0.55f, 1.6f), 0.18f);
-            else if (v < 4.6f) _human.Loop("Jog_Fwd_Loop", Mathf.Clamp(v / 3.6f, 0.75f, 1.3f), 0.18f);
-            else _human.Loop("Sprint_Loop", Mathf.Clamp(v / 6f, 0.8f, 1.2f), 0.18f);
+            // Each clip played at the rate its planted foot keeps pace with the ground (measured stride speeds:
+            // crouch 0.8, walk 1.0, jog 2.3, sprint 3.2 m/s), so the feet stay put instead of skating.
+            if (Sneak) _human.Loop("Crouch_Fwd_Loop", Mathf.Clamp(v / 0.8f, 0.6f, 2.2f), 0.18f);
+            else if (v < 1.5f) _human.Loop("Walk_Loop", Mathf.Clamp(v / 1.0f, 0.55f, 1.5f), 0.18f);
+            else if (v < 3.4f) _human.Loop("Jog_Fwd_Loop", Mathf.Clamp(v / 2.3f, 0.65f, 1.5f), 0.18f);
+            else _human.Loop("Sprint_Loop", Mathf.Clamp(v / 3.2f, 1.0f, 1.75f), 0.18f);
         }
 
         void LateUpdate()
