@@ -515,10 +515,24 @@ namespace LastTide.Game
             go.transform.SetParent(parent, false);
             var s = go.AddComponent<BagSpot>();
             s._nth = nth;
+            // The castaway's canvas pack, slumped where they fell: flap, front pocket, shoulder straps, a bedroll on top.
             var mb = new MeshBuilder();
-            mb.Box(new Vector3(0, 0.3f, 0), new Vector3(0.7f, 0.6f, 0.45f), Tropic.Pack);
-            mb.Box(new Vector3(0, 0.62f, 0), new Vector3(0.6f, 0.12f, 0.4f), MeshBuilder.Darken(Tropic.Pack, 0.8f));
-            mb.ToObject("Bag", go.transform);
+            mb.Surf = SurfaceKind.None;
+            Color canvas = Tropic.Pack, dark = MeshBuilder.Darken(Tropic.Pack, 0.78f), leather = Palette.Hex(0x5A3A22), roll = Palette.Hex(0xC9B98F);
+            mb.Sphere(new Vector3(0, 0.13f, 0), new Vector3(0.28f, 0.13f, 0.2f), 12, dark);
+            mb.Sphere(new Vector3(0, 0.34f, 0), new Vector3(0.3f, 0.32f, 0.2f), 12, canvas);
+            mb.Sphere(new Vector3(0, 0.58f, -0.02f), new Vector3(0.29f, 0.1f, 0.21f), 10, dark);
+            mb.Sphere(new Vector3(0, 0.27f, -0.17f), new Vector3(0.19f, 0.13f, 0.08f), 10, MeshBuilder.Darken(canvas, 1.1f));
+            foreach (float x in new[] { -0.12f, 0.12f })
+            {
+                mb.Cylinder(new Vector3(x, 0.64f, 0.17f), new Vector3(x, 0.12f, 0.2f), 0.022f, 5, leather);   // shoulder straps
+                mb.Box(new Vector3(x, 0.5f, -0.22f), new Vector3(0.05f, 0.14f, 0.02f), leather);            // flap buckles
+            }
+            mb.Cylinder(new Vector3(-0.3f, 0.72f, 0.02f), new Vector3(0.3f, 0.72f, 0.02f), 0.09f, 10, roll);
+            foreach (float x in new[] { -0.18f, 0.18f })
+                mb.Cylinder(new Vector3(x - 0.015f, 0.72f, 0.02f), new Vector3(x + 0.015f, 0.72f, 0.02f), 0.097f, 10, leather);
+            var model = mb.ToObject("Bag", go.transform);
+            model.transform.localRotation = Quaternion.Euler(-14, 25, 6); // leaning back on the ground, not standing to attention
             s.MakeRing(1.5f);
             return s;
         }

@@ -134,7 +134,7 @@ namespace LastTide.Game
             UIKit.ItemIcon(tile, r.id, _tile * 0.8f);
             var n = UIKit.Outlined(UIKit.Label("N", tile, r.n.ToString(), 24, Color.white, TextAnchor.LowerRight), 1.5f);
             n.rectTransform.Fill(4);
-            if (locked) { var l = UIKit.Img("Lock", tile, UIKit.Symbol("lock"), new Color(1f, 0.85f, 0.4f)); l.rectTransform.Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-2, -2), new Vector2(30, 30)); }
+            if (locked) { var l = UIKit.Img("Lock", tile, UIKit.Symbol("lock"), new Color(1f, 0.85f, 0.4f)); l.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(2, -2), new Vector2(_tile * 0.4f, _tile * 0.4f)); } // top left, clear of the count
             if (taken) { var c = UIKit.Img("Taken", tile, null, new Color(0, 0, 0, 0.55f)); c.rectTransform.Fill(); var k = UIKit.Img("Tick", tile, UIKit.Symbol("check"), new Color(0.55f, 0.9f, 0.45f)); k.rectTransform.Fill(22); }
         }
     }
