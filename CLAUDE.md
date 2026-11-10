@@ -131,6 +131,9 @@ setting only.
 - Trees, roofs and towers between the camera and the castaway (or the build ghost) switch to shadows-only while they
   block the view (`App/SeeThrough.cs`, ticked by `CameraRig`; bounds rays, no shader change, so the scans' URP Lit
   variants stay as they are). The HUD canvas uses `Expand` from 1920x1080: an iPad gets 1920x1440 and the panels fit.
+  Phones (`UIKit.Phone`: under 4 in tall; in the Editor a Game view wider than 1.9:1) grow every `UIKit.Label` toward
+  44 units by best fit (`UIKit.SetSize`, never below the size asked for), scale the field HUD by 1.2 (`GrowHudOnPhones`),
+  and lay Help out as a scrolling page (`UIKit.Scroller`). Check new screens at 1800x830 as well as 1440x1080.
 - App Store listing: `docs/appstore/listing.json` + `screens/`, written by `Tools/appstore/listing.py` (Codemagic
   `lasttide-listing` in the train app); see `docs/STORE.md`.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).

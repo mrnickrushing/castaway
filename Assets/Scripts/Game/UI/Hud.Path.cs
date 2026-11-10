@@ -81,13 +81,16 @@ namespace LastTide.Game
 
             // The steps and their rewards, rows sized so a long chapter still fits above the buttons.
             float y = 0, rowH = Mathf.Min(120, 820f / Mathf.Max(1, end - start)), tile = Mathf.Min(92, rowH - 10);
+            // A phone's wide canvas has room to spare: give it to the step names (rewards stay on the right) so the
+            // larger type keeps each step on one line.
+            float rowW = 1060 + (UIKit.Phone ? Mathf.Max(0, _pathBody.rect.width - 1700) : 0);
             _tile = tile;
             for (int i = start; i < end; i++)
             {
                 var q = Quests.All[i];
                 bool done = s.Completed(i), now = i == s.State.quest;
                 var row = UIKit.Img("Step", _pathBody, null, now ? new Color(0.3f, 0.38f, 0.3f) : new Color(0.28f, 0.3f, 0.27f)).rectTransform;
-                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(640, -y), new Vector2(1060, rowH - 8));
+                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(640, -y), new Vector2(rowW, rowH - 8));
                 var t = UIKit.Label("T", row, (i - start + 1) + ". " + q.Text.ToUpper(), 26, done ? new Color(0.55f, 0.9f, 0.45f) : now ? Color.white : new Color(1, 1, 1, 0.45f), TextAnchor.MiddleLeft, false);
                 t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(20, 0); t.rectTransform.offsetMax = new Vector2(-600, 0);
                 float x = -590;

@@ -57,6 +57,7 @@ namespace LastTide.Game
             BuildMap(safe);
             BuildQuest(safe);
             BuildPanels(safe);
+            GrowHudOnPhones();
             BuildBlueprints();
             BuildBuildMode();
             BuildPath();
@@ -109,6 +110,27 @@ namespace LastTide.Game
 
         Text _playerName;
 
+        /// <summary>1.2 on phones, else 1: how much bigger the field HUD is drawn.</summary>
+        float _hudK = 1;
+
+        /// <summary>
+        /// A phone shows the 1080-unit-tall canvas on a screen ~7 cm tall: the field HUD (meters, guide card, buttons,
+        /// minimap, coins) comes up a fifth bigger there, each piece about its own corner, which the 2340-wide canvas has
+        /// room for. Panels keep their layout and grow their type instead (UIKit.Label).
+        /// </summary>
+        void GrowHudOnPhones()
+        {
+            if (!UIKit.Phone) return;
+            _hudK = 1.2f;
+            foreach (RectTransform c in _islandUi) if (c.name != "XP") Grow(c);
+            Grow(_questCard); Grow(_levelUp);
+            // Grown, the MAP button would sit on the weapon slot: it moves up beside the coins, under the round buttons.
+            var map = _islandUi.Find("MAP") as RectTransform;
+            if (map != null) map.anchoredPosition = new Vector2(-330, -300) * _hudK;
+        }
+
+        void Grow(RectTransform c) { c.localScale = Vector3.one * _hudK; c.anchoredPosition *= _hudK; }
+
         void Small(RectTransform box, int col, string icon, Color c, out Image fill, out Text text)
         {
             var r = UIKit.Rect("Small " + icon, box).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(col * 205, -82), new Vector2(195, 44));
@@ -143,7 +165,7 @@ namespace LastTide.Game
         /// <summary>The guide on the left: the chapter in amber, the step under it; folds away with the arrows.</summary>
         void BuildQuest(RectTransform safe)
         {
-            _questCard = UIKit.Rect("Quest", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -170), new Vector2(620, 110));
+            _questCard = UIKit.Rect("Quest", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -170), new Vector2(620, 130));
             _questBack = UIKit.Img("Back", _questCard, Fade(), new Color(0.08f, 0.1f, 0.1f, 0.85f));
             _questBack.rectTransform.Fill();
             _questTitle = UIKit.Label("Title", _questCard, "", 32, UIKit.Amber, TextAnchor.UpperLeft, false);
@@ -152,13 +174,13 @@ namespace LastTide.Game
             _questText.supportRichText = true;
             // Below the chapter title; long steps shrink to fit instead of running up into it.
             _questText.rectTransform.Fill(); _questText.rectTransform.offsetMin = new Vector2(40, 8); _questText.rectTransform.offsetMax = new Vector2(-60, -46);
-            _questText.resizeTextForBestFit = true; _questText.resizeTextMinSize = 18; _questText.resizeTextMaxSize = 30;
+            _questText.resizeTextForBestFit = true; _questText.resizeTextMinSize = 24; _questText.resizeTextMaxSize = 32;
             _questText.verticalOverflow = VerticalWrapMode.Truncate;
             var fold = UIKit.Button("Fold", _questCard, "<<", new Color(0, 0, 0, 0), () => { _questFolded = !_questFolded; }, 40);
             ((RectTransform)fold.transform).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(70, 100));
             fold.GetComponentInChildren<Text>().color = new Color(1, 1, 1, 0.6f);
             // LEVEL UP!: waits until tapped, then pays the level's reward.
-            _levelUp = UIKit.Rect("Level up", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -290), new Vector2(420, 90));
+            _levelUp = UIKit.Rect("Level up", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -310), new Vector2(420, 90));
             var lbg = UIKit.Img("Back", _levelUp, Fade(), new Color(0.08f, 0.1f, 0.1f, 0.85f)); lbg.rectTransform.Fill();
             var lb = UIKit.Button("Up", _levelUp, null, new Color(0.85f, 0.62f, 0.1f), ClaimLevelUp);
             lb.GetComponent<Image>().sprite = UIKit.Circle; lb.GetComponent<Image>().type = Image.Type.Simple;
@@ -242,7 +264,7 @@ namespace LastTide.Game
             }
             _questText.text = "<color=#FFC24A>\u2022</color>  " + q.Label(s) + need;
             _questText.gameObject.SetActive(!_questFolded);
-            _questCard.anchoredPosition = new Vector2(_questFolded ? -540 : 0, MapOpen ? -215 : -170);
+            _questCard.anchoredPosition = new Vector2(_questFolded ? -540 : 0, MapOpen ? -215 : -170) * _hudK;
             if (_questFlash > 0)
             {
                 _questFlash -= Time.deltaTime;
