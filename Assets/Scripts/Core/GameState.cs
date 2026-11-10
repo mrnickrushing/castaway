@@ -72,6 +72,7 @@ namespace LastTide.Core
         public List<ItemCount> gained = new List<ItemCount>(), kills = new List<ItemCount>();
         public List<string> knew = new List<string>(), rescuedBefore = new List<string>();   // at the start
         public List<string> learned = new List<string>(), rescued = new List<string>();     // filled in at the end
+        public List<string> plans = new List<string>(), perksBefore = new List<string>(), perks = new List<string>(); // island plans found; improvements built meanwhile
         public int xp, coins, falls;
     }
 
@@ -165,6 +166,8 @@ namespace LastTide.Core
             if (travel != null && string.IsNullOrEmpty(travel.to)) travel = null;
             if (trip != null && !trip.active) trip = null;
             if (lastTrip != null && !lastTrip.active) lastTrip = null;
+            foreach (var log in new[] { trip, lastTrip })   // logs from before the island plans
+                if (log != null) { if (log.plans == null) log.plans = new List<string>(); if (log.perksBefore == null) log.perksBefore = new List<string>(); if (log.perks == null) log.perks = new List<string>(); }
             // JsonUtility can't store null for a class field: a save written with no bag on the ground loads an empty one.
             if (lostBags == null) lostBags = new List<LostBag>();
             if (lostBag != null && lostBag.slots != null && lostBag.slots.Exists(s => !s.Empty)) lostBags.Add(lostBag);

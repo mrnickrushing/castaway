@@ -20,6 +20,7 @@ namespace LastTide.Core
                 active = true,
                 knew = Content.Recipes.Keys.Where(Knows).ToList(),
                 rescuedBefore = World.Signals.Where(Rescued).Select(s => s.Id).ToList(),
+                perksBefore = Content.Islands.Select(i => i.Perk).Where(HasPerk).ToList(),
             };
         }
 
@@ -42,10 +43,19 @@ namespace LastTide.Core
             var t = State.trip;
             if (t == null) return;
             State.trip = null;
-            t.learned = Content.Recipes.Keys.Where(Knows).Except(t.knew).ToList();
+            // A plan's improvement is told as the plan found, not as a recipe learned.
+            t.learned = Content.Recipes.Keys.Where(Knows).Except(t.knew).Where(r => !Content.IsPerk(r)).ToList();
+            t.perks = Content.Islands.Select(i => i.Perk).Where(HasPerk).Except(t.perksBefore).ToList();
             t.rescued = World.Signals.Where(Rescued).Select(s => s.Id).Except(t.rescuedBefore).ToList();
-            bool happened = t.gained.Count > 0 || t.kills.Count > 0 || t.learned.Count > 0 || t.rescued.Count > 0 || t.xp > 0 || t.coins > 0 || t.falls > 0;
+            bool happened = t.gained.Count > 0 || t.kills.Count > 0 || t.learned.Count > 0 || t.rescued.Count > 0 || t.plans.Count > 0 || t.perks.Count > 0 || t.xp > 0 || t.coins > 0 || t.falls > 0;
             State.lastTrip = happened ? t : null;
+        }
+
+        /// <summary>A plan picked up on this trip (the summary names it).</summary>
+        void TripPlan(string location)
+        {
+            var t = State.trip;
+            if (t != null && !t.plans.Contains(location)) t.plans.Add(location);
         }
 
         /// <summary>The HUD has shown the summary.</summary>
@@ -70,6 +80,12 @@ namespace LastTide.Core
                     if (left.Count > 0 && CanPay(left.ToArray())) list.Add("Build the " + b.Name.ToLower());
                 }
             }
+            if (State.lastTrip != null)
+                foreach (var loc in State.lastTrip.plans)
+                {
+                    var isl = Content.IslandOf(loc);
+                    if (list.Count < max && isl != null && CraftBlocked(isl.Perk, 1) == null) list.Add("Build the " + Content.NameOf(isl.Perk) + " at the workbench");
+                }
             if (State.lastTrip != null)
                 foreach (var r in State.lastTrip.learned)
                     if (list.Count < max && Content.Recipes.ContainsKey(r) && CraftBlocked(r, 1) == null) list.Add("Craft " + Content.NameOf(Content.Recipes[r].Output));

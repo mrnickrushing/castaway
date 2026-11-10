@@ -77,5 +77,30 @@ namespace LastTide.Tests
             a.Tick(30); b.Tick(30);
             Assert.Greater(b.State.hunger, a.State.hunger, "salted rations");
         }
+
+        [Test]
+        public void ATripSummaryNamesThePlanFoundAndTheIslandsMaterial()
+        {
+            double now = 1000000;
+            var g = new Session(GameState.New()); g.RealNow = () => now;
+            g.State.level = 10;
+            g.State.builds.Add(new BuildState { id = "workbench", done = true });
+            Assert.IsTrue(g.Travel(World.Location("grove"), true)); now += 600; g.Arrive();
+            Assert.IsTrue(g.FindPlan("grove"));
+            g.Give("honey", 5); g.Give("wood", 12); g.Give("rope", 3);
+            g.UpdateEnergy(); g.State.energy = World.EnergyMax;
+            Assert.IsTrue(g.Travel(World.Location(World.HomeId), true)); now += 600; g.Arrive();
+            var t = g.LastTrip;
+            Assert.IsNotNull(t);
+            CollectionAssert.AreEqual(new[] { "grove" }, t.plans);
+            CollectionAssert.DoesNotContain(t.learned, "perk_larder", "told as a plan found, not a recipe learned");
+            Assert.AreEqual(5, t.gained.Find(x => x.id == "honey").n);
+            CollectionAssert.Contains(g.NowPossible(5), "Build the Honey Larder at the workbench");
+
+            // Old trip logs (before the plans) load with empty lists, not nulls.
+            g.State.lastTrip.plans = null; g.State.lastTrip.perks = null; g.State.lastTrip.perksBefore = null;
+            g.State.Repair();
+            Assert.IsNotNull(g.State.lastTrip.plans); Assert.IsNotNull(g.State.lastTrip.perks);
+        }
     }
 }
