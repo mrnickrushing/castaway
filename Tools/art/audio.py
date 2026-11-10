@@ -50,6 +50,10 @@ SFX = {
     "static":   ("static.wav",   None, 2.20, 0.55, 0.50),
     "eat":      ("eat.wav",      None, 0.90, 0.70, 0.30),
     "depart":   ("bell.wav",     None, 1.60, 0.60, 0.70),
+    # Biscuit: "Ladrido de un perro" by Edo.pt2, Wikimedia Commons, CC0 (three barks, played at random).
+    "bark":     ("bark.ogg",     1.08, 0.50, 0.70, 0.20),
+    "bark_2":   ("bark.ogg",     1.72, 0.50, 0.70, 0.20),
+    "bark_3":   ("bark.ogg",     2.76, 0.50, 0.70, 0.20),
 }
 
 # Made from filtered noise, no take needed: name: (length s, attack s, band low Hz, band high Hz, crackle, peak).
