@@ -49,8 +49,9 @@ namespace LastTide.Game
                 if (dead > 0) { if (!_dead) { _dead = true; _a.Die(); } return; }
                 if (attack >= 0 && (_lastAttack < 0 || attack < _lastAttack)) _a.Once("Sword", 1.3f);
                 _lastAttack = attack;
-                if (speed > 3f) _a.Loop("Run", Mathf.Clamp(speed / 4.5f, 0.7f, 1.4f));
-                else if (speed > 0.2f) _a.Loop("Walk", Mathf.Clamp(speed / 1.6f, 0.6f, 1.4f));
+                // Jog and walk clips at the rate their feet keep pace (2.3 and 1.0 m/s strides).
+                if (speed > 1.6f) _a.Loop("Run", Mathf.Clamp(speed / 2.3f, 0.7f, 1.8f));
+                else if (speed > 0.2f) _a.Loop("Walk", Mathf.Clamp(speed / 1.0f, 0.6f, 1.6f));
                 else _a.Loop("Idle");
             }
 

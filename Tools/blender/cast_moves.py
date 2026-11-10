@@ -30,13 +30,25 @@ for act in list(bpy.data.actions):
     else:
         bpy.data.actions.remove(act)
 arm.animation_data_create()
-arm.animation_data.action = bpy.data.actions[KEEP[0]]
+# Blender 4.4+ binds an action to an object through a slot: the exporter's "all actions" loop swaps actions in
+# without one and bakes a still pose (every clip but the one already assigned came out frozen). Give each move its
+# own NLA strip, bound to its slot, and export the strips as takes instead.
+ad = arm.animation_data
+ad.action = None
+for name in KEEP:
+    act = bpy.data.actions[name]
+    track = ad.nla_tracks.new()
+    track.name = name
+    strip = track.strips.new(name, int(act.frame_range[0]), act)
+    strip.name = name
+    if hasattr(strip, "action_slot") and len(getattr(act, "slots", [])) > 0:
+        strip.action_slot = act.slots[0]
 bpy.ops.object.select_all(action="DESELECT")
 arm.select_set(True)
 bpy.context.view_layer.objects.active = arm
 bpy.ops.export_scene.fbx(filepath=out, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_UNITS",
                          axis_forward="-Z", axis_up="Y", object_types={"ARMATURE"}, add_leaf_bones=False,
                          primary_bone_axis="Y", secondary_bone_axis="X", armature_nodetype="NULL",
-                         bake_anim=True, bake_anim_use_all_actions=True, bake_anim_use_nla_strips=False,
+                         bake_anim=True, bake_anim_use_all_actions=False, bake_anim_use_nla_strips=True,
                          bake_anim_force_startend_keying=True, bake_anim_simplify_factor=0.5)
 print("[moves]", sorted(a.name for a in bpy.data.actions))
