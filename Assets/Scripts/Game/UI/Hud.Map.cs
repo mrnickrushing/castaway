@@ -258,11 +258,12 @@ namespace LastTide.Game
             }
         }
 
-        void Go(LocationDef l, bool run)
+        void Go(LocationDef l, bool run, bool roomChecked = false)
         {
             var s = G.Session;
             var why = s.TravelBlocked(l, run);
             if (why != null) { Toast(why); return; }
+            if (!roomChecked && TripRoomCheck(() => Go(l, run, true))) return;
             s.Travel(l, run);
             Reminders.AskOnce(); // "Land ho!" is the first reminder worth having
             Sfx.Play("depart"); // the ship's bell, under sail or paddling

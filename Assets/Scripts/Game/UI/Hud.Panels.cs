@@ -62,6 +62,7 @@ namespace LastTide.Game
                 UIKit.Outlined(cap, 1.5f);
                 if (label == "BUILD") _buildButton = rt;
                 if (label == "PATH") _pathBadge = Badge(rt);
+                if (label == "BAG") BagWarning(rt);
                 x -= 104;
             }
 
@@ -323,6 +324,7 @@ namespace LastTide.Game
             _pathBadge.transform.parent.gameObject.SetActive(claim > 0);
             _pathBadge.text = claim > 9 ? "9+" : claim.ToString();
             UpdateSeasonBadge();
+            UpdateBagWarning();
         }
 
         // ------------------------------------------------------------------ the left: clothes, pockets, backpack
@@ -332,6 +334,7 @@ namespace LastTide.Game
             var s = G.Session;
             Clear(_invGrid);
             var store = OpenStorageSlots;
+            var needs = QuestNeeds();
             float y = 0;
             SideLabel(_invGrid, "POCKETS", 0, Cell);
             for (int i = 0; i < s.State.backpack.Count; i++)
@@ -340,7 +343,11 @@ namespace LastTide.Game
                 {
                     y = Cell + 30;
                     var line = UIKit.Img("Line", _invGrid, null, new Color(1, 1, 1, 0.15f));
-                    line.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -Cell - 14), new Vector2(5 * Cell, 3));
+                    // The divider says what the pockets are for: a short rule, then the words on the same line.
+                    line.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -Cell - 11), new Vector2(5 * Cell - 460, 3));
+                    var kept = UIKit.Label("Kept", _invGrid, "POCKETS ARE KEPT IF YOU PASS OUT", 18, new Color(0.91f, 0.78f, 0.42f, 0.85f), TextAnchor.MiddleRight, false);
+                    kept.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 0.5f), new Vector2(5 * Cell - 6, -Cell - 10), new Vector2(450, 26));
+                    kept.verticalOverflow = VerticalWrapMode.Truncate; // one line: phones' best fit settles on what fits
                     int rows = (s.State.backpack.Count - Content.PocketSlots + 4) / 5;
                     SideLabel(_invGrid, "BACKPACK", y, rows * Cell);
                 }
@@ -350,7 +357,7 @@ namespace LastTide.Game
                 {
                     if (store != null) { if (s.StoreSlotTo(store, idx) > 0) Sfx.Play("deliver"); return; }
                     if (_sel == idx) UseSelected(); else { _sel = idx; _dirty = true; }
-                });
+                }, !s.State.backpack[i].Empty && needs.Contains(s.State.backpack[i].id));
             }
             // Paid-for things that didn't fit: they drop in by themselves once there's room.
             if (s.State.waiting.Count > 0)
@@ -370,7 +377,7 @@ namespace LastTide.Game
             t.rectTransform.localRotation = Quaternion.Euler(0, 0, 90);
         }
 
-        RectTransform SlotCell(RectTransform parent, Slot sl, Vector2 at, float size, bool selected, bool held, System.Action tap)
+        RectTransform SlotCell(RectTransform parent, Slot sl, Vector2 at, float size, bool selected, bool held, System.Action tap, bool quest = false)
         {
             var b = UIKit.Button("Slot", parent, null, selected ? new Color(0.15f, 0.5f, 0.5f) : held ? new Color(0.3f, 0.45f, 0.25f) : new Color(0.12f, 0.13f, 0.12f), tap);
             var rt = (RectTransform)b.transform;
@@ -391,6 +398,7 @@ namespace LastTide.Game
                 bar.rectTransform.anchorMin = new Vector2(0, 0); bar.rectTransform.anchorMax = new Vector2(0, left);
                 bar.rectTransform.offsetMin = new Vector2(2, 2); bar.rectTransform.offsetMax = new Vector2(8, -2);
             }
+            if (quest) QuestTab(b.transform, size);
             return rt;
         }
 
@@ -421,8 +429,7 @@ namespace LastTide.Game
             var s = G.Session;
             if (_sel < 0 || s.State.backpack[_sel].Empty)
             {
-                var hint = UIKit.Label("Hint", _invSide, "Tap an item to see it. Tap it again (or USE) to eat, drink, hold or wear it.\n\nPockets are kept when you pass out; the rest of the backpack is left where you fell.", 30, new Color(1, 1, 1, 0.6f), TextAnchor.MiddleCenter, false);
-                hint.rectTransform.Fill(40);
+                BagOverview();
                 return;
             }
             var sl = s.State.backpack[_sel];
@@ -446,13 +453,22 @@ namespace LastTide.Game
             stats.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -330), new Vector2(560, 50));
             var blurb = UIKit.Label("Blurb", _invSide, d?.Blurb ?? "", 28, new Color(1, 1, 1, 0.75f), TextAnchor.UpperCenter, false);
             blurb.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -390), new Vector2(560, 160));
+            if (QuestNeeds().Contains(sl.id))
+            {
+                var qn = UIKit.Label("Quest", _invSide, "Needed for: " + s.CurrentQuest.Label(s), 26, QuestGreen, TextAnchor.UpperCenter, false);
+                qn.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 128), new Vector2(560, 70));
+            }
             string act = d == null ? null : d.Gear != GearSlot.None ? "WEAR" : d.Kind == ItemKind.Weapon || d.Kind == ItemKind.Tool ? (s.State.equipped == _sel ? "PUT AWAY" : "HOLD")
                 : d.Drunk ? "DRINK" : d.Kind == ItemKind.Food ? "EAT" : d.Kind == ItemKind.Medical ? "USE" : d.Id == "supply_crate" || d.Id == "gold_chest" ? "OPEN" : d.Worth > 0 ? "SELL" : null;
             if (act != null)
             {
                 var b = UIKit.Button("Act", _invSide, act, new Color(0.8f, 0.62f, 0.12f), UseSelected, 38);
-                ((RectTransform)b.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(320, 84));
+                ((RectTransform)b.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-150, 30), new Vector2(280, 84));
             }
+            // Pockets are kept on passing out: move things in and out of them.
+            int slot = _sel;
+            var mv = UIKit.Button("Move", _invSide, s.IsPocket(slot) ? "TO BACKPACK" : "TO POCKETS", new Color(0.33f, 0.35f, 0.33f), () => { int to = s.MoveSlot(slot); if (to >= 0) { Sfx.Play("cloth"); _sel = to; _dirty = true; } }, 30);
+            ((RectTransform)mv.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(act != null ? 150 : 0, 30), new Vector2(280, 84));
         }
 
         void StoragePanel()
@@ -464,10 +480,11 @@ namespace LastTide.Game
             var t = UIKit.Label("Title", _invSide, name.ToUpper(), 42, UIKit.Sand, TextAnchor.UpperLeft);
             t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(30, 0); t.rectTransform.offsetMax = new Vector2(0, -20);
             var grid = UIKit.Rect("Grid", _invSide).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -90), new Vector2(6 * 100, 400));
+            var needs = QuestNeeds();
             for (int i = 0; i < store.Count; i++)
             {
                 int idx = i;
-                SlotCell(grid, store[i], new Vector2((i % 6) * 100, -(i / 6) * 100), 94, false, false, () => { if (s.TakeFrom(store, idx) > 0) Sfx.Play("gather"); });
+                SlotCell(grid, store[i], new Vector2((i % 6) * 100, -(i / 6) * 100), 94, false, false, () => { if (s.TakeFrom(store, idx) > 0) Sfx.Play("gather"); }, !store[i].Empty && needs.Contains(store[i].id));
             }
             var hint = UIKit.Label("Hint", _invSide, "Tap your items to store them, stored items to take them.", 24, new Color(1, 1, 1, 0.55f), TextAnchor.LowerCenter, false);
             hint.rectTransform.Fill(); hint.rectTransform.offsetMin = new Vector2(20, 120);

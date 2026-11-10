@@ -11,6 +11,7 @@ namespace LastTide.Core
         public Func<Session, int> Have;     // progress shown as (have/need); null = no counter
         public int Need;
         public string PointNode, PointBuild; // what the guide arrow points at
+        public string Item;                  // what a gathering step collects (the backpack's QUEST tab)
         /// <summary>A crafting step: the recipe to make (the guide fetches its ingredients, then sends you to CRAFT).</summary>
         public string Craft;
         /// <summary>A rescue step: the radio signal whose survivor needs things brought.</summary>
@@ -92,7 +93,7 @@ namespace LastTide.Core
         {
             return new Quest
             {
-                Id = id, Text = text, Need = need, PointNode = node,
+                Id = id, Text = text, Need = need, PointNode = node, Item = item,
                 Have = s => s.Count(item) + s.Delivered(forBuild, item),
                 Done = s => s.Built(forBuild) || s.Count(item) + s.Delivered(forBuild, item) >= need,
             };

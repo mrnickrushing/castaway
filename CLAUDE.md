@@ -34,7 +34,10 @@ setting only.
 - Base (`Core/Content.Base.cs`, `Core/Session.Base.cs`): pockets (first 5 backpack slots, kept on passing out), clothes and
   armour (`GearSlot`), split/sort/drop, station levels and upgrades, crafting several at once ("hand" recipes anywhere),
   free building on the camp grid (`PieceDef`, `PieceState`; floors, edge walls, objects; storage boxes), the Survivor's
-  Path (step rewards claimed on the free track and the Ultra track). UI: `Hud.Panels` (inventory + station/storage),
+  Path (step rewards claimed on the free track and the Ultra track). Backpack friction (`UI/Hud.Bag.cs`): green QUEST tabs on what the
+  current step uses (`Hud.QuestNeeds`, `Quest.Item` for gathering steps), FULL / "2 LEFT" under BAG, MAKE ROOM
+  (`Session.MakeRoom`: tops up stacks, stores spare materials at home), TO POCKETS / TO BACKPACK (`Session.MoveSlot`),
+  and leaving home with under 3 free slots asks STORE & GO / GO ANYWAY. UI: `Hud.Panels` (inventory + station/storage),
   `Hud.Blueprints`, `Hud.Build` (grid, ghost, rotate/confirm), `Hud.Path`. Piece models: `World/Pieces.cs`; icons for
   things without painted art are rendered at runtime (`UI/ModelIcons.cs`).
 - Free models: `Tools/art/free_assets.py` (Kenney kits, Quaternius characters, CC0, see `CREDITS.md`) converts them
