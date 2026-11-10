@@ -159,7 +159,7 @@ namespace LastTide.Game
 
         void BuildLocationPanel()
         {
-            _locPanel = UIKit.Img("Location", _mapUi, null, new Color(0.33f, 0.35f, 0.32f, 0.97f)).rectTransform;
+            _locPanel = UIKit.Img("Location", _mapUi, null, new Color(0.33f, 0.35f, 0.32f, 1f)).rectTransform;
             _locPanel.GetComponent<Image>().raycastTarget = true;
             _locPanel.anchorMin = new Vector2(1, 0); _locPanel.anchorMax = new Vector2(1, 1); _locPanel.pivot = new Vector2(1, 0.5f);
             _locPanel.offsetMin = new Vector2(-660, 0); _locPanel.offsetMax = new Vector2(200, 200);
@@ -175,10 +175,10 @@ namespace LastTide.Game
             var x = UIKit.Button("Close", _locArt.transform, "✕", new Color(0, 0, 0, 0), () => Select(null), 60);
             ((RectTransform)x.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -10), new Vector2(84, 84));
             _locBody = UIKit.Label("Body", _locPanel, "", 32, new Color(1, 1, 1, 0.9f), TextAnchor.UpperLeft, false);
-            _locBody.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -446), new Vector2(600, 150));
-            _lootMain = UIKit.Rect("Main loot", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -640), new Vector2(600, 110));
-            _lootMaybe = UIKit.Rect("Possible loot", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -800), new Vector2(600, 110));
-            _runWalk = UIKit.Rect("Run walk", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -930), new Vector2(600, 260));
+            _locBody.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -446), new Vector2(600, 190));
+            _lootMain = UIKit.Rect("Main loot", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -680), new Vector2(600, 110));
+            _lootMaybe = UIKit.Rect("Possible loot", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -835), new Vector2(600, 110));
+            _runWalk = UIKit.Rect("Run walk", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -960), new Vector2(600, 260));
             _locPanel.gameObject.SetActive(false);
         }
 
@@ -211,11 +211,11 @@ namespace LastTide.Game
             if (loot)
             {
                 _locBody.text = l.Blurb;
-                _locBody.fontSize = 26;
+                UIKit.SetSize(_locBody, 26);
                 LootRow(_lootMain, "Main loot:", l.MainLoot, new Color(0.85f, 0.65f, 0.25f));
                 LootRow(_lootMaybe, "Possible loot:", l.PossibleLoot, new Color(0.3f, 0.7f, 0.68f));
             }
-            else _locBody.fontSize = 32;
+            else UIKit.SetSize(_locBody, 32);
             // Run or walk (or why not).
             var travel = s.State.travel;
             if (l.Id == s.State.location && travel == null)

@@ -41,6 +41,8 @@ namespace LastTide.Game
             var camGo = new GameObject("Map camera");
             camGo.transform.SetParent(transform, false);
             Cam = camGo.AddComponent<Camera>();
+            // The island's camera (and its listener) is switched off while the chart is up: hear the map's sounds here.
+            camGo.AddComponent<AudioListener>();
             Cam.fieldOfView = 34;
             Cam.nearClipPlane = 5; Cam.farClipPlane = 2500;
             Cam.clearFlags = CameraClearFlags.SolidColor;

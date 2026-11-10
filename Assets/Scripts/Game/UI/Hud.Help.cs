@@ -7,7 +7,7 @@ namespace LastTide.Game
     /// <summary>Help: how to play, the story so far (chapters), and settings (sound, restore purchases, start over, credits).</summary>
     public sealed partial class Hud
     {
-        RectTransform _help, _helpBody;
+        RectTransform _help, _helpBody, _helpIn; // _helpIn: where a tab lays out (a scrolling page on phones)
         bool _helpOpen;
         int _helpTab;
 
@@ -40,7 +40,8 @@ namespace LastTide.Game
                 var b = UIKit.Button("Tab", _help, tabs[i], new Color(1, 1, 1, 0.1f), () => { _helpTab = k; RefreshHelp(); }, 34);
                 ((RectTransform)b.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2((i - 1) * 380, -40), new Vector2(360, 84));
             }
-            _helpBody = UIKit.Rect("Body", _help).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -160), new Vector2(1600, 860));
+            // Phones get the full width of their wide screen and a page that scrolls, so the type can be large.
+            _helpBody = UIKit.Rect("Body", _help).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -160), UIKit.Phone ? new Vector2(1900, 910) : new Vector2(1600, 860));
             _help.gameObject.SetActive(false);
         }
 
@@ -62,6 +63,7 @@ namespace LastTide.Game
                 tab.color = i == _helpTab ? new Color(0.8f, 0.62f, 0.12f) : new Color(1, 1, 1, 0.1f);
             }
             Clear(_helpBody);
+            _helpIn = UIKit.Phone ? UIKit.Scroller(_helpBody) : _helpBody;
             if (_helpTab == 0) HelpHowTo();
             else if (_helpTab == 1) HelpStory();
             else HelpSettings();
@@ -69,24 +71,29 @@ namespace LastTide.Game
 
         void HelpHowTo()
         {
+            // Three columns, four rows: every card fits the 1600 x 860 body, text shrinks to its card if it must.
+            // Phones: two wide columns of big type on a page that scrolls.
+            bool phone = UIKit.Phone;
+            int cols = phone ? 2 : 3;
+            float cw = phone ? (_helpBody.sizeDelta.x - 20) / 2 : 525, ch = phone ? 300 : 205;
             for (int i = 0; i < HowTo.Length; i++)
             {
                 var (icon, title, text) = HowTo[i];
-                // Three columns, four rows: every card fits the 1600 x 860 body, text shrinks to its card if it must.
-                int c = i % 3, r = i / 3;
-                var row = UIKit.Img("Row", _helpBody, UIKit.Round, new Color(1, 1, 1, 0.06f)).rectTransform;
-                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(c * 540, -r * 215), new Vector2(525, 205));
+                int c = i % cols, r = i / cols;
+                var row = UIKit.Img("Row", _helpIn, UIKit.Round, new Color(1, 1, 1, 0.06f)).rectTransform;
+                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(c * (cw + 15), -r * (ch + 12)), new Vector2(cw, ch));
                 var disc = UIKit.Img("Disc", row, UIKit.Circle, UIKit.Ink);
                 disc.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -14), new Vector2(62, 62));
                 var ic = UIKit.Img("Icon", disc.transform, UIKit.Symbol(icon), UIKit.Sand);
                 ic.rectTransform.Fill(12);
                 var t = UIKit.Label("Title", row, title, 32, UIKit.Amber, TextAnchor.MiddleLeft);
-                t.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(90, -14), new Vector2(420, 62));
+                t.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(90, -14), new Vector2(cw - 105, 62));
                 var b = UIKit.Label("Text", row, text, 22, Color.white, TextAnchor.UpperLeft, false);
                 b.rectTransform.Fill(); b.rectTransform.offsetMin = new Vector2(16, 8); b.rectTransform.offsetMax = new Vector2(-14, -84);
-                b.resizeTextForBestFit = true; b.resizeTextMinSize = 15; b.resizeTextMaxSize = 22;
+                b.resizeTextForBestFit = true; b.resizeTextMinSize = phone ? 26 : 15; b.resizeTextMaxSize = phone ? 32 : 22; b.fontSize = b.resizeTextMaxSize;
                 b.verticalOverflow = VerticalWrapMode.Truncate;
             }
+            if (phone) UIKit.ScrollHeight(_helpIn, (HowTo.Length + cols - 1) / cols * (ch + 12) + 20);
         }
 
         void HelpStory()
@@ -94,14 +101,15 @@ namespace LastTide.Game
             var s = G.Session;
             int qi = s.State.quest;
             var current = Story.ChapterOf(qi);
+            float step = UIKit.Phone ? 190 : 140; // a phone's larger type takes two lines for a summary
             for (int i = 0; i < Story.Chapters.Count; i++)
             {
                 var ch = Story.Chapters[i];
                 int start = Quests.All.FindIndex(q => q.Id == ch.FirstQuest);
                 bool reached = qi >= start;
                 bool now = ch == current;
-                var row = UIKit.Img("Chapter", _helpBody, UIKit.Round, now ? new Color(0.8f, 0.62f, 0.12f, 0.25f) : new Color(1, 1, 1, 0.06f)).rectTransform;
-                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -i * 140), new Vector2(1600, 128));
+                var row = UIKit.Img("Chapter", _helpIn, UIKit.Round, now ? new Color(0.8f, 0.62f, 0.12f, 0.25f) : new Color(1, 1, 1, 0.06f)).rectTransform;
+                row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -i * step), new Vector2(_helpBody.sizeDelta.x, step - 12));
                 var t = UIKit.Label("Title", row, (i + 1) + ".  " + (reached ? ch.Title : "???"), 38, reached ? UIKit.Amber : new Color(1, 1, 1, 0.4f), TextAnchor.UpperLeft);
                 t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(30, 0); t.rectTransform.offsetMax = new Vector2(-260, -14);
                 var b = UIKit.Label("Text", row, reached ? ch.Summary : "Keep surviving to find out.", 27, Color.white, TextAnchor.UpperLeft, false);
@@ -109,8 +117,14 @@ namespace LastTide.Game
                 var status = UIKit.Label("Status", row, now ? "NOW" : reached ? "DONE" : "", 32, now ? UIKit.Amber : UIKit.Green, TextAnchor.MiddleRight);
                 status.rectTransform.Fill(); status.rectTransform.offsetMax = new Vector2(-30, 0);
             }
-            var replay = UIKit.Button("Replay", _helpBody, "REPLAY THE INTRO", new Color(0.25f, 0.45f, 0.45f), () => { _helpOpen = false; PlayScene(Story.SceneFor("hatchet")); }, 30);
-            ((RectTransform)replay.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, -40), new Vector2(420, 76));
+            var replay = UIKit.Button("Replay", _helpIn, "REPLAY THE INTRO", new Color(0.25f, 0.45f, 0.45f), () => { _helpOpen = false; PlayScene(Story.SceneFor("hatchet")); }, 30);
+            if (UIKit.Phone)
+            {
+                // At the end of the scrolling page (the view masks anything below it).
+                ((RectTransform)replay.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -Story.Chapters.Count * step - 10), new Vector2(420, 80));
+                UIKit.ScrollHeight(_helpIn, Story.Chapters.Count * step + 110);
+            }
+            else ((RectTransform)replay.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, -40), new Vector2(420, 76));
         }
 
         /// <summary>The game's web pages (GitHub Pages, branch gh-pages): privacy policy and support.</summary>
@@ -137,7 +151,7 @@ namespace LastTide.Game
                 SaveSystem.Delete();
                 GameRoot.Instance.Restart();
             }));
-            var credits = UIKit.Label("Credits", _helpBody,
+            var credits = UIKit.Label("Credits", _helpIn,
                 "LAST TIDE  ·  a Rushing Technologies game\n" +
                 "Photoscanned models, ground and sky: Poly Haven (polyhaven.com) and ambientCG (ambientcg.com), CC0. " +
                 "3D models: Kenney (kenney.nl) and Quaternius (quaternius.com), CC0; animations: Quaternius Universal Animation Library, CC0. " +
@@ -149,13 +163,22 @@ namespace LastTide.Game
                 "Crab and snake: scans by ffishAsia-and-floraZia, CC0. " +
                 "Story art, movies, icons, boar and palms made for this game. Fonts: Barlow (SIL Open Font License).",
                 26, new Color(1, 1, 1, 0.6f), TextAnchor.UpperLeft, false);
-            credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(1600, 330));
+            if (UIKit.Phone)
+            {
+                // The page scrolls: the credits take the room they need at full size.
+                credits.resizeTextForBestFit = false;
+                credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(_helpBody.sizeDelta.x, 100));
+                float h = credits.preferredHeight + 20;
+                credits.rectTransform.sizeDelta = new Vector2(_helpBody.sizeDelta.x, h);
+                UIKit.ScrollHeight(_helpIn, y + 30 + h + 20);
+            }
+            else credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(1600, 330));
         }
 
         void Setting(ref float y, string label, string button, System.Action act)
         {
-            var row = UIKit.Img("Row", _helpBody, UIKit.Round, new Color(1, 1, 1, 0.06f)).rectTransform;
-            row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y), new Vector2(1600, 96));
+            var row = UIKit.Img("Row", _helpIn, UIKit.Round, new Color(1, 1, 1, 0.06f)).rectTransform;
+            row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y), new Vector2(_helpBody.sizeDelta.x, 96));
             var t = UIKit.Label("Label", row, label, 36, Color.white, TextAnchor.MiddleLeft);
             t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(30, 0);
             var b = UIKit.Button("Button", row, button, new Color(0.25f, 0.45f, 0.45f), act, 30);

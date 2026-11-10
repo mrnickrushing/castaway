@@ -327,13 +327,78 @@ namespace LastTide.Game
             return img;
         }
 
+        /// <summary>
+        /// A phone shows the 1080-unit-tall canvas on a screen ~7 cm tall, where the HUD's small type came out at 7-11 pt.
+        /// There every label grows toward ~17 pt (44 units) as far as its box allows: best fit between the size asked for
+        /// and the boosted one, so a tight box keeps today's size and nothing spills. iPads already read large. The Editor
+        /// counts a wide Game view (a phone's shape) as a phone so captures match the device.
+        /// </summary>
+        public static bool Phone
+        {
+            get
+            {
+                if (_phone < 0)
+                {
+                    if (Application.isEditor) _phone = (float)Screen.width / Mathf.Max(1, Screen.height) > 1.9f ? 1 : 0;
+                    else _phone = Screen.dpi > 0 && Mathf.Min(Screen.width, Screen.height) / Screen.dpi < 4f ? 1 : 0;
+                }
+                return _phone > 0;
+            }
+        }
+        static int _phone = -1;
+
+        public static int Boosted(int size) { return !Phone || size >= 44 ? size : Mathf.RoundToInt(size + (44 - size) * 0.55f); }
+
+        /// <summary>Sets a label's size the way <see cref="Label"/> does (grown on phones as far as its box allows).</summary>
+        public static void SetSize(Text t, int size)
+        {
+            int want = Boosted(size);
+            t.fontSize = want;
+            t.resizeTextForBestFit = want > size;
+            t.resizeTextMinSize = size;
+            t.resizeTextMaxSize = want;
+        }
+
+        /// <summary>
+        /// Turns <paramref name="view"/> into a vertical scroll view (masked, dragged by any child) and returns a fresh
+        /// content rect laid out like the view itself: children placed from its top-left corner land where they would
+        /// in the view. Call <see cref="ScrollHeight"/> once they're all in.
+        /// </summary>
+        public static RectTransform Scroller(RectTransform view)
+        {
+            var sr = view.GetComponent<ScrollRect>();
+            if (sr == null)
+            {
+                view.gameObject.AddComponent<RectMask2D>();
+                // Something under the finger to drag by between the cards.
+                var hit = view.gameObject.AddComponent<Image>();
+                hit.color = new Color(0, 0, 0, 0);
+                sr = view.gameObject.AddComponent<ScrollRect>();
+                sr.horizontal = false; sr.vertical = true; sr.movementType = ScrollRect.MovementType.Elastic;
+                sr.inertia = true; sr.scrollSensitivity = 30; sr.viewport = view;
+            }
+            var content = Rect("Content", view);
+            content.anchorMin = new Vector2(0, 1); content.anchorMax = new Vector2(1, 1); content.pivot = new Vector2(0.5f, 1);
+            content.anchoredPosition = Vector2.zero; content.sizeDelta = new Vector2(0, view.rect.height);
+            sr.content = content;
+            sr.velocity = Vector2.zero;
+            return content;
+        }
+
+        /// <summary>Sets how far a <see cref="Scroller"/> content runs (never shorter than its view).</summary>
+        public static void ScrollHeight(RectTransform content, float height)
+        {
+            var view = (RectTransform)content.parent;
+            content.sizeDelta = new Vector2(0, Mathf.Max(height, view.rect.height));
+        }
+
         public static Text Label(string name, Transform parent, string text, int size, Color color, TextAnchor align = TextAnchor.MiddleLeft, bool bold = true)
         {
             var rt = Rect(name, parent);
             var t = rt.gameObject.AddComponent<Text>();
             t.font = bold ? Bold : Body;
             t.fontStyle = FontStyle.Normal;
-            t.fontSize = size;
+            SetSize(t, size);
             t.color = color;
             t.alignment = align;
             t.text = text;
