@@ -7,7 +7,7 @@ namespace LastTide.Tests
     /// <summary>The small things: item actions, pearls, Ned's powder, names, where things come from.</summary>
     public class DetailTests
     {
-        static Session Fresh() { return new Session(GameState.New()); }
+        static Session Fresh() { return TestGame.New(); }   // fixed clock, seeded dice
 
         [Test]
         public void DrinksAreDrunkAndFoodIsEaten()

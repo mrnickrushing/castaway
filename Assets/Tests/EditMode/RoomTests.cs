@@ -7,7 +7,7 @@ namespace LastTide.Tests
     /// <summary>Rewards wait for room in the backpack; paid-for things wait and drop in; every fall leaves its own bag.</summary>
     public class RoomTests
     {
-        static Session Fresh() { return new Session(GameState.New()); }
+        static Session Fresh() { return TestGame.New(); }   // fixed clock, seeded dice
 
         /// <summary>Every slot holds a spear (they never stack): nothing else fits.</summary>
         static void Fill(Session g) { foreach (var s in g.State.backpack) { s.id = "spear"; s.n = 1; s.wear = 0; } }

@@ -89,6 +89,7 @@ namespace LastTide.Game
             Instance = this;
             // Real time, whatever the project settings carry (the editor play bot runs the game at 3x).
             Time.timeScale = 1f;
+            gameObject.AddComponent<Telemetry>();   // anonymous play statistics (off in the Editor)
             gameObject.AddComponent<FrameBudget>(); // 60 fps (30 in battery saver), and the 3D view's resolution on a device
             // LOD switch points are tuned for a bias of 1 (ModelRegistry.AddFarLod): trees near the castaway stay full detail.
             QualitySettings.lodBias = 1f;
