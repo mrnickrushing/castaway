@@ -67,6 +67,10 @@ namespace LastTide.EditorTools
                 mi.resampleCurves = true;
             }
             mi.isReadable = false;
+            // What the castaway holds is stood upright in the hand by its shape (SurvivorArt.HeldScan reads the points).
+            string file = System.IO.Path.GetFileNameWithoutExtension(assetPath);
+            if (assetPath.StartsWith(Models + "Scan/") && (file.StartsWith("held_") || file == "wooden_axe" || file == "wooden_hammer_01" || file == "wooden_handle_saber"))
+                mi.isReadable = true;
             mi.meshCompression = ModelImporterMeshCompression.Medium;
             mi.importNormals = ModelImporterNormals.Import;
             mi.importTangents = ModelImporterTangents.CalculateMikk;
