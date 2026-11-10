@@ -6,7 +6,8 @@ setting only.
 
 - `Assets/Scripts/Core` (no Unity dependency): `Content` (items, recipes, camp structures, harvest nodes, tuning),
   `Session` (survival meters, harvesting, building by delivering materials, crafting jobs, combat damage, death and
-  the lost backpack, chest, rain catcher), `Quests` (the survival guide), `GameState` (the save).
+  the lost backpacks, one per fall, chest, rain catcher; rewards wait until they fit (`Fits`), paid-for items that
+  don't fit wait in `State.waiting` and drop in by themselves), `Quests` (the survival guide), `GameState` (the save).
 - `Assets/Scripts/Game`: everything visual is built from code at runtime (`GameRoot` boots in the empty
   `Assets/Scenes/Main.unity`). `World/Island` (height function, terrain mesh, sea), `World/WorldBuilder` (places
   everything from a fixed seed; harvest keys like `palm#12` must stay stable between launches), `World/Spots`

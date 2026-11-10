@@ -346,13 +346,22 @@ namespace LastTide.Core
             }
         }
 
+        /// <summary>Takes a finished step's rewards. One that doesn't fit in the backpack stays here to claim later.</summary>
         public bool Claim(int questIndex)
         {
             if (!Completed(questIndex)) return false;
             var q = Quests.All[questIndex];
             bool any = false;
-            if (!Claimed(q)) { foreach (var r in q.Reward) Give(r.id, r.n); SetFlag("claim_" + q.Id); any = true; }
-            if (Ultra && !ClaimedUltra(q)) { foreach (var r in q.Premium) Give(r.id, r.n); SetFlag("claimu_" + q.Id); any = true; }
+            if (!Claimed(q))
+            {
+                if (Fits(q.Reward)) { foreach (var r in q.Reward) Give(r.id, r.n); SetFlag("claim_" + q.Id); any = true; }
+                else NoRoom();
+            }
+            if (Ultra && !ClaimedUltra(q))
+            {
+                if (Fits(q.Premium)) { foreach (var r in q.Premium) Give(r.id, r.n); SetFlag("claimu_" + q.Id); any = true; }
+                else NoRoom();
+            }
             if (any) Changed?.Invoke();
             return any;
         }

@@ -91,7 +91,7 @@ namespace LastTide.Core
             UpdateEnergy();
             // Once a second: a step finished by an item that arrived some other way (a crate, a reward, a purchase).
             _questCheck -= dt;
-            if (_questCheck <= 0) { _questCheck = 1; CheckQuests(); }
+            if (_questCheck <= 0) { _questCheck = 1; if (State.waiting.Count > 0) DeliverWaiting(); CheckQuests(); }
             State.hunger = Clamp(State.hunger - Content.HungerDecay * dt);
             State.thirst = Clamp(State.thirst - Content.ThirstDecay * dt);
             if (State.hunger <= 0 || State.thirst <= 0) Damage(Content.StarveDamage * dt * ((State.hunger <= 0 ? 1 : 0) + (State.thirst <= 0 ? 1 : 0)), "starving");
@@ -210,16 +210,74 @@ namespace LastTide.Core
             return true;
         }
 
-        /// <summary>Adds items to the backpack; whatever doesn't fit is lost with a warning.</summary>
+        /// <summary>Adds items to the backpack; whatever doesn't fit is lost with a warning (a harvest, a drop).
+        /// Rewards check <see cref="Fits"/> first and wait where they are; paid-for things use <see cref="GiveOrHold"/>.</summary>
         public int Give(string id, int n)
+        {
+            int got = Put(id, n);
+            if (got < n) Toast?.Invoke("Backpack full");
+            return got;
+        }
+
+        static bool NeedsNoRoom(string id) { return id == "doubloon" || id.StartsWith("pet_"); }
+
+        int Put(string id, int n)
         {
             if (id == "doubloon") { State.coins += n; Gained?.Invoke(id, n); Changed?.Invoke(); return n; }
             if (id.StartsWith("pet_")) { UnlockPet(id.Substring(4)); Changed?.Invoke(); return n; }
             int got = Inventory.Add(State.backpack, id, n);
             if (got > 0) Gained?.Invoke(id, got);
-            if (got < n) Toast?.Invoke("Backpack full");
             if (got > 0 && Content.Item(id) != null && Content.Item(id).Kind == ItemKind.Weapon && State.equipped < 0) AutoEquip();
             return got;
+        }
+
+        /// <summary>Would all of these go into the backpack? Doubloons and companions need no room. <paramref name="leaving"/>:
+        /// one of an item that comes out first (the crate being opened).</summary>
+        public bool Fits(IEnumerable<ItemCount> items, string leaving = null)
+        {
+            var copy = new List<Slot>(State.backpack.Count);
+            foreach (var s in State.backpack) copy.Add(new Slot { id = s.id, n = s.n, wear = s.wear });
+            if (leaving != null) Inventory.Remove(copy, leaving, 1);
+            foreach (var i in items)
+                if (i.n > 0 && !NeedsNoRoom(i.id) && Inventory.Add(copy, i.id, i.n) < i.n) return false;
+            return true;
+        }
+
+        double _noRoomAt = -1;
+        /// <summary>A reward that doesn't fit stays where it is; says so once however many were tried at once.</summary>
+        void NoRoom()
+        {
+            if (_noRoomAt == State.time) return;
+            _noRoomAt = State.time;
+            Toast?.Invoke("Backpack full: make room, then claim it");
+        }
+
+        /// <summary>For things already paid for (a purchase, a rescue): what doesn't fit waits and drops into the
+        /// backpack as soon as there is room (<see cref="DeliverWaiting"/>).</summary>
+        void GiveOrHold(string id, int n)
+        {
+            int left = n - Put(id, n);
+            if (left <= 0) return;
+            int i = State.waiting.FindIndex(w => w.id == id);
+            if (i < 0) State.waiting.Add(new ItemCount(id, left)); else State.waiting[i] = new ItemCount(id, State.waiting[i].n + left);
+            Toast?.Invoke("Backpack full: the rest waits until you make room");
+        }
+
+        /// <summary>Moves what's waiting into the backpack as far as it fits. Returns how many went in.</summary>
+        public int DeliverWaiting()
+        {
+            int moved = 0;
+            for (int i = 0; i < State.waiting.Count; i++)
+            {
+                var w = State.waiting[i];
+                int k = Put(w.id, w.n);
+                moved += k;
+                State.waiting[i] = new ItemCount(w.id, w.n - k);
+            }
+            if (moved == 0) return 0;
+            State.waiting.RemoveAll(w => w.n <= 0);
+            Changed?.Invoke();
+            return moved;
         }
 
         void Wear(int slot)
@@ -407,7 +465,8 @@ namespace LastTide.Core
                 var s = State.backpack[i];
                 if (!s.Empty) { bag.slots.Add(new Slot { id = s.id, n = s.n, wear = s.wear }); s.Clear(); }
             }
-            State.lostBag = bag.slots.Count > 0 ? bag : State.lostBag;
+            // Every fall leaves its own bag: one dropped earlier stays where it is.
+            if (bag.slots.Count > 0) State.lostBags.Add(bag);
             if (State.equipped >= Content.PocketSlots) State.equipped = -1;
             State.health = 60;
             State.hunger = Math.Max(State.hunger, 50);
@@ -416,12 +475,16 @@ namespace LastTide.Core
             Changed?.Invoke();
         }
 
-        /// <summary>Picks the lost bag back up (what fits).</summary>
-        public int TakeBag()
+        /// <summary>The bag dropped last (null when none lies anywhere).</summary>
+        public LostBag NewestBag { get { return State.lostBags.Count > 0 ? State.lostBags[State.lostBags.Count - 1] : null; } }
+
+        /// <summary>Picks a lost bag back up (what fits); the newest one if none is named.</summary>
+        public int TakeBag(LostBag bag = null)
         {
-            if (State.lostBag == null) return 0;
+            if (bag == null) bag = NewestBag;
+            if (bag == null || !State.lostBags.Contains(bag)) return 0;
             int n = 0;
-            foreach (var s in State.lostBag.slots)
+            foreach (var s in bag.slots)
             {
                 if (s.Empty) continue;
                 int k = Inventory.Add(State.backpack, s.id, s.n, s.wear);
@@ -429,7 +492,7 @@ namespace LastTide.Core
                 s.n -= k; n += k;
                 if (s.n <= 0) s.Clear();
             }
-            if (State.lostBag.slots.All(s => s.Empty)) State.lostBag = null;
+            if (bag.slots.All(s => s.Empty)) State.lostBags.Remove(bag);
             else Toast?.Invoke("Backpack full");
             if (State.equipped < 0) AutoEquip();
             Changed?.Invoke();

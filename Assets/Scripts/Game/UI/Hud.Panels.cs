@@ -263,7 +263,7 @@ namespace LastTide.Game
             if (_sel < 0 || s.State.backpack[_sel].Empty) { Toast("Choose an item first"); return; }
             var d = Content.Item(s.State.backpack[_sel].id);
             var crate = s.OpenCrate(_sel);
-            if (crate != null) { Sfx.Play("coin"); ShowRewards(d.Name.ToUpper(), crate); }
+            if (crate != null) { if (crate.Count > 0) { Sfx.Play("coin"); ShowRewards(d.Name.ToUpper(), crate); } } // empty: no room, stays shut
             else if (d != null && d.Gear != GearSlot.None) { if (s.PutOn(_sel)) Sfx.Play("click"); }
             else if (s.Use(_sel)) Sfx.Play(d != null && (d.Kind == ItemKind.Food || d.Kind == ItemKind.Drink) ? "eat" : "click");
             if (s.State.backpack[_sel].Empty) _sel = -1;
@@ -338,6 +338,15 @@ namespace LastTide.Game
                     if (store != null) { if (s.StoreSlotTo(store, idx) > 0) Sfx.Play("deliver"); return; }
                     if (_sel == idx) UseSelected(); else { _sel = idx; _dirty = true; }
                 });
+            }
+            // Paid-for things that didn't fit: they drop in by themselves once there's room.
+            if (s.State.waiting.Count > 0)
+            {
+                int rows = (s.State.backpack.Count - Content.PocketSlots + 4) / 5;
+                var parts = new List<string>();
+                foreach (var w in s.State.waiting) parts.Add(w.n + " " + Content.NameOf(w.id));
+                var t = UIKit.Label("Waiting", _invGrid, "Waiting for room: " + string.Join(", ", parts), 24, UIKit.Amber, TextAnchor.UpperLeft, false);
+                t.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -(Cell + 30) - rows * Cell - 6), new Vector2(5 * Cell, 60));
             }
         }
 

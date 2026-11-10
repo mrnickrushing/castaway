@@ -85,7 +85,9 @@ namespace LastTide.Core
         public List<NodeState> nodes = new List<NodeState>();
         public List<BuildState> builds = new List<BuildState>();
         public List<JobState> jobs = new List<JobState>();
-        public LostBag lostBag;
+        public List<LostBag> lostBags = new List<LostBag>(); // one per time the castaway passed out, oldest first
+        public LostBag lostBag;             // saves before lostBags kept a single bag: moved into lostBags on load
+        public List<ItemCount> waiting = new List<ItemCount>(); // paid-for items that didn't fit: they drop in when there's room
         public int quest;                   // index into Quests.All
         public int kills, deaths, days;
         public List<string> flags = new List<string>();
@@ -147,7 +149,12 @@ namespace LastTide.Core
             if (string.IsNullOrEmpty(location) || World.Location(location) == null) location = World.HomeId;
             if (travel != null && string.IsNullOrEmpty(travel.to)) travel = null;
             // JsonUtility can't store null for a class field: a save written with no bag on the ground loads an empty one.
-            if (lostBag != null && (lostBag.slots == null || !lostBag.slots.Exists(s => !s.Empty))) lostBag = null;
+            if (lostBags == null) lostBags = new List<LostBag>();
+            if (lostBag != null && lostBag.slots != null && lostBag.slots.Exists(s => !s.Empty)) lostBags.Add(lostBag);
+            lostBag = null;
+            lostBags.RemoveAll(b => b == null || b.slots == null || !b.slots.Exists(s => !s.Empty));
+            if (waiting == null) waiting = new List<ItemCount>();
+            waiting.RemoveAll(w => string.IsNullOrEmpty(w.id) || w.n <= 0);
             foreach (var b in builds) if (b.delivered == null) b.delivered = new List<ItemCount>();
             if (equipped >= backpack.Count) equipped = -1;
         }
