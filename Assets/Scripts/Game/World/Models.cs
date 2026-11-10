@@ -593,7 +593,7 @@ namespace LastTide.Game
         public static MeshBuilder Pier(float length, bool boat = true)
         {
             var mb = new MeshBuilder();
-            for (float z = -4; z < length; z += 0.55f)
+            for (float z = -4; z < length && Materials.Planks == null; z += 0.55f)   // with the plank texture, PierDeck lays the boards
             {
                 mb.Surf = SurfaceKind.Planks;
                 var c = Color.Lerp(Palette.Hex(0xA88A62), Palette.Hex(0x8A6E4E), Hash(z, 3));
@@ -615,6 +615,28 @@ namespace LastTide.Game
             mb.Surf = SurfaceKind.None;
             if (boat) for (int i = 0; i < 3; i++) mb.Box(new Vector3(-0.9f, Island.PierDeck + 0.25f + i * 0.4f, length - 2.5f), new Vector3(0.7f, 0.4f, 0.5f), Tropic.Rope);
             return mb;
+        }
+
+        /// <summary>The pier's deck in the scanned plank texture: weathered boards laid across (a few sprung or
+        /// missing), the stringers under them and a rail along the far end. Null without the texture.</summary>
+        public static GameObject PierDeck(float length, Transform pier)
+        {
+            if (Materials.Planks == null) return null;
+            var pm = new PieceModels.PlankMesh();
+            float y = Island.PierDeck - 0.05f;
+            int k = 0;
+            for (float z = -4; z < length; z += 0.55f, k++)
+            {
+                float h = Hash(z, 3);
+                if (k % 17 == 11) continue;                                          // a board gone
+                float w = 3.2f - (h > 0.85f ? 0.5f : 0), x = h > 0.85f ? -0.25f : (h - 0.5f) * 0.08f;
+                pm.Pose = Matrix4x4.TRS(new Vector3(x, y + (k % 9 == 4 ? 0.025f : 0), z), Quaternion.Euler(0, (h - 0.5f) * 2.5f, k % 9 == 4 ? 1.5f : 0), Vector3.one);
+                pm.Box(Vector3.zero, new Vector3(w, 0.1f, 0.5f), 0, h * 3 + k * 0.17f);
+            }
+            pm.Pose = Matrix4x4.identity;
+            foreach (float x in new[] { -1.35f, 0f, 1.35f })
+                pm.Box(new Vector3(x, y - 0.17f, (length - 4) / 2), new Vector3(0.16f, 0.24f, length + 4), 2, x);
+            return pm.ToObject("Deck", pier);
         }
 
         // ------------------------------------------------------------------ camp structures

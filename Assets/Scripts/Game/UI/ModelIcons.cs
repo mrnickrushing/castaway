@@ -10,7 +10,7 @@ namespace LastTide.Game
     /// </summary>
     public static class ModelIcons
     {
-        const int Size = 192, Layer = 31;
+        const int Size = 256, Layer = 31;
         static readonly Dictionary<string, Sprite> _cache = new Dictionary<string, Sprite>();
         static Camera _cam;
         static Light _light;
@@ -51,7 +51,7 @@ namespace LastTide.Game
                 _light = l.AddComponent<Light>();
                 _light.type = LightType.Directional;
                 _light.cullingMask = 1 << Layer;
-                _light.intensity = 0.6f;
+                _light.intensity = 0.95f;
                 _light.transform.rotation = Quaternion.Euler(40, 150, 0);
             }
             var at = new Vector3(0, -500, 0);
@@ -77,7 +77,37 @@ namespace LastTide.Game
             _cam.targetTexture = null;
             RenderTexture.ReleaseTemporary(rt);
             Object.DestroyImmediate(go);
-            return Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100);
+            return Sprite.Create(Trim(tex), new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100);
+        }
+
+        /// <summary>
+        /// Crops a render to what was drawn and scales it back up to the full square (a little margin kept), so a model
+        /// fills its tile the way the painted icons do instead of sitting small in the middle of its bounding sphere.
+        /// </summary>
+        static Texture2D Trim(Texture2D src)
+        {
+            src.wrapMode = TextureWrapMode.Clamp;
+            var px = src.GetPixels32();
+            int n = src.width, x0 = n, y0 = n, x1 = -1, y1 = -1;
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                    if (px[y * n + x].a > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+            if (x1 < 0) return src;
+            float side = Mathf.Max(x1 - x0 + 1, y1 - y0 + 1) * 1.08f;
+            if (side >= n * 0.97f) return src;                       // already fills it
+            float cx = (x0 + x1 + 1) / 2f, cy = (y0 + y1 + 1) / 2f;
+            var dst = new Texture2D(n, n, TextureFormat.RGBA32, false);
+            var outPx = new Color[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float sx = cx + ((x + 0.5f) / n - 0.5f) * side, sy = cy + ((y + 0.5f) / n - 0.5f) * side;
+                    outPx[y * n + x] = sx < 0 || sy < 0 || sx > n || sy > n ? Color.clear : src.GetPixelBilinear(sx / n, sy / n);
+                }
+            dst.SetPixels(outPx);
+            dst.Apply();
+            Object.Destroy(src);
+            return dst;
         }
 
         /// <summary>A small model of an item that has no painted icon.</summary>

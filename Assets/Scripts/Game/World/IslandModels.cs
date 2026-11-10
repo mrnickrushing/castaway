@@ -519,7 +519,7 @@ namespace LastTide.Game
                     mb.Mat(0.15f);
                     mb.Sphere(new Vector3(top.x, top.y * 0.6f, top.z), new Vector3(rad * 0.7f, 0.05f, rad * 0.7f), 9, Chalk);
                     for (int i = 0; i < 3; i++)
-                        Models.Rock(mb, new Vector3(top.x + rad * (1.25f + i * 0.3f), 0.06f, top.z + (i - 1) * rad * 0.9f), new Vector3(0.15f, 0.11f, 0.13f), i + 2, i == 1 ? ChalkShade : Chalk);
+                        Models.Rock(mb, new Vector3(top.x + rad * (0.95f + (i % 2) * 0.35f), 0.07f, top.z + (i - 1) * rad * 0.75f - rad * 0.5f), new Vector3(0.17f, 0.13f, 0.15f), i + 2, i == 1 ? ChalkShade : Chalk);
                     break;
                 case "lamp_oil":
                     // A cask of whale oil: a brass tap, and a drop of what's in it.
@@ -541,11 +541,16 @@ namespace LastTide.Game
                         r.sharedMaterial = _tar;
                     }
                     mb.Mat(0.35f);
-                    mb.Sphere(new Vector3(top.x + rad * 1.1f, 0.07f, top.z + rad * 0.5f), Vector3.one * 0.13f, 8, Float);   // a cork float still tied on
+                    // Stood up towards the camera like a coil hung on a peg, a cork float still tied on inside it.
+                    b.transform.rotation = Quaternion.Euler(-58, 0, 0) * b.transform.rotation;
+                    var cb = ModelRegistry.RendererBounds(b);
+                    b.transform.position += new Vector3(0, -cb.min.y, 0);
+                    cb = ModelRegistry.RendererBounds(b);
+                    mb.Sphere(new Vector3(cb.center.x + 0.02f, cb.min.y + 0.1f, cb.center.z - 0.08f), Vector3.one * 0.12f, 8, Float);
                     break;
                 }
                 case "brass":
-                    if (Has("portholes_e")) Put("portholes_e", holder.transform, new Vector3(top.x + size.x * 0.62f, 0, top.z + size.z * 0.3f), 140, 0.7f);
+                    if (Has("portholes_e")) Put("portholes_e", holder.transform, new Vector3(top.x + size.x * 0.42f, 0, top.z - size.z * 0.45f), 140, 0.8f);
                     break;
                 case "perk_larder":
                     // Honey pots lined up on the camp table.

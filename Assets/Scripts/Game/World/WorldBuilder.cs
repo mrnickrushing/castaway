@@ -452,6 +452,7 @@ namespace LastTide.Game
                     var go = Models.Pier(PierLength, !boat).ToObject("Pier", world);
                     go.transform.position = new Vector3(at.x, 0, at.z);
                     go.transform.rotation = Quaternion.Euler(0, PierYaw, 0);
+                    Models.PierDeck(PierLength, go.transform);
                     if (boat)
                     {
                         // The scanned rowboat tied up alongside the end, sitting low in the water, and the catch
