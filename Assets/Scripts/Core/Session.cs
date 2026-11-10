@@ -9,6 +9,9 @@ namespace LastTide.Core
         public string Id, Name;
         public int Health, Damage;
         public float Speed, AttackEvery, Aggro;
+        /// <summary>Seconds it stands and gathers itself before a strike (the red ring fills): long enough to see
+        /// and step out of reach. The strike lands about 0.3 s after it ends.</summary>
+        public float Windup = 0.45f;
         public int Xp;
         public ItemCount? Rare;     // a one-in-four extra drop
         public ItemCount[] Drops;
@@ -18,17 +21,17 @@ namespace LastTide.Core
     {
         public static readonly Dictionary<string, EnemyDef> All = new Dictionary<string, EnemyDef>
         {
-            { "boar", new EnemyDef { Id = "boar", Name = "Wild Boar", Health = 60, Damage = 9, Speed = 4.2f, AttackEvery = 1.3f, Aggro = 9f, Xp = 10,
+            { "boar", new EnemyDef { Id = "boar", Name = "Wild Boar", Health = 60, Damage = 9, Speed = 4.2f, AttackEvery = 1.3f, Aggro = 9f, Windup = 0.45f, Xp = 10,
                 Drops = new[] { Content.I("raw_meat", 2), Content.I("hide", 1) }, Rare = Content.I("hide", 1) } },
-            { "crab", new EnemyDef { Id = "crab", Name = "Giant Crab", Health = 35, Damage = 6, Speed = 2.6f, AttackEvery = 1.2f, Aggro = 6f, Xp = 6,
+            { "crab", new EnemyDef { Id = "crab", Name = "Giant Crab", Health = 35, Damage = 6, Speed = 2.6f, AttackEvery = 1.2f, Aggro = 6f, Windup = 0.5f, Xp = 6,
                 Drops = new[] { Content.I("crab", 2) } } },
-            { "snake", new EnemyDef { Id = "snake", Name = "Island Viper", Health = 30, Damage = 11, Speed = 4.8f, AttackEvery = 1.0f, Aggro = 7f, Xp = 9,
+            { "snake", new EnemyDef { Id = "snake", Name = "Island Viper", Health = 30, Damage = 11, Speed = 4.8f, AttackEvery = 1.0f, Aggro = 7f, Windup = 0.35f, Xp = 9,
                 Drops = new[] { Content.I("raw_meat", 1) } } },
-            { "skeleton", new EnemyDef { Id = "skeleton", Name = "Drowned Smuggler", Health = 110, Damage = 11, Speed = 3.6f, AttackEvery = 1.25f, Aggro = 10f, Xp = 26,
+            { "skeleton", new EnemyDef { Id = "skeleton", Name = "Drowned Smuggler", Health = 110, Damage = 11, Speed = 3.6f, AttackEvery = 1.25f, Aggro = 10f, Windup = 0.5f, Xp = 26,
                 Drops = new[] { Content.I("gunpowder", 1), Content.I("doubloon", 3) } } },
-            { "redjack", new EnemyDef { Id = "redjack", Name = "Red Jack", Health = 440, Damage = 14, Speed = 4.4f, AttackEvery = 1.3f, Aggro = 14f, Xp = 300,
+            { "redjack", new EnemyDef { Id = "redjack", Name = "Red Jack", Health = 440, Damage = 14, Speed = 4.4f, AttackEvery = 1.3f, Aggro = 14f, Windup = 0.6f, Xp = 300,
                 Drops = new[] { Content.I("doubloon", 120), Content.I("cutlass", 1), Content.I("pirate_coat", 1) } } },
-            { "pirate", new EnemyDef { Id = "pirate", Name = "Red Jack's Raider", Health = 130, Damage = 11, Speed = 4.6f, AttackEvery = 1.2f, Aggro = 11f, Xp = 30,
+            { "pirate", new EnemyDef { Id = "pirate", Name = "Red Jack's Raider", Health = 130, Damage = 11, Speed = 4.6f, AttackEvery = 1.2f, Aggro = 11f, Windup = 0.45f, Xp = 30,
                 Drops = new[] { Content.I("rum", 1), Content.I("gunpowder", 1), Content.I("doubloon", 4) }, Rare = Content.I("tricorn", 1) } },
         };
     }

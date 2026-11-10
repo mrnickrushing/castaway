@@ -42,11 +42,22 @@ namespace LastTide.Game
             return rig;
         }
 
+        float _shake;
+
+        /// <summary>A jolt that dies away in about a third of a second (the castaway taking a blow). Bigger calls win.</summary>
+        public static void Shake(float amount) { if (Instance != null) Instance._shake = Mathf.Max(Instance._shake, amount); }
+
         void Snap()
         {
             var rot = Quaternion.Euler(Pitch, 0, 0);
             transform.rotation = rot;
             transform.position = _focus + Vector3.up * 1.2f - rot * Vector3.forward * Distance;
+            if (_shake > 0.001f)
+            {
+                float t = Time.unscaledTime * 60f;
+                transform.position += (transform.right * (Mathf.PerlinNoise(t, 0.37f) - 0.5f) + transform.up * (Mathf.PerlinNoise(0.71f, t) - 0.5f)) * _shake * 2f;
+                _shake = Mathf.MoveTowards(_shake, 0, Time.unscaledDeltaTime * 1.2f);
+            }
         }
 
         void LateUpdate()

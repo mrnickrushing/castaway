@@ -15,9 +15,20 @@ namespace LastTide.Game
         EnemyDef _def;
         EnemyBody _body;
         Vector3 _home, _wander;
-        float _health, _gait, _move, _attack = -1, _cooldown, _think, _dead, _flash, _grunt;
-        bool _hit, _angry;
+        float _health, _gait, _move, _attack = -1, _windup = -1, _cooldown, _think, _dead, _punch, _alertAt = -9;
+        bool _hit, _angry, _reachAtWindup;
+        Ring _ring;
+        const float Reach = 2.1f;   // a strike lands if the castaway is still this close (along the ground)
         public bool Alive { get { return _health > 0; } }
+        public EnemyDef Def { get { return _def; } }
+        /// <summary>0..1 while it gathers itself for a strike (the HUD's red "!" and the ring), else -1.</summary>
+        public float Windup01 { get { return _windup; } }
+        /// <summary>Chasing the castaway (counts toward the HUD's DANGER).</summary>
+        public bool Angry { get { return _angry && Alive; } }
+        /// <summary>Seconds since it noticed the castaway (the yellow "!" pops for a moment).</summary>
+        public float SinceAlert { get { return Time.time - _alertAt; } }
+        /// <summary>Would have noticed the castaway but for sneaking (the HUD's grey "?": sneaking works).</summary>
+        public bool Suspicious { get; private set; }
         public float Health01 { get { return _health / _def.Health; } }
         public bool Hurt { get { return _health < _def.Health; } }
 
@@ -38,6 +49,7 @@ namespace LastTide.Game
 
         void OnEnable() { All.Add(this); }
         void OnDisable() { All.Remove(this); }
+        void OnDestroy() { if (_ring != null) Destroy(_ring.transform.parent.gameObject); }
 
         public static Enemy Nearest(Vector3 p, float range)
         {
@@ -57,23 +69,28 @@ namespace LastTide.Game
             return best;
         }
 
-        public void Hit(int dmg, Vector3 from)
+        /// <summary>A blow from the castaway (<paramref name="weapon"/>: the item held, null for fists) or a companion ("bite").</summary>
+        public void Hit(int dmg, Vector3 from, string weapon = null)
         {
             if (!Alive) return;
             _health -= dmg;
+            if (!_angry) _alertAt = Time.time;
             _angry = true;
-            _flash = 0.15f;
+            _punch = 1;
             var push = transform.position - from; push.y = 0;
             if (push.sqrMagnitude > 0.001f) transform.position = Step(transform.position, push.normalized * 0.45f);
             Burst.Hit(transform.position + Vector3.up * 0.7f, _def.Id == "skeleton" ? new Color(0.85f, 0.85f, 0.8f) : new Color(0.55f, 0.12f, 0.08f));
             if (_health > 0) _body.Flinch();
-            if (_def.Id == "boar") Sfx.Play("squeal", transform.position, 0.8f); // boars squeal, everything else thuds
-            else Sfx.Play("hit", transform.position);
+            CombatFx.Impact(weapon, transform.position);                                    // what it was hit with
+            if (_def.Id == "boar") Sfx.Play("squeal", transform.position, 0.65f);        // and how it takes it
             Hud.Instance.Damage(transform.position + Vector3.up * 1.6f, dmg);
+            if (weapon != "bite") CombatFx.HitStop(_health <= 0 ? 0.09f : 0.045f);
             if (_health <= 0)
             {
                 _health = 0;
                 _dead = 0.001f;
+                _windup = _attack = -1;
+                if (_ring != null) _ring.gameObject.SetActive(false);
                 DeathCry(transform.position);
                 G.Session.Killed(_def.Id);
             }
@@ -122,9 +139,12 @@ namespace LastTide.Game
             if (player != null) { var off = player.transform.position - pos; toPlayer = Mathf.Abs(off.y) > 2.5f ? 999 : new Vector2(off.x, off.z).magnitude; }
             bool alive = G.Session.State.health > 0;
             float aggro = _def.Aggro * G.Session.AggroScale(player != null && player.Sneaking);
-            if (alive && (toPlayer < aggro || (_angry && toPlayer < _def.Aggro * 2.2f)) && Vector3.Distance(pos, _home) < 30f)
+            bool chase = alive && (toPlayer < aggro || (_angry && toPlayer < _def.Aggro * 2.2f)) && Vector3.Distance(pos, _home) < 30f;
+            // Sneaking is what kept it from noticing: say so (the HUD's grey "?").
+            Suspicious = !chase && alive && player != null && player.Sneaking && toPlayer < _def.Aggro * G.Session.AggroScale(false);
+            if (chase)
             {
-                if (!_angry) { AlarmCry(pos); _angry = true; }
+                if (!_angry) { AlarmCry(pos); _angry = true; _alertAt = Time.time; }
                 goal = player.transform.position;
                 speed = _def.Speed;
             }
@@ -144,23 +164,38 @@ namespace LastTide.Game
                 if (_def.Id == "boar" && Random.value < dt * 0.15f) Sfx.Play("grunt", pos, 0.4f);
             }
 
-            // Attack when close.
+            // Attack when close: first stand and gather itself (the red ring fills, a red "!" over its head), then
+            // strike. Stepping out of reach before the blow lands dodges it. The cooldown starts with the windup, so
+            // the time between blows is what it always was.
             _cooldown -= dt;
-            if (_attack >= 0)
+            if (_windup >= 0)
+            {
+                _windup += dt / Mathf.Max(0.1f, _def.Windup);
+                speed = 0;
+                if (_windup >= 1) { _windup = -1; _attack = 0; _hit = false; }
+            }
+            else if (_attack >= 0)
             {
                 _attack += dt / 0.55f;
                 if (!_hit && _attack >= 0.55f)
                 {
                     _hit = true;
-                    if (player != null && toPlayer < 2.1f && alive) player.Hurt(_def.Damage, pos);
+                    if (player != null && toPlayer < Reach && alive) player.Hurt(_def.Damage, pos);
+                    else if (player != null && alive && _reachAtWindup && toPlayer < Reach + 4f)
+                    {
+                        Sfx.Play("swing", pos, 0.8f, 0.85f);
+                        Hud.Instance.Pop(player.transform.position + Vector3.up * 2f, "DODGED", new Color(0.75f, 0.95f, 1f));
+                    }
                 }
                 if (_attack >= 1) _attack = -1;
                 speed = 0;
             }
             else if (_angry && toPlayer < 1.6f && _cooldown <= 0)
             {
-                _attack = 0; _hit = false; _cooldown = _def.AttackEvery;
+                _windup = 0; _cooldown = _def.AttackEvery; _reachAtWindup = toPlayer < Reach;
+                _alertAt = -9; // the red "!" takes over from the yellow one
             }
+            StrikeRing();
 
             var d = goal - pos; d.y = 0;
             float m = d.magnitude;
@@ -187,7 +222,28 @@ namespace LastTide.Game
             transform.position = pos;
             _gait += dt * (2 + _move * 3.2f);
             Pose(_move, _attack, 0);
-            _flash -= dt;
+            // Gathering itself: crouches a little, as if to spring. Hit: a quick squash that springs back.
+            float w = _windup >= 0 ? Mathf.SmoothStep(0, 1, Mathf.Min(1, _windup * 1.6f)) : 0;
+            _punch = Mathf.MoveTowards(_punch, 0, dt * 7f);
+            float p = Mathf.Sin(_punch * Mathf.PI) * 0.12f;
+            transform.localScale = new Vector3(1 + 0.06f * w + p, 1 - 0.1f * w - p, 1 + 0.06f * w + p);
+        }
+
+        /// <summary>The red ring on the ground at strike reach, filling as it winds up.</summary>
+        void StrikeRing()
+        {
+            bool on = _windup >= 0 || (_attack >= 0 && _attack < 0.55f);
+            if (on && _ring == null)
+            {
+                // Beside the enemy, not under it: the ring's mesh is in world space and the body squashes.
+                var holder = new GameObject(name + " strike");
+                holder.transform.SetParent(transform.parent, false);
+                _ring = Ring.Create(holder.transform, Reach);
+            }
+            if (_ring == null) return;
+            _ring.transform.parent.position = transform.position;
+            if (_ring.gameObject.activeSelf != on) _ring.gameObject.SetActive(on);
+            if (on) _ring.Paint(_windup >= 0 ? _windup : 1, 1, new Color(0.75f, 0.06f, 0.04f, 0.8f), new Color(0.45f, 0.02f, 0f, 1));
         }
 
         void Pose(float speed, float attack, float dead) { _body.Pose(_gait, speed, attack, dead); }

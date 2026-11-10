@@ -58,6 +58,7 @@ namespace LastTide.Game
             BuildQuest(safe);
             BuildPanels(safe);
             GrowHudOnPhones();
+            BuildCombat();      // after growing: the red edge covers the screen at its own size
             BuildBlueprints();
             BuildBuildMode();
             BuildPath();
@@ -439,6 +440,7 @@ namespace LastTide.Game
             if (_offersOpen && Time.frameCount % 30 == 0) RefreshOffers();
             _worldLayer.gameObject.SetActive(!MapOpen);
             UpdateWorldLabels();
+            UpdateCombat();
             UpdatePops();
             UpdateOverlays();
             // Rebuild the panels when something changed, and tick a craft's progress bar while it runs.

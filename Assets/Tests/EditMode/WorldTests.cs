@@ -173,5 +173,16 @@ namespace LastTide.Tests
             }
             foreach (var s in World.Signals) Assert.IsNotNull(World.Location(s.Location), s.Id);
         }
+
+        [Test]
+        public void EveryEnemyTelegraphsItsStrikeInTime()
+        {
+            // The windup (red ring filling) must leave room to step away, and still end before the next attack is due.
+            foreach (var e in Enemies.All.Values)
+            {
+                Assert.GreaterOrEqual(e.Windup, 0.3f, e.Id + ": too fast to dodge");
+                Assert.Less(e.Windup, e.AttackEvery - 0.3f, e.Id + ": windup overlaps the next attack");
+            }
+        }
     }
 }

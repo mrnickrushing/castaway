@@ -103,6 +103,12 @@ setting only.
   Wood", or "craft 2 Rope (CRAFT)") and the arrow leads to a node that yields it, or its ingredients, then the station;
   crafting steps (`Quest.Craft`) list missing ingredients, then "ready: tap CRAFT". When a hunt target is all dead, the
   arrow leads toward the next den but stops 30 m short (dens only refill with the castaway over 26 m away).
+- Combat feedback (`App/CombatFx.cs`, `UI/Hud.Combat.cs`): enemies telegraph each strike for `EnemyDef.Windup` seconds
+  (they stop, crouch, a red ring of reach 2.1 m fills under them, red "!" overhead); stepping out of reach makes them
+  miss ("DODGED"). Hits play a hit-stop (`CombatFx.HitStop`, keeps the bot's timeScale) and a weapon sound
+  (`CombatFx.Impact`: slash/stab/chop/mine/hit); being hit shakes the camera, pops the damage and shows a red arc
+  toward the attacker. Amber "!" on noticing, grey "?" when sneaking alone kept one from noticing, DANGER + a red
+  vignette when two or more are after the castaway within 25 m, and the held weapon's condition bar under its button.
 - Fight reach is measured along the ground (`Enemy.Nearest`, enemy attack, Biscuit's bite): 3D distance stalled fights
   on slopes. The drowned smugglers (5 dens, back in 40 s) and the cave/camp barrels (rum) feed the late story steps.
 - Story cards use `Resources/UI/Story/<key>.jpg` (16:9, from `ai_media.py story`), else the small map painting.
@@ -152,7 +158,7 @@ setting only.
 unity pipeline install --project-path .     # once per clone (local dev tool, never commit it)
 unity open . --until-ready
 Tools/unity-recompile.sh
-unity command --project-path . test run editor --timeout 600 --result-only
+Tools/unity-test.sh                          # leaves Play mode first (the runner refuses to start during Play)
 Tools/unity-capture.sh out.png 8
 ~/.dotnet8/dotnet test Tools/CoreTests       # Core tests without Unity
 ```

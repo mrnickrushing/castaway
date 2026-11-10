@@ -598,10 +598,17 @@ namespace LastTide.Game
 
         public void Set(float fill, bool here, bool blocked)
         {
+            Paint(fill, here ? 1 : 0.5f + 0.5f * Mathf.Sin(Time.time * 4 + transform.position.x), blocked ? Amber : Green);
+        }
+
+        /// <summary>Any colour and fill (an enemy's red strike ring fills as it winds up); <paramref name="fillTint"/>
+        /// is added where filled (default: the action rings' pale sweep).</summary>
+        public void Paint(float fill, float pulse, Color color, Color? fillTint = null)
+        {
             _mat.SetFloat("_Fill", fill);
-            float pulse = here ? 1 : 0.5f + 0.5f * Mathf.Sin(Time.time * 4 + transform.position.x);
+            _mat.SetColor("_FillTint", fillTint ?? new Color(0.6f, 0.6f, 0.45f, 1));
             _mat.SetFloat("_Pulse", pulse);
-            _mat.SetColor("_Color", blocked ? Amber : Green);
+            _mat.SetColor("_Color", color);
             var p = transform.parent.position;
             if ((p - _builtAt).sqrMagnitude > 0.01f || float.IsNaN(_builtAt.x))
             {
