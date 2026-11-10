@@ -196,16 +196,16 @@ namespace LastTide.Game
         static Vector3 Move(Vector3 pos, Vector3 step)
         {
             var next = pos + step;
-            if (!Island.Walkable(next.x, next.z))
+            if (!Island.CanStep(next.x, next.z))
             {
                 var nx = pos + new Vector3(step.x, 0, 0);
                 var nz = pos + new Vector3(0, 0, step.z);
-                if (Island.Walkable(nx.x, nx.z)) next = nx;
-                else if (Island.Walkable(nz.x, nz.z)) next = nz;
+                if (Island.CanStep(nx.x, nx.z)) next = nx;
+                else if (Island.CanStep(nz.x, nz.z)) next = nz;
                 else next = pos;
             }
             next = Obstacles.Resolve(next, BodyRadius);
-            if (!Island.Walkable(next.x, next.z)) next = pos;
+            if (!Island.CanStep(next.x, next.z)) next = pos;
             return next;
         }
 

@@ -187,6 +187,21 @@ namespace LastTide.Game
             return s < 0.62f;
         }
 
+        /// <summary>
+        /// Whether the castaway (or an animal) can step here: not out at sea and not up a real slope. Steepness is taken
+        /// across 5 m, so the small bumps in the ground's noise (patches of 0.25-15 m² that read as flat grass, about a
+        /// thousand of them on the archipelago) don't stop anyone; cliffs and ridges still do. Placement keeps using
+        /// <see cref="Walkable"/> so the islands stay laid out as before.
+        /// </summary>
+        public static bool CanStep(float x, float z)
+        {
+            if (WorldBuilder.OnPier(x, z)) return true;
+            if (Height(x, z) < -0.25f) return false;
+            const float e = 2.5f;
+            float dx = Height(x + e, z) - Height(x - e, z), dz = Height(x, z + e) - Height(x, z - e);
+            return Mathf.Sqrt(dx * dx + dz * dz) / (2 * e) < 0.62f;
+        }
+
         public static float Slope(float x, float z)
         {
             const float e = 1f;
