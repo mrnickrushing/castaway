@@ -61,6 +61,7 @@ namespace LastTide.Game
             var raftAt = Island.Start + new Vector3(-12, 0, -4);
             ExitSpot.Create(nodes, Island.Ground(raftAt), 200);
             Take(raftAt, 4f);
+            CampPerks.Create(world, raftAt);   // the improvements already built, standing at camp
 
             // Camp blueprints.
             foreach (var s in Sites)
