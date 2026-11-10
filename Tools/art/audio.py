@@ -8,7 +8,7 @@ music are cut to a seamless loop (the tail crossfaded into the head). Everything
 Assets/Resources/Audio/<name>.ogg, which Sfx loads by name.
 
 Sources: Seed Audio 1.0 (Higgsfield) for the island effects and ambience (2026-11-08); the UI takes are shared
-with Ironhorse Frontier. Sfx.cs loads them; missing clips are skipped.
+with Ironhorse Frontier. The hiss and sizzle are made here from filtered noise (NOISE), the hit from a falling thump (impact), the squeal from the boar grunt sped up. Sfx.cs loads them; missing clips are skipped.
 """
 import os
 import subprocess
@@ -42,7 +42,6 @@ SFX = {
     "gather":   ("gather.wav",   None, 0.80, 0.70, 0.30),
     "drink":    ("gather.wav",   None, 0.60, 0.55, 0.30),
     "treefall": ("treefall.wav", None, 2.80, 0.90, 0.80),
-    "hit":      ("hit.wav",      None, 0.50, 0.85, 0.20),
     "hurt":     ("hurt.wav",     None, 0.65, 0.75, 0.20),
     "pirate_die": ("hurt.wav",   None, 0.65, 0.80, 0.20),
     "swing":    ("swing.wav",    None, 0.45, 0.55, 0.15),
@@ -50,6 +49,13 @@ SFX = {
     "boardie":  ("grunt.wav",    None, 1.80, 0.80, 0.80),
     "static":   ("static.wav",   None, 2.20, 0.55, 0.50),
     "eat":      ("eat.wav",      None, 0.90, 0.70, 0.30),
+    "depart":   ("bell.wav",     None, 1.60, 0.60, 0.70),
+}
+
+# Made from filtered noise, no take needed: name: (length s, attack s, band low Hz, band high Hz, crackle, peak).
+NOISE = {
+    "hiss":   (0.75, 0.04, 3000, 9000, 0.0, 0.45),   # a viper or a crab rearing up
+    "sizzle": (1.10, 0.02, 1800, 7000, 1.0, 0.40),   # food going on the fire
 }
 # name: (source, start s, end s, crossfade s, peak, channels, ffmpeg filter or None)
 LOOPS = {
@@ -105,11 +111,72 @@ def loop(src, start, end, xfade, peak, channels, af=None):
     return normalise(body, peak)
 
 
+def noise(length, attack, lo, hi, crackle, peak, seed=7):
+    rng = np.random.default_rng(seed)
+    n = int(length * SR)
+    w = rng.standard_normal(n)
+    spec = np.fft.rfft(w)
+    f = np.fft.rfftfreq(n, 1 / SR)
+    spec *= np.clip((f - lo * 0.7) / (lo * 0.3), 0, 1) * np.clip((hi * 1.3 - f) / (hi * 0.3), 0, 1)  # soft band-pass
+    a = np.fft.irfft(spec, n)
+    if crackle > 0:  # fat popping: short bursts at random moments
+        pops = np.zeros(n)
+        for t in rng.integers(0, n - 400, int(40 * length * crackle)):
+            pops[t:t + 300] += rng.standard_normal(300) * np.exp(-np.arange(300) / 40) * rng.uniform(2, 6)
+        a = a + pops
+    t = np.arange(n) / SR
+    env = np.minimum(1, t / attack) * np.exp(-3.2 * np.maximum(0, t - attack) / length)
+    env[-int(0.08 * SR):] *= np.linspace(1, 0, int(0.08 * SR))
+    return normalise((a * env)[:, None], peak)
+
+
+def impact(seed=3, peak=0.9):
+    """A blow landing on an animal: a low thump that drops in pitch, a slap of mid noise and a short crack on top.
+    Made here because the hit take ended in a voice-like groan."""
+    rng = np.random.default_rng(seed)
+    n = int(0.32 * SR)
+    t = np.arange(n) / SR
+    f = 150 * np.exp(-t / 0.08) + 62                       # 212 Hz falling to ~62 Hz
+    thump = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.075)
+
+    def band(lo, hi, decay):
+        w = rng.standard_normal(n)
+        spec = np.fft.rfft(w)
+        fr = np.fft.rfftfreq(n, 1 / SR)
+        spec *= (fr > lo) & (fr < hi)
+        return np.fft.irfft(spec, n) * np.exp(-t / decay)
+    slap = band(250, 1800, 0.035)
+    crack = band(1800, 6000, 0.008)
+    a = thump * 1.0 + slap / (np.abs(slap).max() + 1e-9) * 0.55 + crack / (np.abs(crack).max() + 1e-9) * 0.35
+    a[:int(0.002 * SR)] *= np.linspace(0, 1, int(0.002 * SR))
+    a[-int(0.05 * SR):] *= np.linspace(1, 0, int(0.05 * SR))
+    return normalise(a[:, None], peak)
+
+
+def squeal(src="grunt.wav", length=0.42, up=1.35, peak=0.8):
+    """A boar taking a blow: the loudest moment of its grunt take, sped up into a short squeal."""
+    a = load(src, 1)[:, 0]
+    win = int(length * up * SR)
+    env = np.convolve(np.abs(a), np.ones(2048) / 2048, mode="same")
+    start = int(np.argmax(env[: max(1, len(a) - win)]))
+    start = max(0, start - int(0.05 * SR))
+    seg = a[start:start + win]
+    out = np.interp(np.arange(0, len(seg) - 1, up), np.arange(len(seg)), seg)   # faster and higher
+    n = len(out)
+    out[:int(0.004 * SR)] *= np.linspace(0, 1, int(0.004 * SR))
+    out[n - int(0.12 * SR):] *= np.linspace(1, 0, int(0.12 * SR)) ** 2
+    return normalise(out[:, None], peak)
+
+
 def main():
     if not os.path.isdir(SRC):
         sys.exit("missing " + SRC)
     for name, spec in SFX.items():
         print(name, save(name, sfx(name, *spec)))
+    print("hit", save("hit", impact()))
+    print("squeal", save("squeal", squeal()))
+    for name, spec in NOISE.items():
+        print(name, save(name, noise(*spec)))
     for name, spec in LOOPS.items():
         print(name, save(name, loop(*spec)))
 

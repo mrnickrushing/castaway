@@ -88,13 +88,25 @@ namespace LastTide.Game
         Image _healthFill, _foodFill, _waterFill;
         Text _healthText, _foodText, _waterText;
 
-        /// <summary>Top left: the castaway's name and health (number box and bar), food and water below.</summary>
+        /// <summary>Top left: the level badge, the castaway's name and health (number box and bar), food and water below.</summary>
         void BuildMeters(RectTransform safe)
         {
-            var box = UIKit.Rect("Meters", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -20), new Vector2(420, 140));
+            // The level in a round badge, left of the name; tapping it (or the name) opens Settings to rename.
+            var badge = UIKit.Button("Level", safe, null, new Color(0.1f, 0.12f, 0.12f, 0.85f), () => OpenHelp(2));
+            badge.GetComponent<Image>().sprite = UIKit.Circle; badge.GetComponent<Image>().type = Image.Type.Simple;
+            ((RectTransform)badge.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -22), new Vector2(96, 96));
+            var bring = UIKit.Img("Ring", badge.transform, UIKit.RingSprite, new Color(1f, 0.8f, 0.3f, 0.95f)); bring.rectTransform.Fill(2);
+            _levelBadge = UIKit.Outlined(UIKit.Label("N", badge.transform, "1", 40, Color.white, TextAnchor.MiddleCenter), 1.5f);
+            _levelBadge.rectTransform.Fill(); _levelBadge.rectTransform.offsetMin = new Vector2(8, 34); _levelBadge.rectTransform.offsetMax = new Vector2(-8, -10);
+            var lv = UIKit.Label("Lv", badge.transform, "LVL", 18, UIKit.Amber, TextAnchor.LowerCenter);
+            lv.rectTransform.anchorMin = new Vector2(0, 0); lv.rectTransform.anchorMax = new Vector2(1, 0); lv.rectTransform.pivot = new Vector2(0.5f, 0);
+            lv.rectTransform.anchoredPosition = new Vector2(0, 12); lv.rectTransform.sizeDelta = new Vector2(-30, 22);
+            var box = UIKit.Rect("Meters", safe).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -20), new Vector2(420, 140));
             var name = UIKit.Outlined(UIKit.Label("Name", box, "Castaway", 36, Color.white, TextAnchor.MiddleLeft, false), 1.5f);
             name.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), Vector2.zero, new Vector2(300, 52));
             _playerName = name;
+            var tapName = name.gameObject.AddComponent<Button>(); name.raycastTarget = true;
+            tapName.onClick.AddListener(() => { Sfx.Play("click"); OpenHelp(2); });
             var hb = UIKit.Img("HP", box, null, new Color(0.2f, 0.55f, 0.2f, 0.95f));
             hb.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(300, -4), new Vector2(100, 46));
             _healthText = UIKit.Label("N", hb.transform, "100", 34, Color.white, TextAnchor.MiddleRight, false);
@@ -108,7 +120,7 @@ namespace LastTide.Game
             Small(box, 1, "water", new Color(0.3f, 0.68f, 1f), out _waterFill, out _waterText);
         }
 
-        Text _playerName;
+        Text _playerName, _levelBadge;
 
         /// <summary>1.2 on phones, else 1: how much bigger the field HUD is drawn.</summary>
         float _hudK = 1;
@@ -311,7 +323,8 @@ namespace LastTide.Game
             _levelText.text = "Level " + s.State.level;
             _xpRing.rectTransform.anchorMax = new Vector2(s.Xp01, 1);
             _coinsIsland.text = s.State.coins.ToString();
-            if (_playerName != null) _playerName.text = string.IsNullOrEmpty(s.State.name) ? "Castaway" : s.State.name;
+            if (_playerName != null) _playerName.text = s.DisplayName;
+            if (_levelBadge != null) _levelBadge.text = s.State.level.ToString();
         }
 
         // ------------------------------------------------------------------ joystick
@@ -543,7 +556,7 @@ namespace LastTide.Game
             var rt = UIKit.Rect("Pop", _worldLayer).Place(Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(300, 64));
             var g = rt.gameObject.AddComponent<CanvasGroup>();
             var icon = UIKit.Rect("Icon", rt).Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(40, 0), new Vector2(64, 64));
-            UIKit.ItemIcon(icon, id, 64);
+            UIKit.ItemIcon(icon, id, 64, false); // floats over the field: never catch a touch meant for the stick
             string text = n > 0 ? "+" + n + " " + Content.NameOf(id) : Content.NameOf(id) == "Flask of Water" ? "Refreshing!" : Content.NameOf(id);
             if (id == "water" && n == 0) text = "+ Thirst";
             var t = UIKit.Outlined(UIKit.Label("Text", rt, text, 34, Color.white), 2f);
@@ -618,6 +631,7 @@ namespace LastTide.Game
 
         void UpdateOverlays()
         {
+            UpdateItemTip();
             _toastT -= Time.deltaTime;
             _toast.color = new Color(1, 1, 1, Mathf.Clamp01(_toastT * 2));
             _flashT -= Time.deltaTime;

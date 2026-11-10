@@ -54,6 +54,12 @@ namespace LastTide.Game
                 var rt = (RectTransform)b.transform;
                 rt.Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(x, 22), new Vector2(96, 96));
                 var ic = UIKit.Img("Icon", b.transform, UIKit.Symbol(sym), new Color(0.88f, 0.9f, 0.88f)); ic.rectTransform.Fill(18);
+                ic.rectTransform.offsetMin = new Vector2(24, 30); ic.rectTransform.offsetMax = new Vector2(-24, -8);
+                // The guide and Help name these buttons ("tap CRAFT"), so each carries its name under the icon.
+                var cap = UIKit.Label("Caption", b.transform, label, 20, new Color(0.88f, 0.9f, 0.88f), TextAnchor.LowerCenter);
+                cap.rectTransform.anchorMin = new Vector2(0, 0); cap.rectTransform.anchorMax = new Vector2(1, 0); cap.rectTransform.pivot = new Vector2(0.5f, 0);
+                cap.rectTransform.anchoredPosition = new Vector2(0, 2); cap.rectTransform.sizeDelta = new Vector2(12, 26); // a fixed strip: phones can't grow it over the icon
+                UIKit.Outlined(cap, 1.5f);
                 if (label == "BUILD") _buildButton = rt;
                 if (label == "PATH") _pathBadge = Badge(rt);
                 x -= 104;
@@ -265,7 +271,7 @@ namespace LastTide.Game
             var crate = s.OpenCrate(_sel);
             if (crate != null) { if (crate.Count > 0) { Sfx.Play("coin"); ShowRewards(d.Name.ToUpper(), crate); } } // empty: no room, stays shut
             else if (d != null && d.Gear != GearSlot.None) { if (s.PutOn(_sel)) Sfx.Play("click"); }
-            else if (s.Use(_sel)) Sfx.Play(d != null && (d.Kind == ItemKind.Food || d.Kind == ItemKind.Drink) ? "eat" : "click");
+            else if (s.Use(_sel)) Sfx.Play(d == null ? "click" : d.Worth > 0 ? "coin" : d.Drunk ? "drink" : d.Kind == ItemKind.Food ? "eat" : "click");
             if (s.State.backpack[_sel].Empty) _sel = -1;
         }
 
@@ -397,7 +403,7 @@ namespace LastTide.Game
                     t.rectTransform.Fill();
                 }
             }
-            var armor = UIKit.Label("Armor", _invGear, "ARMOUR " + s.Armor, 24, UIKit.Sand, TextAnchor.UpperCenter, false);
+            var armor = UIKit.Label("Armor", _invGear, "ARMOR " + s.Armor, 24, UIKit.Sand, TextAnchor.UpperCenter, false);
             armor.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(-20, -4 * Cell - 10), new Vector2(160, 40));
         }
 
@@ -422,18 +428,19 @@ namespace LastTide.Game
             if (d != null)
             {
                 if (d.Damage > 0) lines.Add("Damage " + d.Damage);
-                if (d.Armor > 0) lines.Add("Armour " + d.Armor + " (" + d.Gear.ToString().ToLower() + ")");
+                if (d.Armor > 0) lines.Add("Armor " + d.Armor + " (" + d.Gear.ToString().ToLower() + ")");
                 if (d.Durability > 0) lines.Add("Condition " + (d.Durability - sl.wear) + "/" + d.Durability);
                 if (d.Food > 0) lines.Add("Food +" + d.Food);
                 if (d.Drink > 0) lines.Add("Water +" + d.Drink);
                 if (d.Heal != 0) lines.Add("Health " + (d.Heal > 0 ? "+" : "") + d.Heal);
+                if (d.Worth > 0) lines.Add("Worth " + d.Worth + " doubloons");
             }
             var stats = UIKit.Label("Stats", _invSide, string.Join("    ", lines), 30, UIKit.Amber, TextAnchor.UpperCenter, false);
             stats.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -330), new Vector2(560, 50));
             var blurb = UIKit.Label("Blurb", _invSide, d?.Blurb ?? "", 28, new Color(1, 1, 1, 0.75f), TextAnchor.UpperCenter, false);
             blurb.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -390), new Vector2(560, 160));
             string act = d == null ? null : d.Gear != GearSlot.None ? "WEAR" : d.Kind == ItemKind.Weapon || d.Kind == ItemKind.Tool ? (s.State.equipped == _sel ? "PUT AWAY" : "HOLD")
-                : d.Kind == ItemKind.Food || d.Kind == ItemKind.Drink ? "EAT" : d.Kind == ItemKind.Medical ? "USE" : d.Id == "supply_crate" || d.Id == "gold_chest" ? "OPEN" : null;
+                : d.Drunk ? "DRINK" : d.Kind == ItemKind.Food ? "EAT" : d.Kind == ItemKind.Medical ? "USE" : d.Id == "supply_crate" || d.Id == "gold_chest" ? "OPEN" : d.Worth > 0 ? "SELL" : null;
             if (act != null)
             {
                 var b = UIKit.Button("Act", _invSide, act, new Color(0.8f, 0.62f, 0.12f), UseSelected, 38);
@@ -497,7 +504,7 @@ namespace LastTide.Game
                     var cell = UIKit.Button("Recipe", area, null, id == _recipe ? new Color(0.15f, 0.5f, 0.5f) : new Color(0.12f, 0.13f, 0.12f), () => { _recipe = id; _qty = 1; _recipeList = false; _dirty = true; });
                     ((RectTransform)cell.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2((i % 5) * 116, -(i / 5) * 116), new Vector2(110, 110));
                     UIKit.ItemIcon(cell.transform, r.Output, 86);
-                    if (!ok) { var lk = UIKit.Label("Lv", cell.transform, "LV" + r.MinLevel, 22, UIKit.Red, TextAnchor.UpperRight); lk.rectTransform.Fill(4); }
+                    if (!ok) { var lk = UIKit.Label("Lv", cell.transform, "LVL " + r.MinLevel, 22, UIKit.Red, TextAnchor.UpperRight); lk.rectTransform.Fill(4); }
                 }
                 return;
             }

@@ -122,7 +122,7 @@ namespace LastTide.Game
             if (d != null)
             {
                 if (d.Damage > 0) stats.Add("Damage " + d.Damage);
-                if (d.Armor > 0) stats.Add("Armour " + d.Armor);
+                if (d.Armor > 0) stats.Add("Armor " + d.Armor);
                 if (d.Durability > 0) stats.Add("Lasts " + d.Durability);
                 if (d.Food > 0) stats.Add("Food +" + d.Food);
                 if (d.Drink > 0) stats.Add("Water +" + d.Drink);

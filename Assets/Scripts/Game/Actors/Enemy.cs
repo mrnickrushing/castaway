@@ -67,14 +67,39 @@ namespace LastTide.Game
             if (push.sqrMagnitude > 0.001f) transform.position = Step(transform.position, push.normalized * 0.45f);
             Burst.Hit(transform.position + Vector3.up * 0.7f, _def.Id == "skeleton" ? new Color(0.85f, 0.85f, 0.8f) : new Color(0.55f, 0.12f, 0.08f));
             if (_health > 0) _body.Flinch();
-            Sfx.Play("hit", transform.position);
+            if (_def.Id == "boar") Sfx.Play("squeal", transform.position, 0.8f); // boars squeal, everything else thuds
+            else Sfx.Play("hit", transform.position);
             Hud.Instance.Damage(transform.position + Vector3.up * 1.6f, dmg);
             if (_health <= 0)
             {
                 _health = 0;
                 _dead = 0.001f;
-                Sfx.Play(_def.Id == "pirate" || _def.Id == "redjack" ? "pirate_die" : "boardie", transform.position);
+                DeathCry(transform.position);
                 G.Session.Killed(_def.Id);
+            }
+        }
+
+        /// <summary>The sound it makes on noticing the castaway: boars grunt, crabs and vipers hiss, a raider draws steel.</summary>
+        void AlarmCry(Vector3 pos)
+        {
+            switch (_def.Id)
+            {
+                case "boar": Sfx.Play("grunt", pos); break;
+                case "crab": Sfx.Play("hiss", pos, 0.8f, 0.7f); break; // lower and shorter than the snake
+                case "snake": Sfx.Play("hiss", pos); break;
+                default: Sfx.Play("swing", pos, 0.7f); break;        // raiders, Red Jack, the drowned smugglers
+            }
+        }
+
+        /// <summary>The sound it makes going down (a boar's squeal only for boars).</summary>
+        void DeathCry(Vector3 pos)
+        {
+            switch (_def.Id)
+            {
+                case "boar": Sfx.Play("boardie", pos); break;
+                case "crab": Sfx.Play("mine", pos, 0.8f, 1.35f); break; // the shell cracks
+                case "snake": Sfx.Play("hiss", pos, 1f, 0.75f); break;
+                default: Sfx.Play("pirate_die", pos); break;
             }
         }
 
@@ -99,7 +124,7 @@ namespace LastTide.Game
             float aggro = _def.Aggro * G.Session.AggroScale(player != null && player.Sneaking);
             if (alive && (toPlayer < aggro || (_angry && toPlayer < _def.Aggro * 2.2f)) && Vector3.Distance(pos, _home) < 30f)
             {
-                if (!_angry) { Sfx.Play(_def.Id == "boar" ? "grunt" : "hiss", pos); _angry = true; }
+                if (!_angry) { AlarmCry(pos); _angry = true; }
                 goal = player.transform.position;
                 speed = _def.Speed;
             }
