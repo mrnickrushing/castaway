@@ -39,7 +39,8 @@ setting only.
   (`Session.MakeRoom`: tops up stacks, stores spare materials at home), TO POCKETS / TO BACKPACK (`Session.MoveSlot`),
   and leaving home with under 3 free slots asks STORE & GO / GO ANYWAY. UI: `Hud.Panels` (inventory + station/storage),
   `Hud.Blueprints`, `Hud.Build` (grid, ghost, rotate/confirm), `Hud.Path`. Piece models: `World/Pieces.cs`; icons for
-  things without painted art are rendered at runtime (`UI/ModelIcons.cs`).
+  things without painted art are rendered at runtime (`UI/ModelIcons.cs`; each render is trimmed to what was drawn so it
+  fills its tile like the painted icons).
 - Free models: `Tools/art/free_assets.py` (Kenney kits, Quaternius characters, CC0, see `CREDITS.md`) converts them
   with `Tools/blender/free_import.py` to vertex-coloured FBX in `Models/Free` and `Models/People`, drawn with
   `Materials.Kit` (VertexLit without the uv2 surface channel those meshes don't have). Prefer these over paid AI art.
@@ -141,7 +142,7 @@ setting only.
   pieces (`PieceModels.ScanPiece`) are scans too. Floors, walls, the bed and the
   dog house are boxes mapped with a tileable scanned plank texture (`PieceModels.Planked`, `Materials.Planks`,
   `Resources/Textures/Planks*.jpg` from `polyhaven.py surfaces`; the normal map needs the import rule in
-  `Editor/ArtImport.cs` or vertical faces go black); blanket, kennel roof and flag are the ship's sailcloth
+  `Editor/ArtImport.cs` or vertical faces go black); the pier's deck uses it too (`Models.PierDeck`); blanket, kennel roof and flag are the ship's sailcloth
   (`Models.SailSheet`), torch and flag poles scanned driftwood. Nodes are named over their ring, gold on
   the radar, and worked with the tool they need.
 - Combat feedback (`App/CombatFx.cs`, `UI/Hud.Combat.cs`): enemies telegraph each strike for `EnemyDef.Windup` seconds
