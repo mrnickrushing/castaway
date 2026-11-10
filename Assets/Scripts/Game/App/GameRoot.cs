@@ -234,6 +234,11 @@ namespace LastTide.Game
             if (Pet.Instance != null) Pet.Instance.Place(p + new Vector3(1.5f, 0, -1.5f));
             Hud.Instance.Toast(to.Name);
             Save();
+            // Destroying the old island leaves the meshes and materials it made at runtime (rings, stumps, terrain)
+            // alive: once it is gone at the end of this frame, unload them behind the loading screen (~80 MB a lap
+            // of the archipelago otherwise).
+            yield return null;
+            yield return Resources.UnloadUnusedAssets();
             _arriving = false;
             yield return ls.Finish(to.Name);
         }

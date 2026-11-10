@@ -156,7 +156,7 @@ namespace LastTide.Game
             CampGrid.Pose(_ghostId, _gi, _gj, _grot, out pos, out rot);
             _ghost.transform.position = pos;
             _ghost.transform.rotation = rot;
-            bool ok = G.Session.PlaceBlocked(_ghostId, _gi, _gj, _grot) == null;
+            bool ok = G.Session.PlaceBlocked(_ghostId, _gi, _gj, _grot) == null && CampGrid.InTheWay(_ghostId, _gi, _gj, _grot) == null;
             _ghostMat.SetColor("_Color", ok ? new Color(0.4f, 1f, 0.35f, 0.4f) : new Color(1f, 0.3f, 0.25f, 0.4f));
             _ghostMat.SetFloat("_MinY", pos.y);
             _ghostMat.SetFloat("_Height", 3);
@@ -166,7 +166,7 @@ namespace LastTide.Game
         void ConfirmGhost()
         {
             var s = G.Session;
-            var why = s.PlaceBlocked(_ghostId, _gi, _gj, _grot);
+            var why = s.PlaceBlocked(_ghostId, _gi, _gj, _grot) ?? CampGrid.InTheWay(_ghostId, _gi, _gj, _grot);
             if (why != null) { Toast(why); Sfx.Play("error"); return; }
             if (s.Place(_ghostId, _gi, _gj, _grot) != null)
             {
