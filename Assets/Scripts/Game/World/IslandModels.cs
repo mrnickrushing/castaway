@@ -347,7 +347,7 @@ namespace LastTide.Game
         static GameObject ScanNode(string kind, Transform parent, float h0)
         {
             string need = kind == "oldnet" ? "fishnet" : kind == "hull" ? "planks" : "cannon_01";
-            if (!Has(need)) return null;
+            if (!Has(need) && !(kind == "hull" && Materials.Planks != null)) return null;
             var holder = new GameObject("Model");
             holder.transform.SetParent(parent, false);
             float yaw = h0 * 360;
@@ -362,13 +362,48 @@ namespace LastTide.Game
             }
             else if (kind == "hull")
             {
-                // A stretch of planking still on two ribs, leaning; a loose board fallen beside it.
-                Put("planks", holder.transform, new Vector3(0, 0.28f, 0), yaw, 1.25f, Quaternion.Euler(0, 0, 24));
-                Put("planks", holder.transform, new Vector3(1.0f, 0.0f, 0.5f), yaw + 70, 0.6f);
+                // A stretch of the Gull's side lying where the sea left it: three curved ribs, the strakes still nailed
+                // to them (a few broken short, one gone), a loose board fallen beside it.
+                if (Materials.Planks != null)
+                {
+                    var pm = new PieceModels.PlankMesh();
+                    var turn = Matrix4x4.Rotate(Quaternion.Euler(0, yaw, 0));
+                    const float R = 1.5f;
+                    System.Func<float, Vector3> arc = a => new Vector3(-0.9f + R - Mathf.Cos(a) * R, Mathf.Sin(a) * R, 0);
+                    foreach (float z in new[] { -0.85f, 0f, 0.85f })
+                        for (int k = 0; k < 6; k++)
+                        {
+                            float a0 = k * 0.21f, a1 = (k + 1) * 0.21f, am = (a0 + a1) / 2;
+                            var mid = (arc(a0) + arc(a1)) / 2 + new Vector3(0.09f * Mathf.Cos(am), -0.09f * Mathf.Sin(am), z);
+                            pm.Pose = turn * Matrix4x4.TRS(mid, Quaternion.Euler(0, 0, 90 - am * Mathf.Rad2Deg), Vector3.one);
+                            pm.Box(Vector3.zero, new Vector3((arc(a1) - arc(a0)).magnitude + 0.04f, 0.13f, 0.14f), 0, z + k * 0.13f);
+                        }
+                    for (int k = 0; k < 6; k++)
+                    {
+                        if (k == 4) continue;   // one strake gone
+                        float am = (k + 0.5f) * 0.21f;
+                        float len = k == 5 ? 1.3f : k == 2 ? 1.7f : 2.2f, off = k == 5 ? -0.35f : k == 2 ? 0.2f : 0;
+                        pm.Pose = turn * Matrix4x4.TRS(arc(am) + new Vector3(0, 0, off), Quaternion.Euler(0, 0, 90 - am * Mathf.Rad2Deg), Vector3.one);
+                        pm.Box(Vector3.zero, new Vector3(0.3f, 0.05f, len), 2, k * 0.23f);
+                    }
+                    pm.Pose = turn * Matrix4x4.TRS(new Vector3(1.0f, 0.03f, 0.45f), Quaternion.Euler(0, 62, 3), Vector3.one);
+                    pm.Box(Vector3.zero, new Vector3(0.3f, 0.05f, 1.3f), 2, 0.6f);
+                    pm.ToObject("Planking", holder.transform);
+                }
+                else
+                {
+                    Put("planks", holder.transform, new Vector3(0, 0.28f, 0), yaw, 1.25f, Quaternion.Euler(0, 0, 24));
+                    Put("planks", holder.transform, new Vector3(1.0f, 0.0f, 0.5f), yaw + 70, 0.6f);
+                }
+                // The trenails that held it, and a brass-headed bolt or two.
                 mb.Push().RotateY(yaw);
-                mb.Mat(0.2f);
-                foreach (float z in new[] { -0.6f, 0.55f })
-                    mb.Cylinder(new Vector3(-0.85f, 0.0f, z), new Vector3(0.75f, 1.0f, z * 0.9f), 0.1f, 0.075f, 7, Oak);
+                mb.Mat(0.4f, 0.8f);
+                for (int k = 0; k < 4; k++)
+                    foreach (float z in new[] { -0.85f, 0.85f })
+                    {
+                        float am = (k + 0.5f) * 0.21f;
+                        mb.Sphere(new Vector3(-0.9f + 1.5f - Mathf.Cos(am) * 1.5f - 0.03f * Mathf.Cos(am), Mathf.Sin(am) * 1.5f + 0.03f * Mathf.Sin(am), z), Vector3.one * 0.03f, 5, Band);
+                    }
                 mb.Pop();
             }
             else
@@ -389,11 +424,78 @@ namespace LastTide.Game
             return holder;
         }
 
+        static Material _tar;
+
+        /// <summary>Improvement pictures put together from the plank texture, the ship's sailcloth and driftwood:
+        /// the limewashed lean-to, the fish weir, the brass-rigged sail. Null without those materials.</summary>
+        static GameObject BuiltIcon(string id)
+        {
+            if (id != "perk_limewash" && id != "perk_weir" && id != "perk_sail") return null;
+            if (Materials.Planks == null || ModelRegistry.SailMaterial == null) return null;
+            var holder = new GameObject(id);
+            var t = holder.transform;
+            var mb = new MeshBuilder();
+            var cloth = new Vector4(0.42f, 0.64f, 0.94f, 0.97f);
+            if (id == "perk_limewash")
+            {
+                // A little lean-to with whitewashed plank walls under a sailcloth roof, the lime bucket by the door.
+                var pm = new PieceModels.PlankMesh();
+                pm.Box(new Vector3(0, 0.32f, 0.32f), new Vector3(1.1f, 0.64f, 0.07f), 1);
+                foreach (float x in new[] { -0.55f, 0.55f }) pm.Box(new Vector3(x, 0.32f, 0), new Vector3(0.07f, 0.64f, 0.7f), 1, x);
+                pm.ToObject("Walls", t, Materials.Whitewash);
+                Models.SailSheet(t, (u, w) => new Vector3((u - 0.5f) * 1.4f, Mathf.Lerp(0.8f, 0.62f, w) - Mathf.Sin(u * Mathf.PI) * 0.03f, Mathf.Lerp(0.48f, -0.52f, w)), cloth, new Color(0.9f, 0.82f, 0.62f));
+                if (Has("wooden_bucket_01")) Put("wooden_bucket_01", t, new Vector3(0.25f, 0, -0.5f), 30, 0.42f);
+                mb.Mat(0.15f);
+                mb.Sphere(new Vector3(0.25f, 0.17f, -0.5f), new Vector3(0.09f, 0.03f, 0.09f), 8, Chalk);
+            }
+            else if (id == "perk_weir")
+            {
+                // A horseshoe of driftwood stakes with cord woven between them, a fish caught inside.
+                for (int i = 0; i < 9; i++)
+                {
+                    float a = Mathf.Lerp(-100, 100, i / 8f) * Mathf.Deg2Rad;
+                    var p = new Vector3(Mathf.Sin(a) * 0.62f, 0, Mathf.Cos(a) * 0.62f - 0.15f);
+                    Models.Pole(t, p + Vector3.down * 0.05f, p + new Vector3(Mathf.Sin(a) * 0.04f, 0.75f + (i % 3) * 0.06f, Mathf.Cos(a) * 0.04f));
+                }
+                mb.Mat(0.15f);
+                foreach (float y in new[] { 0.22f, 0.36f, 0.5f })
+                    for (int i = 0; i < 8; i++)
+                    {
+                        float a0 = Mathf.Lerp(-100, 100, i / 8f) * Mathf.Deg2Rad, a1 = Mathf.Lerp(-100, 100, (i + 1) / 8f) * Mathf.Deg2Rad;
+                        float r0 = 0.62f + ((i + (int)(y * 10)) % 2 == 0 ? 0.03f : -0.03f), r1 = 0.62f + ((i + 1 + (int)(y * 10)) % 2 == 0 ? 0.03f : -0.03f);
+                        mb.Cylinder(new Vector3(Mathf.Sin(a0) * r0, y, Mathf.Cos(a0) * r0 - 0.15f), new Vector3(Mathf.Sin(a1) * r1, y, Mathf.Cos(a1) * r1 - 0.15f), 0.022f, 5, Palette.Hex(0x4A4234), false);
+                    }
+                mb.Mat(0.6f, 0.4f);
+                mb.Sphere(new Vector3(0.05f, 0.07f, 0.1f), new Vector3(0.26f, 0.07f, 0.09f), 8, Palette.Hex(0x8FA4AE));
+                mb.Tri(new Vector3(0.3f, 0.07f, 0.1f), new Vector3(0.42f, 0.14f, 0.1f), new Vector3(0.42f, 0.0f, 0.1f), Palette.Hex(0x7A8E98));
+                mb.Tri(new Vector3(0.3f, 0.07f, 0.1f), new Vector3(0.42f, 0.0f, 0.1f), new Vector3(0.42f, 0.14f, 0.1f), Palette.Hex(0x7A8E98));
+            }
+            else
+            {
+                // The raft's mast and yard with a square of the Gull's sail, brass blocks at the corners.
+                Models.Pole(t, new Vector3(0, -0.05f, 0), new Vector3(0, 1.55f, 0));
+                Models.Pole(t, new Vector3(-0.62f, 1.32f, 0.03f), new Vector3(0.62f, 1.36f, 0.03f));
+                Models.SailSheet(t, (u, w) => new Vector3((u - 0.5f) * 1.15f, Mathf.Lerp(1.3f, 0.3f, w), 0.06f + Mathf.Sin(w * Mathf.PI) * 0.16f * (0.6f + 0.4f * Mathf.Sin(u * Mathf.PI))), cloth);
+                mb.Mat(0.6f, 0.9f);
+                foreach (float x in new[] { -0.58f, 0.58f })
+                {
+                    mb.Cylinder(new Vector3(x, 1.26f, 0.0f), new Vector3(x, 1.26f, 0.08f), 0.075f, 10, Brass);
+                    mb.Cylinder(new Vector3(x * 0.98f, 0.3f, 0.02f), new Vector3(x * 0.98f, 0.3f, 0.1f), 0.065f, 10, Brass);
+                }
+                mb.Sphere(new Vector3(0, 1.57f, 0), Vector3.one * 0.06f, 8, Brass);
+            }
+            if (mb.VertexCount > 0) mb.ToObject("Extra", t).GetComponent<MeshRenderer>().sharedMaterial = Materials.Kit;
+            return holder;
+        }
+
         /// <summary>An item's picture built from scans (the clay honey pot, the oil jug, the salt in its bowl...),
         /// or null when it has none or the scans aren't there (<see cref="Icon"/> is used then).</summary>
         public static GameObject IconArt(string id)
         {
+            var built = BuiltIcon(id);
+            if (built != null) return built;
             string scan = id == "honey" ? "ceramic_pot" : id == "ship_timber" ? "planks" : id == "lime" ? "wooden_bucket_01"
+                : id == "net_cord" ? "ropecoil" : id == "brass" ? "portholes_f"
                 : id == "lamp_oil" ? "wine_barrel_01" : id == "sea_salt" ? "wooden_bowl_02"
                 : id == "perk_larder" ? "WoodenTable_03" : id == "perk_chest" ? "treasure_chest"
                 : id == "perk_lamp" ? "wooden_lantern_01" : id == "perk_salt" ? "wine_barrel_01" : null;
@@ -429,6 +531,21 @@ namespace LastTide.Game
                 case "sea_salt": case "perk_salt":
                     mb.Mat(0.5f);
                     mb.Sphere(new Vector3(top.x, top.y - (id == "sea_salt" ? 0.04f : 0.03f), top.z), new Vector3(rad * (id == "sea_salt" ? 0.78f : 0.7f), id == "sea_salt" ? 0.07f : 0.1f, rad * (id == "sea_salt" ? 0.78f : 0.7f)), 10, Salt);
+                    break;
+                case "net_cord":
+                {
+                    // Tarred: the scanned coil darkened (its own material, so other rope keeps its colour).
+                    foreach (var r in b.GetComponentsInChildren<Renderer>())
+                    {
+                        if (_tar == null) { _tar = new Material(r.sharedMaterial) { name = "Tarred cord" }; _tar.SetColor("_BaseColor", new Color(0.5f, 0.44f, 0.36f)); }
+                        r.sharedMaterial = _tar;
+                    }
+                    mb.Mat(0.35f);
+                    mb.Sphere(new Vector3(top.x + rad * 1.1f, 0.07f, top.z + rad * 0.5f), Vector3.one * 0.13f, 8, Float);   // a cork float still tied on
+                    break;
+                }
+                case "brass":
+                    if (Has("portholes_e")) Put("portholes_e", holder.transform, new Vector3(top.x + size.x * 0.62f, 0, top.z + size.z * 0.3f), 140, 0.7f);
                     break;
                 case "perk_larder":
                     // Honey pots lined up on the camp table.

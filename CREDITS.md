@@ -39,5 +39,7 @@ Re-download and convert the free models with `python3 Tools/art/free_assets.py f
 - "Burlap Sack" by clockworkcreations (https://sketchfab.com/3d-models/e3b01fcc08e745758e65b1a997d52bf2), CC BY 4.0. Used as the sailors' bags; rescaled, maps repacked.
 - "Military Radio" by ivan.rybalkin (https://sketchfab.com/3d-models/8307bd59dabe42a78a2ae08fca038a00), CC BY 4.0. Used as the ship's radio at camp; rescaled, maps repacked.
 - "Furnace" by kosmotron (https://sketchfab.com/3d-models/64f344213c084424ba438875e62bd452), CC BY 4.0. Used as the furnace you build at camp; rescaled, maps repacked.
+- "Vintage Ship Portholes Type A" by Mad_Lobster_Workshop (https://sketchfab.com/3d-models/133379af65b94c6589e451366f8ff821), CC BY 4.0. Used as the brass fittings; rescaled, maps repacked.
+- "Coiled Rope 2" by TepidGames (https://sketchfab.com/3d-models/e6fe8fedd3d04b1dac3e32e0dd515cbb), CC BY 4.0. Used as the net cord; rescaled, maps repacked.
 
 - Universal Animation Library by Quaternius (https://quaternius.com), CC0. Every character's moves.
