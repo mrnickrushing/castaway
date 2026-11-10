@@ -92,7 +92,8 @@ namespace LastTide.Game
 
         public static GameObject Create(string id, Transform parent, bool lit = true)
         {
-            GameObject kit = null;
+            GameObject kit = ScanPiece(id, parent);   // photoscans first, then the free kit, then built in code
+            if (kit != null) return kit;
             switch (id)
             {
                 case "small_box": kit = Kit("box", parent, 1.1f); break;
@@ -214,6 +215,31 @@ namespace LastTide.Game
                 default: return null;
             }
             return mb.ToObject(id, parent);
+        }
+
+        /// <summary>Pieces made of free scans: the crate and the chest for storage, the forge, the table and the chair.</summary>
+        static GameObject ScanPiece(string id, Transform parent)
+        {
+            string scan = id == "small_box" ? "wooden_crate_01" : id == "storage_chest" ? "treasure_chest" : id == "furnace" ? "forge"
+                : id == "table" ? "WoodenTable_03" : id == "chair" ? "painted_wooden_chair_02" : null;
+            if (scan == null || ModelRegistry.Prefab(ModelRegistry.Scan, scan) == null) return null;
+            var holder = new GameObject(id);
+            if (parent != null) holder.transform.SetParent(parent, false);
+            var go = ModelRegistry.Spawn(ModelRegistry.Scan, scan, holder.transform);
+            float scale = id == "small_box" ? 0.85f : id == "storage_chest" ? 1.1f : id == "table" ? 0.85f : 1f;
+            go.transform.localScale *= scale;
+            // Stood on the ground, centred on its cell.
+            var b = ModelRegistry.RendererBounds(go);
+            go.transform.position += holder.transform.position - new Vector3(b.center.x, b.min.y, b.center.z);
+            if (id == "table")
+            {
+                // A coconut-shell cup on it, as before.
+                var mb = new MeshBuilder();
+                float top = ModelRegistry.RendererBounds(go).max.y - holder.transform.position.y;
+                mb.Cylinder(new Vector3(0.3f, top, 0), new Vector3(0.3f, top + 0.1f, 0), 0.1f, 8, Tropic.Coconut);
+                mb.ToObject("Cup", holder.transform).GetComponent<MeshRenderer>().sharedMaterial = Materials.Kit;
+            }
+            return holder;
         }
 
         static GameObject Kit(string art, Transform parent, float scale)

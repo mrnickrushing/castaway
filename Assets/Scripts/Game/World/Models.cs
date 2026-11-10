@@ -756,11 +756,133 @@ namespace LastTide.Game
                     Scan("wooden_crate_02", t, new Vector3(-1.9f, 0, -0.6f), 70, 0.7f);
                     break;
                 }
+                case "chest":
+                {
+                    // The Gull's sea chest, a water cask and a crate of what was saved with it.
+                    if (Scan("treasure_chest", t, Vector3.zero, 0, 1.05f) == null) { Object.Destroy(holder); return null; }
+                    Scan("wine_barrel_01", t, new Vector3(1.25f, 0, 0.25f), 40, 0.85f);
+                    Scan("wooden_crate_02", t, new Vector3(-1.2f, 0, 0.35f), -20, 0.6f);
+                    break;
+                }
+                case "raincatcher":
+                {
+                    // Four driftwood poles, a square of the Gull's sail sagging to its middle, a cask under the drip.
+                    var shipSail = ModelRegistry.SailMaterial;
+                    if (shipSail == null || ModelRegistry.Prefab(ModelRegistry.Scan, "wine_barrel_01") == null) { Object.Destroy(holder); return null; }
+                    var sail = new Material(shipSail) { name = "Rain sail" };
+                    sail.SetFloat("_Smoothness", 0.12f);
+                    sail.SetColor("_BaseColor", new Color(1.1f, 1.06f, 0.98f));
+                    const float r = 1.3f, high = 2.2f, low = 1.25f;
+                    foreach (var c in new[] { new Vector3(-r, 0, -r), new Vector3(r, 0, -r), new Vector3(r, 0, r), new Vector3(-r, 0, r) })
+                        Span(Scan("dry_branches_medium_01_b", t, Vector3.zero, 0), t, c + Vector3.down * 0.1f, c * 0.98f + Vector3.up * (high + 0.1f));
+                    Cloth(t, sail, SheetMesh((u, w) =>
+                    {
+                        float x = (u - 0.5f) * 2 * r, z = (w - 0.5f) * 2 * r;
+                        float edge = Mathf.Max(Mathf.Abs(x), Mathf.Abs(z)) / r;            // 0 in the middle, 1 at the hem
+                        return new Vector3(x, Mathf.Lerp(low, high, Mathf.Pow(edge, 1.4f)) + Mathf.Sin(u * 11 + w * 7) * 0.02f, z);
+                    }, new Vector4(0.42f, 0.64f, 0.94f, 0.97f)));
+                    var cask = Scan("wine_barrel_01", t, Vector3.zero, 25, 1f);
+                    float top = ModelRegistry.RendererBounds(cask).max.y - t.position.y;
+                    var water = new MeshBuilder();
+                    water.Mat(0.92f);
+                    water.Cylinder(new Vector3(0, top - 0.06f, 0), new Vector3(0, top - 0.03f, 0), 0.3f, 0.3f, 12, Palette.Hex(0x3C8F9C));
+                    water.ToObject("Water", t).GetComponent<MeshRenderer>().sharedMaterial = Materials.Kit;
+                    Scan("wooden_bucket_01", t, new Vector3(0.95f, 0, 0.75f), 60, 0.8f);
+                    break;
+                }
+                case "radio":
+                {
+                    // The ship's radio set on a crate, its aerial wire run up a driftwood mast (no roof: it would hide the set from the camera).
+                    if (ModelRegistry.Prefab(ModelRegistry.Scan, "radioset") == null) { Object.Destroy(holder); return null; }
+                    var crate = Scan("wooden_crate_01", t, Vector3.zero, 8, 1f);
+                    float top = ModelRegistry.RendererBounds(crate).max.y - t.position.y;
+                    var set = Scan("radioset", t, new Vector3(0, top, 0), 180, 1.25f);
+                    set.transform.position += Vector3.up * (t.position.y + top - ModelRegistry.RendererBounds(set).min.y);
+                    float setTop = ModelRegistry.RendererBounds(set).max.y - t.position.y;
+                    Span(Scan("dry_branches_medium_01_b", t, Vector3.zero, 0), t, new Vector3(0.95f, -0.1f, 0.45f), new Vector3(0.95f, 4.4f, 0.45f));
+                    var wire = new MeshBuilder();
+                    wire.Mat(0.4f, 0.6f);
+                    wire.Cylinder(new Vector3(0.95f, 4.35f, 0.45f), new Vector3(0.2f, setTop, 0.1f), 0.012f, 3, Tropic.Iron, false);
+                    wire.ToObject("Aerial", t).GetComponent<MeshRenderer>().sharedMaterial = Materials.Kit;
+                    Scan("wooden_lantern_01", t, new Vector3(-0.9f, 0, -0.5f), 30, 0.8f);
+                    break;
+                }
                 default:
                     Object.Destroy(holder);
                     return null;
             }
             return holder;
+        }
+
+        /// <summary>A sheet of sailcloth over any surface: <paramref name="at"/> maps (u, w) in 0..1 to a local point.</summary>
+        static Mesh SheetMesh(System.Func<float, float, Vector3> at, Vector4 uvRect)
+        {
+            const int n = 10;
+            var v = new List<Vector3>(); var uv = new List<Vector2>(); var tri = new List<int>();
+            for (int j = 0; j <= n; j++)
+                for (int i = 0; i <= n; i++)
+                {
+                    float u = i / (float)n, w = j / (float)n;
+                    v.Add(at(u, w));
+                    uv.Add(new Vector2(Mathf.Lerp(uvRect.x, uvRect.z, u), Mathf.Lerp(uvRect.w, uvRect.y, w)));
+                }
+            for (int j = 0; j < n; j++)
+                for (int i = 0; i < n; i++)
+                {
+                    int a = j * (n + 1) + i, b = a + 1, c = a + n + 1, d = c + 1;
+                    tri.AddRange(new[] { a, c, b, b, c, d });
+                }
+            var m = new Mesh { name = "Sheet" };
+            m.SetVertices(v); m.SetUVs(0, uv); m.SetTriangles(tri, 0);
+            m.RecalculateNormals(); m.RecalculateTangents(); m.RecalculateBounds();
+            if (m.normals[(n + 1) * (n / 2) + n / 2].y < 0) { tri.Reverse(); m.SetTriangles(tri, 0); m.RecalculateNormals(); m.RecalculateTangents(); }  // face up
+            return m;
+        }
+
+        /// <summary>
+        /// The spring and the tide pools from scans: a ring of mossy stones round real water (the sea's shader over a
+        /// dark bed, so it refracts and glints) instead of a flat blue disc. Null without the scans.
+        /// </summary>
+        public static GameObject ScanPool(string kind, Transform parent, float h0)
+        {
+            if (ModelRegistry.Prefab(ModelRegistry.Scan, "rock_moss_set_01_a") == null) return null;
+            bool spring = kind == "spring";
+            float r = spring ? 1.5f : 1.15f;
+            var holder = new GameObject("Model");
+            holder.transform.SetParent(parent, false);
+            var t = holder.transform;
+            string[] stones = { "rock_moss_set_01_a", "rock_moss_set_01_b", "rock_moss_set_01_c", "rock_moss_set_01_d", "rock_moss_set_01_e", "rock_moss_set_01_f", "stone_01" };
+            int count = spring ? 12 : 9;
+            for (int i = 0; i < count; i++)
+            {
+                float a = (i + Hash(h0 * 9, i) * 0.4f) / count * Mathf.PI * 2, rr = r * (1.0f + Hash(h0 * 5, i + 3) * 0.14f);
+                Scan(stones[(i + (int)(h0 * 7)) % stones.Length], t, new Vector3(Mathf.Cos(a) * rr, -0.08f, Mathf.Sin(a) * rr), i * 67 + h0 * 360, 0.3f + Hash(h0 * 3, i + 9) * 0.16f);
+            }
+            // The bed, then the water a hand above it.
+            var bed = new MeshBuilder();
+            bed.Mat(0.2f);
+            bed.Cylinder(new Vector3(0, -0.02f, 0), new Vector3(0, 0.03f, 0), r * 1.02f, r * 1.02f, 16, spring ? Palette.Hex(0x2E4A44) : Palette.Hex(0x4A4638));
+            if (!spring) { bed.Mat(0.3f); bed.Sphere(new Vector3(0.45f, 0.2f, 0.3f), new Vector3(0.16f, 0.07f, 0.13f), 6, Palette.Hex(0xC4502E)); }   // a crab in the shallows
+            bed.ToObject("Bed", t).GetComponent<MeshRenderer>().sharedMaterial = Materials.Kit;
+            var water = new GameObject("Water");
+            water.transform.SetParent(t, false);
+            water.AddComponent<MeshFilter>().sharedMesh = DiscMesh(r, 0.17f);
+            var mr = water.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = Materials.Water;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return holder;
+        }
+
+        static Mesh DiscMesh(float r, float y)
+        {
+            const int n = 20;
+            var v = new List<Vector3> { new Vector3(0, y, 0) }; var col = new List<Color> { new Color(0.5f, 0.5f, 0.5f, 1) }; var tri = new List<int>();
+            for (int i = 0; i < n; i++) { float a = i / (float)n * Mathf.PI * 2; v.Add(new Vector3(Mathf.Cos(a) * r, y, Mathf.Sin(a) * r)); col.Add(new Color(0.5f, 0.5f, 0.5f, 1)); }
+            for (int i = 0; i < n; i++) tri.AddRange(new[] { 0, 1 + (i + 1) % n, 1 + i });
+            var m = new Mesh { name = "Pool" };
+            m.SetVertices(v); m.SetColors(col); m.SetTriangles(tri, 0);
+            m.RecalculateNormals(); m.RecalculateBounds();
+            return m;
         }
 
         // ------------------------------------------------------------------ photoscanned landmarks

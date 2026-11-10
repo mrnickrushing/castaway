@@ -146,6 +146,7 @@ namespace LastTide.Game
                     return hs;
                 }
             }
+            if (kind == "spring" || kind == "tidepool") { var pool = Models.ScanPool(kind, parent, h0); if (pool != null) return pool; }
             var island = IslandModels.Art(kind, parent, h0);
             if (island != null) return island;
             string free = kind == "crate" ? "crate" : kind == "barrel" ? "barrel" : kind == "treasure" ? "chest"
@@ -846,14 +847,26 @@ namespace LastTide.Game
             var s = go.AddComponent<LootSpot>();
             s.Key = key;
             var mb = new MeshBuilder();
-            // A canvas sea bag lying on its side, its rope loose, a few things spilled.
             mb.Surf = SurfaceKind.None;
-            mb.Sphere(new Vector3(0, 0.3f, 0), new Vector3(0.45f, 0.32f, 0.7f), 10, Palette.Hex(0xB8AA88));
-            mb.Cylinder(new Vector3(0, 0.3f, 0.62f), new Vector3(0, 0.3f, 0.82f), 0.16f, 0.08f, 8, Palette.Hex(0xA09070));
-            mb.Cylinder(new Vector3(0.05f, 0.32f, 0.78f), new Vector3(0.5f, 0.05f, 1.2f), 0.03f, 4, Tropic.Rope, false);
-            mb.Box(new Vector3(0.6f, 0.06f, 0.9f), new Vector3(0.3f, 0.1f, 0.2f), Palette.WoodPale);
-            mb.Cylinder(new Vector3(-0.5f, 0.05f, 0.8f), new Vector3(-0.5f, 0.3f, 0.8f), 0.07f, 6, Palette.Hex(0x2E6A3A));
+            bool scan = ModelRegistry.Prefab(ModelRegistry.Scan, "sack") != null;
+            if (!scan)
+            {
+                // A canvas sea bag lying on its side, its rope loose.
+                mb.Sphere(new Vector3(0, 0.3f, 0), new Vector3(0.45f, 0.32f, 0.7f), 10, Palette.Hex(0xB8AA88));
+                mb.Cylinder(new Vector3(0, 0.3f, 0.62f), new Vector3(0, 0.3f, 0.82f), 0.16f, 0.08f, 8, Palette.Hex(0xA09070));
+            }
+            // A few things spilled beside it.
+            mb.Cylinder(new Vector3(0.05f, 0.05f, 0.5f), new Vector3(0.5f, 0.03f, 0.95f), 0.03f, 4, Tropic.Rope, false);
+            mb.Box(new Vector3(0.6f, 0.06f, 0.6f), new Vector3(0.3f, 0.1f, 0.2f), Palette.WoodPale);
+            mb.Cylinder(new Vector3(-0.5f, 0.05f, 0.55f), new Vector3(-0.5f, 0.3f, 0.55f), 0.07f, 6, Palette.Hex(0x2E6A3A));
             s._model = mb.ToObject("Bag", go.transform);
+            if (scan)
+            {
+                // The scanned burlap sack, slumped a little.
+                var sack = ModelRegistry.Spawn(ModelRegistry.Scan, "sack", s._model.transform);
+                sack.transform.localRotation = Quaternion.Euler(8, 0, -6) * sack.transform.localRotation;
+                sack.transform.localScale *= 1.2f;
+            }
             s.MakeRing(1.6f);
             return s;
         }
