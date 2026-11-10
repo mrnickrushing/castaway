@@ -837,7 +837,10 @@ namespace LastTide.Game
             go.transform.position = pos;
             var s = go.AddComponent<PetSpot>();
             s._art = CharacterArt.TryCreate("shiba", go.transform);
-            s.MakeRing(1.8f);
+            // Sized like the Biscuit who follows you (the free model comes in at 3.6 m tall).
+            var def = Season.Pet("biscuit");
+            if (s._art != null) Pet.FitHeight(s._art.gameObject, def != null ? def.Height : 0.55f);
+            s.MakeRing(1.6f);
             return s;
         }
 
