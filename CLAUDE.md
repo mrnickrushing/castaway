@@ -71,6 +71,10 @@ setting only.
 - Far detail: any model with an `<id>_far` next to it (Scan or Trees category) gets a LODGroup in `ModelRegistry.Spawn`
   (full detail above 0.6 of screen height; `GameRoot` sets lodBias 1). `island_tree_02_far` (6k tris, shares the near
   tree's textures through its JSON slot names) and `Trees/palm_far` keep every island near 1.2M tris (was ~1.95M).
+- Phone performance (`App/FrameBudget.cs`, device only): the 3D view renders at most ~2000 px across (URP
+  `renderScale`) and drops 0.05 at a time to 0.6 while frames run long, back up after 20 steady seconds; Settings'
+  Battery saver runs at 30 fps (PlayerPrefs `lt_battery_saver`, per device). SSAO is half resolution. Measured
+  2026-11-10: home ~0.9M tris / 321 batches, the other islands 0.27-0.51M.
 - Look: ACES tonemapping, HDRI reflections (`Resources/Sky`), SSAO (radius 0.4), shadows to 50 m; the sea refracts
   the opaque texture with depth absorption and caustics (`Water.shader`, needs URP opaque + depth textures). Never add
   a negative lift to the grading: it crushes the night to black.
