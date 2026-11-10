@@ -44,7 +44,7 @@ namespace LastTide.Core
             Q("cook", "Roast meat on the campfire", s => s.Flag("cooked"), build: "campfire"),
             Q("rain", "Build a rain catcher", s => s.Built("raincatcher"), build: "raincatcher", reward: new[] { Content.I("water", 2) }),
             Q("chest", "Build a sea chest for your supplies", s => s.Built("chest"), build: "chest"),
-            Q("map", "Open the map and run to Palm Grove", s => s.Flag("visited_grove"), node: "exit", reward: new[] { Content.I("doubloon", 10) }),
+            Q("map", "Open the map and sail to Palm Grove", s => s.Flag("visited_grove"), node: "exit", reward: new[] { Content.I("doubloon", 10) }),
             Q("level3", "Gather, build and hunt to reach level 3", s => s.State.level >= 3),
             Q("dog", "Find the Gull's dog on Driftwood Shore", s => s.FoundBiscuit, node: "pet"),
             Q("radio", "Rebuild the ship's radio at camp", s => s.Built("radio"), build: "radio", reward: new[] { Content.I("doubloon", 10) }),

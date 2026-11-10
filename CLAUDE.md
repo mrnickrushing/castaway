@@ -14,7 +14,7 @@ setting only.
   `Resources/Models/<Category>/<id>`), `Actors/` (castaway rig and controls, boars), `UI/Hud*` (joystick, meters,
   guide card, labels over rings, backpack, crafting, chest).
 - The wider game (`Core/World.cs` content, `Core/Session.World.cs` rules): levels and XP, energy that refills in real
-  time (`World.EnergyMax`, `EnergyEvery`), doubloons, eight locations on the archipelago map (run for energy or walk
+  time (`World.EnergyMax`, `EnergyEvery`), doubloons, eight locations on the archipelago map (SAIL fast for energy or PADDLE
   for free in real time; level gates; loot grows back `Refresh` seconds after leaving), radio distress calls that send
   the castaway to rescue a survivor at a location (`SignalDef`), and the trading post (`OfferDef`, doubloons only, no
   real-money purchases yet). Locations are their own islands: `Island.Configure(location)` reshapes the height

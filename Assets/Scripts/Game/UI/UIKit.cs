@@ -130,6 +130,14 @@ namespace LastTide.Game
                 case "run":
                     f = (u, v) => Mathf.Max(Mathf.Max(Disc(u, v, 0.62f, 0.82f, 0.1f), Capsule(u, v, 0.55f, 0.66f, 0.42f, 0.4f, 0.07f)), Mathf.Max(Mathf.Max(Capsule(u, v, 0.42f, 0.4f, 0.62f, 0.18f, 0.06f), Capsule(u, v, 0.42f, 0.4f, 0.2f, 0.25f, 0.06f)), Mathf.Max(Capsule(u, v, 0.54f, 0.62f, 0.78f, 0.52f, 0.05f), Capsule(u, v, 0.54f, 0.62f, 0.32f, 0.6f, 0.05f))));
                     break;
+                case "sail": // a boat under a sail
+                    f = (u, v) => Mathf.Max(Mathf.Max(Poly(u, v, new[] { new Vector2(0.06f, 0.3f), new Vector2(0.94f, 0.3f), new Vector2(0.76f, 0.1f), new Vector2(0.24f, 0.1f) }),
+                        Capsule(u, v, 0.48f, 0.32f, 0.48f, 0.94f, 0.03f)),
+                        Mathf.Max(Poly(u, v, new[] { new Vector2(0.53f, 0.92f), new Vector2(0.53f, 0.38f), new Vector2(0.88f, 0.38f) }), Poly(u, v, new[] { new Vector2(0.43f, 0.82f), new Vector2(0.43f, 0.38f), new Vector2(0.16f, 0.38f) })));
+                    break;
+                case "paddle": // an oar, blade down
+                    f = (u, v) => Mathf.Max(Mathf.Max(Capsule(u, v, 0.8f, 0.94f, 0.42f, 0.4f, 0.04f), Capsule(u, v, 0.4f, 0.37f, 0.25f, 0.13f, 0.11f)), Capsule(u, v, 0.76f, 0.9f, 0.84f, 0.98f, 0.055f));
+                    break;
                 case "walk":
                     f = (u, v) => Mathf.Max(Mathf.Max(Disc(u, v, 0.52f, 0.84f, 0.1f), Capsule(u, v, 0.5f, 0.68f, 0.48f, 0.4f, 0.075f)), Mathf.Max(Mathf.Max(Capsule(u, v, 0.48f, 0.4f, 0.58f, 0.06f, 0.06f), Capsule(u, v, 0.48f, 0.4f, 0.4f, 0.06f, 0.06f)), Mathf.Max(Capsule(u, v, 0.5f, 0.64f, 0.62f, 0.44f, 0.05f), Capsule(u, v, 0.5f, 0.64f, 0.38f, 0.46f, 0.05f))));
                     break;

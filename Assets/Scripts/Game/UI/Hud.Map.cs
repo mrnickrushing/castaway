@@ -226,8 +226,8 @@ namespace LastTide.Game
             else if (!s.Unlocked(l)) { }
             else if (travel == null)
             {
-                RoundButton(_runWalk, 0, "run", "RUN", s.RunCost(l) + " energy", Duration(s.RunSeconds(l)), () => Go(l, true), s.State.energy >= s.RunCost(l));
-                RoundButton(_runWalk, 1, "walk", "WALK", "free", Duration(s.WalkSeconds(l)), () => Go(l, false), true);
+                RoundButton(_runWalk, 0, "sail", "SAIL", s.RunCost(l) + " energy", Duration(s.RunSeconds(l)), () => Go(l, true), s.State.energy >= s.RunCost(l));
+                RoundButton(_runWalk, 1, "paddle", "PADDLE", "free", Duration(s.WalkSeconds(l)), () => Go(l, false), true);
             }
         }
 
@@ -367,7 +367,7 @@ namespace LastTide.Game
                 bool there = s.Arrived;
                 _bigButtonText.text = there ? "ENTER" : Clock(tr.arriveAt - s.RealNow());
                 _bigButtonText.color = there ? new Color(0.5f, 1f, 0.6f) : Color.white;
-                _bigButtonSub.text = there ? World.Location(tr.to).Name : (tr.arriveAt - tr.leftAt < 20 ? "Running..." : "Walking...");
+                _bigButtonSub.text = there ? World.Location(tr.to).Name : (tr.arriveAt - tr.leftAt < 20 ? "Sailing..." : "Paddling...");
                 _bigButtonRing.fillAmount = there ? 1 : s.TravelProgress;
                 _bigButtonRing.color = there ? new Color(0.4f, 0.9f, 0.5f) : new Color(0.3f, 0.75f, 0.7f);
                 _bigButton.localScale = Vector3.one * (there ? 1 + 0.05f * Mathf.Sin(UnityEngine.Time.time * 6) : 1);
