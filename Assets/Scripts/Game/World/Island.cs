@@ -28,7 +28,9 @@ namespace LastTide.Game
         public static readonly Vector3 Wreck = new Vector3(19, 0, -93);
         /// <summary>Where the castaway stands on arrival.</summary>
         public static Vector3 Start { get; private set; } = new Vector3(2, 0, -79);
-        static float _sx, _sz;
+        /// <summary>Where a location island's raft lies: at the water's edge below the landing.</summary>
+        public static Vector3 RaftAt { get; private set; }
+        static float _sx, _sz, _gx, _gz;
 
         /// <summary>Shapes the island for a location (call before building anything).</summary>
         public static void Configure(LocationDef l)
@@ -36,7 +38,7 @@ namespace LastTide.Game
             Location = l;
             if (l.Home)
             {
-                Radius = 105; Half = 170; Camp = new Vector3(0, 0, -58); CampRadius = 20; Start = new Vector3(2, 0, -79); _sx = _sz = 0;
+                Radius = 105; Half = 170; Camp = new Vector3(0, 0, -58); CampRadius = 20; Start = new Vector3(2, 0, -79); _sx = _sz = 0; _gx = _gz = 0;
                 return;
             }
             Radius = l.Size;
@@ -44,12 +46,22 @@ namespace LastTide.Game
             int h = l.Id.GetHashCode();
             _sx = (h & 0xFF) * 0.37f;
             _sz = ((h >> 8) & 0xFF) * 0.41f;
+            // Where the meadows, dry grass and sand edges fall: each island its own (they all drew the same patches).
+            // Kept off whole numbers, where Unity's Perlin goes flat.
+            _gx = ((h >> 16) & 0xFF) * 0.53f + 0.31f;
+            _gz = ((h >> 24) & 0x7F) * 0.47f + 0.17f;
             // The landing: on the south beach, where the sand starts.
             float z = -Radius * 0.4f;
             while (z > -Radius * 1.4f && Distance01(0, z) < 0.8f) z -= 0.5f;
             Camp = new Vector3(0, 0, z + 3);
             CampRadius = 8;
-            Start = new Vector3(0, 0, z + 1);
+            // Land a few metres above the waterline, the raft pulled up at the water's edge in view below (a little
+            // left, clear of the buttons on the right of the screen).
+            while (z > -Radius * 1.4f && Distance01(0, z) < 0.94f) z -= 0.5f;
+            Start = new Vector3(0, 0, z);
+            float rz = z;
+            while (rz > z - 20 && Height(-4, rz) > 0.35f) rz -= 0.25f;
+            RaftAt = new Vector3(-4, 0, rz + 0.5f);
         }
 
         /// <summary>The lighthouse, cave mouth or pirate camp on a location island.</summary>
@@ -235,13 +247,13 @@ namespace LastTide.Game
         {
             for (int i = 0; i < 6; i++) w[i] = 0;
             float d = Distance01(x, z);
-            float n = Mathf.PerlinNoise(x * 0.07f + 3, z * 0.07f + 9);
+            float n = Mathf.PerlinNoise(x * 0.07f + 3 + _gx, z * 0.07f + 9 + _gz);
             float sand = Mathf.Clamp01((d - 0.74f - n * 0.06f) / 0.06f);
             sand = Mathf.Max(sand, Mathf.Clamp01((1.3f - h) / 0.5f));
             float rock = Mathf.Clamp01((slope - 0.38f) / 0.22f);
             // Offsets off the noise lattice: at a whole-number input Unity's Perlin sits flat, which drew a straight
             // dry/green border down the middle of every island.
-            float dry = Mathf.Clamp01((Mathf.PerlinNoise(x * 0.017f + 50.37f, z * 0.019f + 13.71f) - 0.45f) * 3f);
+            float dry = Mathf.Clamp01((Mathf.PerlinNoise(x * 0.017f + 50.37f + _gz, z * 0.019f + 13.71f + _gx) - 0.45f) * 3f);
             float camp = Vector2.Distance(new Vector2(x, z), new Vector2(Camp.x, Camp.z));
             float dirt = Mathf.Clamp01((CampRadius * 0.75f - camp) / 6f) * (0.55f + 0.45f * n);
             float grass = 1 - sand;
