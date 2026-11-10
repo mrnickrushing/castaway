@@ -72,7 +72,12 @@ namespace LastTide.Game
 
             var s = G.Session;
             s.Toast += Toast;
-            s.Gained += (id, n) => { if (Player.Instance != null) Pop(id, n); };
+            s.Gained += (id, n) =>
+            {
+                if (Player.Instance != null) Pop(id, n);
+                // A camp improvement is for good: mark the moment (away from home, where its prop can't appear and sound).
+                if (Content.IsPerk(id) && !s.AtHome) Sfx.Play("built");
+            };
             s.QuestDone += q => { _questFlash = 1.6f; Sfx.Play("quest"); };
             s.Changed += () => _dirty = true;
             s.Died += PassOut;

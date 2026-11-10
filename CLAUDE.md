@@ -133,6 +133,8 @@ setting only.
   flag and the rules read `FoodScale`, `RegenScale`, `HungerScale`, `NightAggro`, `SailScale`, the weir's extra fish
   and the chest's `ChestBrace` slots). `WorldBuilder.PlanSpot` always draws its position so the island layout stays
   the same once the plan is taken. The map's island panel shows an "Own:" line; CRAFT has a Camp tab.
+  Built improvements stand at camp (`World/CampPerks.cs`: honey table and salt barrel by the fire, the signal lamp lit on
+  its post, the lime bucket by the shelter, the weir in the shallows off the raft), appearing with the build sound.
   Their models and icons use free scans where one fits (`IslandModels.ScanNode`, `IconArt`, `Put`): the Sketchfab skep
   (CC0), fishing net and planks (CC BY), Poly Haven's cannon, clay pot, bowl, wine barrel, lantern, chest and table;
   What the castaway holds (hatchet, pickaxe, hammer, spear, harpoon, cutlass, club) are scans stood upright in the
