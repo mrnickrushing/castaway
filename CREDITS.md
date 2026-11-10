@@ -41,5 +41,9 @@ Re-download and convert the free models with `python3 Tools/art/free_assets.py f
 - "Furnace" by kosmotron (https://sketchfab.com/3d-models/64f344213c084424ba438875e62bd452), CC BY 4.0. Used as the furnace you build at camp; rescaled, maps repacked.
 - "Vintage Ship Portholes Type A" by Mad_Lobster_Workshop (https://sketchfab.com/3d-models/133379af65b94c6589e451366f8ff821), CC BY 4.0. Used as the brass fittings; rescaled, maps repacked.
 - "Coiled Rope 2" by TepidGames (https://sketchfab.com/3d-models/e6fe8fedd3d04b1dac3e32e0dd515cbb), CC BY 4.0. Used as the net cord; rescaled, maps repacked.
+- "Medieval Pickaxe (game ready asset)" by apariciosilva3D (https://sketchfab.com/3d-models/0922b29670544ee2bf3968cfab3545e7), CC BY 4.0. Used as the pickaxe in the castaway's hands; rescaled, maps repacked.
+- "Spiked Club" by youssefdarwish01 (https://sketchfab.com/3d-models/801ac484f01e4f35b03602adb0077e26), CC BY 4.0. Used as the club; rescaled, maps repacked.
+- "Harpoon" by Sofi_EX (https://sketchfab.com/3d-models/1a423a25bc444c9eb2a104fbc6d5f280), CC BY 4.0. Used as the harpoon; rescaled, maps repacked.
+- "Medieval Spear" by iedalton (https://sketchfab.com/3d-models/f61070945153418fa11c4abae286b292), CC BY 4.0. Used as the spear; rescaled, maps repacked.
 
 - Universal Animation Library by Quaternius (https://quaternius.com), CC0. Every character's moves.

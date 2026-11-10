@@ -121,6 +121,15 @@ PROPS = {
                       role="the brass fittings", kind="prop", size=0.9, tris=3000),
     "ropecoil": dict(uid="e6fe8fedd3d04b1dac3e32e0dd515cbb", title="Coiled Rope 2", author="TepidGames",
                      role="the net cord", kind="prop", size=0.7, tris=2500),
+    # What the castaway holds (Actors/ArtRigs.Hold stands each upright in the hand by its shape).
+    "held_pickaxe": dict(uid="0922b29670544ee2bf3968cfab3545e7", title="Medieval Pickaxe (game ready asset)", author="apariciosilva3D",
+                         role="the pickaxe in the castaway's hands", kind="prop", size=0.8, tris=1500),
+    "held_club": dict(uid="801ac484f01e4f35b03602adb0077e26", title="Spiked Club", author="youssefdarwish01",
+                      role="the club", kind="prop", size=0.85, tris=2500),
+    "held_harpoon": dict(uid="1a423a25bc444c9eb2a104fbc6d5f280", title="Harpoon", author="Sofi_EX",
+                         role="the harpoon", kind="prop", size=1.9, tris=400),
+    "held_spear": dict(uid="f61070945153418fa11c4abae286b292", title="Medieval Spear", author="iedalton",
+                       role="the spear", kind="prop", size=1.85, tris=1500),
 }
 OTHER = dict(CREATURES, **PROPS)
 

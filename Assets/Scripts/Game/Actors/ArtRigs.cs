@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace LastTide.Game
@@ -93,6 +94,8 @@ namespace LastTide.Game
             if (_held != null) Destroy(_held);
             _held = null;
             if (string.IsNullOrEmpty(id)) return;
+            _held = HeldScan(id, transform.parent);   // scanned tools and weapons first
+            if (_held != null) return;
             string kit = id == "hatchet" ? "tool_axe" : id == "pickaxe" ? "tool_pickaxe" : id == "hammer" ? "tool_hammer" : null;
             if (kit != null && ModelRegistry.Has(ModelRegistry.Free, kit))
             {
@@ -107,6 +110,72 @@ namespace LastTide.Game
             var mb = Models.Held(id);
             if (mb.VertexCount == 0) return;
             _held = mb.ToObject("Held " + id, transform.parent);
+        }
+
+        /// <summary>
+        /// A scanned tool or weapon made ready for the hand: stood along +Y by its own shape (its longest side is the
+        /// handle, the wider end is the head and goes up), the head's weight turned toward +Z (an axe's bit, a blade's
+        /// edge), scaled to length, and set so the grip is at the origin. Null when there's no scan for it.
+        /// </summary>
+        static GameObject HeldScan(string id, Transform parent)
+        {
+            // scan, length (m), how far up from the butt the hand closes
+            string scan; float length, grip;
+            switch (id)
+            {
+                case "hatchet": case "iron_hatchet": scan = "wooden_axe"; length = 0.72f; grip = 0.12f; break;
+                case "pickaxe": case "iron_pickaxe": scan = "held_pickaxe"; length = 0.8f; grip = 0.12f; break;
+                case "hammer": scan = "wooden_hammer_01"; length = 0.42f; grip = 0.08f; break;
+                case "spear": scan = "held_spear"; length = 1.85f; grip = 0.45f; break;
+                case "harpoon": scan = "held_harpoon"; length = 1.9f; grip = 0.45f; break;
+                case "cutlass": scan = "wooden_handle_saber"; length = 0.95f; grip = 0.09f; break;
+                case "club": scan = "held_club"; length = 0.85f; grip = 0.12f; break;
+                default: return null;
+            }
+            if (ModelRegistry.Prefab(ModelRegistry.Scan, scan) == null) return null;
+            var held = new GameObject("Held " + id);
+            var model = ModelRegistry.Spawn(ModelRegistry.Scan, scan, held.transform);
+            // Its points, in the holder's space.
+            var pts = new List<Vector3>();
+            foreach (var mf in model.GetComponentsInChildren<MeshFilter>())
+            {
+                if (mf.sharedMesh == null) continue;
+                var vs = mf.sharedMesh.vertices;
+                int step = Mathf.Max(1, vs.Length / 600);
+                for (int i = 0; i < vs.Length; i += step) pts.Add(mf.transform.TransformPoint(vs[i]));
+            }
+            if (pts.Count < 4) { Destroy(held); return null; }
+            Vector3 lo = pts[0], hi = pts[0];
+            foreach (var p in pts) { lo = Vector3.Min(lo, p); hi = Vector3.Max(hi, p); }
+            var ext = hi - lo;
+            int k = ext.x >= ext.y && ext.x >= ext.z ? 0 : ext.y >= ext.z ? 1 : 2;      // the handle's axis
+            float mid = (lo[k] + hi[k]) / 2;
+            // Which end is the head: the half that spreads wider across the handle.
+            var c = (lo + hi) / 2;
+            float spreadLo = 0, spreadHi = 0;
+            foreach (var p in pts)
+            {
+                var d = p - c; d[k] = 0;
+                if (p[k] < mid) spreadLo = Mathf.Max(spreadLo, d.magnitude); else spreadHi = Mathf.Max(spreadHi, d.magnitude);
+            }
+            var axis = Vector3.zero; axis[k] = spreadHi >= spreadLo ? 1 : -1;
+            // A spear's point is slimmer than its butt binding, so the wider-end rule picks the wrong end for those.
+            if (id == "spear" || id == "harpoon") axis = -axis;
+            // Where the head leans (the bit, the edge): the mean offset of the head half from the handle's line.
+            var lean = Vector3.zero; int n = 0;
+            foreach (var p in pts)
+                if ((p[k] - mid) * axis[k] > (hi[k] - lo[k]) * 0.2f) { var d = p - c; d[k] = 0; lean += d; n++; }
+            if (n > 0) lean /= n;
+            if (lean.magnitude < ext[k] * 0.01f) { lean = Vector3.zero; lean[(k + 1) % 3] = 1; }   // symmetric (a spear): any side
+            var turn = Quaternion.Inverse(Quaternion.LookRotation(lean.normalized, axis));
+            model.transform.rotation = turn * model.transform.rotation;
+            model.transform.position = turn * (model.transform.position - c);
+            float s = length / Mathf.Max(0.01f, ext[k]);
+            model.transform.localScale *= s;
+            model.transform.position *= s;
+            model.transform.position += Vector3.up * (length / 2 - grip + 0.14f);   // PlaceHeld puts the fist 0.14 above the origin
+            held.transform.SetParent(parent, false);
+            return held;
         }
 
         public void Pose(float walk, float move, Act act, float actPhase, float swing)
