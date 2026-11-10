@@ -68,7 +68,7 @@ namespace LastTide.Game
                     {
                         _bite = 1.2f;
                         if (_art != null) _art.Once("Attack", 1.3f);
-                        _target.Hit(Session.PetDamage, me);
+                        _target.Hit(Session.PetDamage, me, "bite");
                     }
                 }
             }

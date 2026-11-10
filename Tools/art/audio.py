@@ -194,6 +194,45 @@ def rustle(swishes=3, length=0.5, peak=0.55, seed=11):
     return normalise(a[:, None], peak)
 
 
+def _band(rng, n, lo, hi):
+    w = rng.standard_normal(n)
+    spec = np.fft.rfft(w)
+    f = np.fft.rfftfreq(n, 1 / SR)
+    spec *= (f > lo) & (f < hi)
+    a = np.fft.irfft(spec, n)
+    return a / (np.abs(a).max() + 1e-9)
+
+
+def slash(seed=21, peak=0.85):
+    """A blade biting: a fast rising swish, a bright metallic tick where it lands and a short soft thump under it."""
+    rng = np.random.default_rng(seed)
+    n = int(0.28 * SR)
+    t = np.arange(n) / SR
+    swish = _band(rng, n, 2500, 9000) * np.exp(-((t - 0.05) / 0.03) ** 2)
+    ring = (np.sin(2 * np.pi * 2900 * t) + 0.6 * np.sin(2 * np.pi * 4350 * t) + 0.3 * np.sin(2 * np.pi * 6100 * t)) \
+        * np.exp(-np.maximum(0, t - 0.07) / 0.035) * (t > 0.07)
+    f = 120 * np.exp(-np.maximum(0, t - 0.07) / 0.05) + 70
+    thump = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-np.maximum(0, t - 0.07) / 0.06) * (t > 0.07)
+    a = swish * 0.7 + ring * 0.28 + thump * 0.6
+    a[-int(0.03 * SR):] *= np.linspace(1, 0, int(0.03 * SR))
+    return normalise(a[:, None], peak)
+
+
+def stab(seed=23, peak=0.85):
+    """A point going in: a short tight thud, higher than the club's, with a wet crunch of mid noise."""
+    rng = np.random.default_rng(seed)
+    n = int(0.22 * SR)
+    t = np.arange(n) / SR
+    f = 260 * np.exp(-t / 0.04) + 90
+    thud = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.05)
+    crunch = _band(rng, n, 500, 3200) * np.exp(-t / 0.025)
+    tick = _band(rng, n, 3000, 7000) * np.exp(-t / 0.006)
+    a = thud + crunch * 0.6 + tick * 0.3
+    a[:int(0.002 * SR)] *= np.linspace(0, 1, int(0.002 * SR))
+    a[-int(0.03 * SR):] *= np.linspace(1, 0, int(0.03 * SR))
+    return normalise(a[:, None], peak)
+
+
 def main():
     if not os.path.isdir(SRC):
         sys.exit("missing " + SRC)
@@ -202,6 +241,8 @@ def main():
     print("hit", save("hit", impact()))
     print("squeal", save("squeal", squeal()))
     print("cloth", save("cloth", rustle()))
+    print("slash", save("slash", slash()))
+    print("stab", save("stab", stab()))
     for name, spec in NOISE.items():
         print(name, save(name, noise(*spec)))
     for name, spec in LOOPS.items():

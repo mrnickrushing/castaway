@@ -137,7 +137,7 @@ namespace LastTide.Game
                     _struck = true;
                     if (_target != null && Flat(_target.transform.position - pos) < AttackRange + 0.4f)
                     {
-                        _target.Hit(s.AttackDamage(), pos);
+                        _target.Hit(s.AttackDamage(), pos, s.WeaponId);
                         s.Swung();
                     }
                 }
@@ -226,8 +226,16 @@ namespace LastTide.Game
 
         public void Hurt(float dmg, Vector3 from)
         {
+            float before = G.Session.State.health;
             G.Session.Damage(dmg, "boar");
             _hurt = 0.3f;
+            CameraRig.Shake(0.18f);
+            if (Hud.Instance != null)
+            {
+                int lost = Mathf.Max(1, Mathf.RoundToInt(before - G.Session.State.health));   // after armour
+                Hud.Instance.Pop(transform.position + Vector3.up * 2f, "-" + lost, new Color(1f, 0.35f, 0.3f));
+                Hud.Instance.HurtFrom(from);
+            }
             var push = transform.position - from; push.y = 0;
             if (push.sqrMagnitude > 0.001f) transform.position = Island.Ground(Move(transform.position, push.normalized * 0.5f));
             Burst.Hit(transform.position + Vector3.up * 1.2f, new Color(0.7f, 0.1f, 0.1f));
