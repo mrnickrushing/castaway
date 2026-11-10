@@ -25,6 +25,31 @@ namespace LastTide.Game
             }
         }
 
+        static Material _planks;
+        static bool _planksTried;
+
+        /// <summary>Weathered ship's planking (a tileable Poly Haven scan) for the walls, floors and furniture built in
+        /// code; null when the texture isn't there (those pieces fall back to flat colours).</summary>
+        public static Material Planks
+        {
+            get
+            {
+                if (_planksTried) return _planks;
+                _planksTried = true;
+                var tex = Resources.Load<Texture2D>("Textures/Planks");
+                var template = Resources.Load<Material>("Models/ArtLit");
+                if (tex == null || template == null) return null;
+                _planks = new Material(template) { name = "Planks", enableInstancing = true };
+                _planks.SetTexture("_BaseMap", tex);
+                _planks.SetColor("_BaseColor", new Color(1.2f, 1.02f, 0.82f));   // the scan is grey driftwood: warmed towards the Gull's oak
+                _planks.SetFloat("_Metallic", 0);
+                _planks.SetFloat("_Smoothness", 0.2f);
+                var n = Resources.Load<Texture2D>("Textures/PlanksNormal");
+                if (n != null) { _planks.SetTexture("_BumpMap", n); _planks.SetFloat("_BumpScale", 1f); _planks.EnableKeyword("_NORMALMAP"); }
+                return _planks;
+            }
+        }
+
         static Material _kit;
 
         /// <summary>The world material for free kit models and the Quaternius characters: vertex colours, matte, no

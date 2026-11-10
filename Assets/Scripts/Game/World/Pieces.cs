@@ -92,7 +92,9 @@ namespace LastTide.Game
 
         public static GameObject Create(string id, Transform parent, bool lit = true)
         {
-            GameObject kit = ScanPiece(id, parent);   // photoscans first, then the free kit, then built in code
+            GameObject kit = ScanPiece(id, parent);   // photoscans first, then planked in a scanned texture, the free kit, flat colours
+            if (kit != null) return kit;
+            kit = Planked(id, parent, lit);
             if (kit != null) return kit;
             switch (id)
             {
@@ -215,6 +217,155 @@ namespace LastTide.Game
                 default: return null;
             }
             return mb.ToObject(id, parent);
+        }
+
+        /// <summary>
+        /// Pieces carpentered from the Gull's planking: boxes mapped with a scanned plank texture (grain along each
+        /// board), sailcloth from the ship's own sail, driftwood poles. Null when the texture isn't there.
+        /// </summary>
+        static GameObject Planked(string id, Transform parent, bool lit)
+        {
+            if (Materials.Planks == null) return null;
+            float L = Content.CellSize, H = 2.6f;
+            var pm = new PlankMesh();
+            var mb = new MeshBuilder();
+            var holder = new GameObject(id);
+            if (parent != null) holder.transform.SetParent(parent, false);
+            var t = holder.transform;
+            var cloth = new Vector4(0.42f, 0.64f, 0.94f, 0.97f);
+            switch (id)
+            {
+                case "foundation":
+                    pm.Box(new Vector3(0, -0.06f, 0), new Vector3(L, 0.12f, L), 2);
+                    foreach (float x in new[] { -L / 2, L / 2 }) foreach (float z in new[] { -L / 2, L / 2 })
+                        pm.Box(new Vector3(x * 0.96f, -0.5f, z * 0.96f), new Vector3(0.22f, 0.9f, 0.22f), 1, 0.37f);
+                    foreach (float z in new[] { -L / 2 * 0.97f, L / 2 * 0.97f }) pm.Box(new Vector3(0, -0.2f, z), new Vector3(L, 0.2f, 0.14f), 0, 0.6f);
+                    break;
+                case "wall":
+                case "doorway":
+                case "window":
+                {
+                    float gap = id == "doorway" ? 0.65f : id == "window" ? 0.6f : 0;
+                    if (gap == 0) pm.Box(new Vector3(0, H / 2, 0), new Vector3(L, H, 0.1f), 1);
+                    else
+                    {
+                        float side = L / 2 - gap;
+                        foreach (float s in new[] { -1f, 1f }) pm.Box(new Vector3(s * (gap + side / 2), H / 2, 0), new Vector3(side, H, 0.1f), 1, s * 0.21f);
+                        float lo = id == "doorway" ? 2.1f : 2.1f;
+                        pm.Box(new Vector3(0, (lo + H) / 2, 0), new Vector3(gap * 2, H - lo, 0.1f), 1, 0.43f);          // over the opening
+                        if (id == "window") pm.Box(new Vector3(0, 0.5f, 0), new Vector3(gap * 2, 1.0f, 0.1f), 1, 0.71f);    // under the sill
+                    }
+                    foreach (float x in new[] { -L / 2, L / 2 }) pm.Box(new Vector3(x, H / 2 + 0.05f, 0), new Vector3(0.2f, H + 0.1f, 0.2f), 1, 0.55f);
+                    foreach (float y in new[] { 0.6f, H - 0.3f })
+                    {
+                        if (gap == 0 || (id == "window" && y < 1)) pm.Box(new Vector3(0, y, 0.08f), new Vector3(L, 0.12f, 0.06f), 0, y);
+                        else if (y > 2.1f) pm.Box(new Vector3(0, y, 0.08f), new Vector3(L, 0.12f, 0.06f), 0, y);
+                        else foreach (float s in new[] { -1f, 1f }) pm.Box(new Vector3(s * (gap + (L / 2 - gap) / 2), y, 0.08f), new Vector3(L / 2 - gap, 0.12f, 0.06f), 0, y);
+                    }
+                    if (id == "window")
+                        foreach (float x in new[] { -0.85f, 0.85f })
+                            mb.Box(new Vector3(x, 1.55f, 0.16f), new Vector3(0.55f, 1.0f, 0.05f), Palette.Hex(0x5E7A5A));   // painted shutters, thrown open
+                    break;
+                }
+                case "bed":
+                    // A plank cot with a sailcloth blanket and a rolled pillow.
+                    pm.Box(new Vector3(0, 0.32f, 0), new Vector3(1.2f, 0.12f, 2.2f), 2);
+                    foreach (float x in new[] { -0.52f, 0.52f }) foreach (float z in new[] { -1.0f, 1.0f })
+                        pm.Box(new Vector3(x, 0.15f, z), new Vector3(0.12f, 0.3f, 0.12f), 1, 0.3f);
+                    pm.Box(new Vector3(0, 0.6f, 1.06f), new Vector3(1.2f, 0.5f, 0.08f), 0, 0.5f);   // headboard
+                    if (Models.SailSheet(t, (u, w) => new Vector3((u - 0.5f) * 1.16f, 0.4f + Mathf.Sin(u * Mathf.PI) * 0.09f + Mathf.Sin(w * 7) * 0.012f, Mathf.Lerp(-1.05f, 0.55f, w)), cloth) == null)
+                        mb.Box(new Vector3(0, 0.45f, -0.25f), new Vector3(1.1f, 0.12f, 1.6f), Tropic.Sail);
+                    mb.Mat(0.15f);
+                    mb.Cylinder(new Vector3(-0.4f, 0.47f, 0.8f), new Vector3(0.4f, 0.47f, 0.8f), 0.12f, 8, Palette.Hex(0xD8CDB0));
+                    break;
+                case "doghouse":
+                {
+                    // A plank kennel with a sailcloth roof; the door faces the camp side (-Z).
+                    pm.Box(new Vector3(0, 0.06f, 0), new Vector3(1.5f, 0.12f, 1.2f), 0);
+                    pm.Box(new Vector3(0, 0.55f, 0.55f), new Vector3(1.5f, 0.9f, 0.1f), 1);
+                    foreach (float x in new[] { -0.7f, 0.7f }) pm.Box(new Vector3(x, 0.55f, 0), new Vector3(0.1f, 0.9f, 1.2f), 1, 0.4f);
+                    foreach (float x in new[] { -0.48f, 0.48f }) pm.Box(new Vector3(x, 0.55f, -0.55f), new Vector3(0.54f, 0.9f, 0.1f), 1, 0.7f);
+                    pm.Box(new Vector3(0, 0.9f, -0.55f), new Vector3(0.42f, 0.2f, 0.1f), 0, 0.2f);
+                    mb.Box(new Vector3(0, 0.5f, -0.4f), new Vector3(0.42f, 0.7f, 0.02f), Palette.Hex(0x2A1E14)); // the dark inside
+                    bool roofed = true;
+                    foreach (float s in new[] { -1f, 1f })
+                        roofed &= Models.SailSheet(t, (u, w) => new Vector3(s * Mathf.Lerp(0.0f, 0.92f, w), Mathf.Lerp(1.55f, 0.98f, w) - Mathf.Sin(w * Mathf.PI) * 0.03f, (u - 0.5f) * 1.5f), cloth, new Color(0.95f, 0.9f, 0.8f)) != null;
+                    if (!roofed) mb.GableRoof(new Vector3(0, 1.0f, 0), new Vector3(1.5f, 0.55f, 1.2f), MeshBuilder.Darken(Tropic.Sail, 0.78f), Palette.Hex(0xB08458), 0.15f);
+                    foreach (float z in new[] { -0.6f, 0.6f })   // the gables under the cloth
+                        mb.Tri(new Vector3(-0.75f, 1.0f, z), new Vector3(0.75f, 1.0f, z), new Vector3(0, 1.5f, z), Palette.Hex(0x8A6A48));
+                    foreach (float z in new[] { -0.6f, 0.6f })
+                        mb.Tri(new Vector3(0.75f, 1.0f, z), new Vector3(-0.75f, 1.0f, z), new Vector3(0, 1.5f, z), Palette.Hex(0x8A6A48));
+                    break;
+                }
+                case "torch":
+                    // A driftwood stake with an oil-soaked rag bound round its head.
+                    Models.Pole(t, new Vector3(0, -0.1f, 0), new Vector3(0, 1.8f, 0));
+                    mb.Mat(0.3f);
+                    mb.Cylinder(new Vector3(0, 1.68f, 0), new Vector3(0, 1.95f, 0), 0.1f, 0.075f, 7, Palette.Hex(0x4A3A2A));
+                    mb.Cylinder(new Vector3(0, 1.74f, 0), new Vector3(0, 1.78f, 0), 0.108f, 0.108f, 7, Tropic.Rope);
+                    break;
+                case "flag":
+                    // Your own colours on a driftwood pole: a square of the Gull's sail with a blue disc.
+                    Models.Pole(t, new Vector3(0, -0.1f, 0), new Vector3(0, 5f, 0));
+                    if (Models.SailSheet(t, (u, w) => new Vector3(0.05f + u * 1.8f, Mathf.Lerp(4.9f, 3.75f, w) - u * 0.18f, Mathf.Sin(u * 5f + w) * 0.07f * u), cloth) == null)
+                        mb.Quad(new Vector3(0, 4.9f, 0), new Vector3(1.8f, 4.7f, 0), new Vector3(1.8f, 3.6f, 0), new Vector3(0, 3.8f, 0), Tropic.Sail);
+                    mb.Sphere(new Vector3(0.95f, 4.22f, 0.05f), new Vector3(0.28f, 0.28f, 0.02f), 8, Palette.Hex(0x2A5A8A));
+                    mb.Sphere(new Vector3(0.95f, 4.22f, -0.05f), new Vector3(0.28f, 0.28f, 0.02f), 8, Palette.Hex(0x2A5A8A));
+                    break;
+                default:
+                    Object.Destroy(holder);
+                    return null;
+            }
+            pm.ToObject("Planks", t);
+            if (mb.VertexCount > 0) mb.ToObject("Extra", t).GetComponent<MeshRenderer>().sharedMaterial = Materials.Kit;
+            return holder;
+        }
+
+        /// <summary>Boxes mapped with the plank texture: the grain (the texture's V) runs along the axis given for
+        /// each box, 1.4 m of board to a tile, each box shifted a little so neighbours don't repeat.</summary>
+        sealed class PlankMesh
+        {
+            const float Tile = 1.4f;
+            readonly List<Vector3> _v = new List<Vector3>(), _n = new List<Vector3>();
+            readonly List<Vector2> _uv = new List<Vector2>();
+            readonly List<int> _t = new List<int>();
+
+            public void Box(Vector3 c, Vector3 size, int grain, float shift = 0)
+            {
+                var h = size / 2;
+                for (int a = 0; a < 3; a++)
+                    for (int sgn = -1; sgn <= 1; sgn += 2)
+                    {
+                        int b = (a + 1) % 3, d = (a + 2) % 3;
+                        // The face's two axes: v along the grain when it lies in the face.
+                        int vAxis = grain != a ? grain : d, uAxis = grain != a ? 3 - a - grain : b;
+                        var n = Vector3.zero; n[a] = sgn;
+                        int i0 = _v.Count;
+                        for (int k = 0; k < 4; k++)
+                        {
+                            var p = c; p[a] += sgn * h[a];
+                            p[uAxis] += ((k == 1 || k == 2) ? 1 : -1) * h[uAxis];
+                            p[vAxis] += (k >= 2 ? 1 : -1) * h[vAxis];
+                            _v.Add(p); _n.Add(n);
+                            _uv.Add(new Vector2(p[uAxis] / Tile + shift + a * 0.31f, p[vAxis] / Tile + shift * 1.7f));
+                        }
+                        var e1 = _v[i0 + 1] - _v[i0]; var e2 = _v[i0 + 3] - _v[i0];
+                        bool flip = Vector3.Dot(Vector3.Cross(e1, e2), n) < 0;
+                        _t.AddRange(flip ? new[] { i0, i0 + 2, i0 + 1, i0, i0 + 3, i0 + 2 } : new[] { i0, i0 + 1, i0 + 2, i0, i0 + 2, i0 + 3 });
+                    }
+            }
+
+            public GameObject ToObject(string name, Transform parent)
+            {
+                var go = new GameObject(name);
+                go.transform.SetParent(parent, false);
+                var m = new Mesh { name = name };
+                m.SetVertices(_v); m.SetNormals(_n); m.SetUVs(0, _uv); m.SetTriangles(_t, 0);
+                m.RecalculateTangents(); m.RecalculateBounds();
+                go.AddComponent<MeshFilter>().sharedMesh = m;
+                go.AddComponent<MeshRenderer>().sharedMaterial = Materials.Planks;
+                return go;
+            }
         }
 
         /// <summary>Pieces made of free scans: the crate and the chest for storage, the forge, the table and the chair.</summary>

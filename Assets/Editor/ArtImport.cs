@@ -129,6 +129,20 @@ namespace LastTide.EditorTools
                 c.textureCompression = TextureImporterCompression.CompressedHQ;
                 return;
             }
+            if (assetPath.StartsWith("Assets/Resources/Textures/Planks"))
+            {
+                // The tileable plank surface for walls and floors (Poly Haven, CC0; Tools/art/polyhaven.py surfaces).
+                var s = (TextureImporter)assetImporter;
+                bool nm = assetPath.EndsWith("Normal.jpg");
+                s.textureType = nm ? TextureImporterType.NormalMap : TextureImporterType.Default;
+                s.sRGBTexture = !nm;
+                s.wrapMode = TextureWrapMode.Repeat;
+                s.mipmapEnabled = true;
+                s.anisoLevel = 4;
+                s.maxTextureSize = 1024;
+                s.textureCompression = TextureImporterCompression.CompressedHQ;
+                return;
+            }
             if (assetPath.StartsWith(Models))
             {
                 var t = (TextureImporter)assetImporter;
