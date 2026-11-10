@@ -117,6 +117,10 @@ PROPS = {
                      role="the ship's radio at camp", kind="prop", size=0.8, tris=4000),
     "forge": dict(uid="64f344213c084424ba438875e62bd452", title="Furnace", author="kosmotron",
                   role="the furnace you build at camp", kind="prop", size=2.2, tris=4000),
+    "portholes": dict(uid="133379af65b94c6589e451366f8ff821", title="Vintage Ship Portholes Type A", author="Mad_Lobster_Workshop",
+                      role="the brass fittings", kind="prop", size=0.9, tris=3000),
+    "ropecoil": dict(uid="e6fe8fedd3d04b1dac3e32e0dd515cbb", title="Coiled Rope 2", author="TepidGames",
+                     role="the net cord", kind="prop", size=0.7, tris=2500),
 }
 OTHER = dict(CREATURES, **PROPS)
 

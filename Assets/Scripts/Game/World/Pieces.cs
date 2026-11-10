@@ -323,8 +323,11 @@ namespace LastTide.Game
 
         /// <summary>Boxes mapped with the plank texture: the grain (the texture's V) runs along the axis given for
         /// each box, 1.4 m of board to a tile, each box shifted a little so neighbours don't repeat.</summary>
-        sealed class PlankMesh
+        internal sealed class PlankMesh
         {
+            /// <summary>Where the next boxes go (a tilted strake, a leaning rib); identity by default.</summary>
+            public Matrix4x4 Pose = Matrix4x4.identity;
+
             const float Tile = 1.4f;
             readonly List<Vector3> _v = new List<Vector3>(), _n = new List<Vector3>();
             readonly List<Vector2> _uv = new List<Vector2>();
@@ -346,16 +349,16 @@ namespace LastTide.Game
                             var p = c; p[a] += sgn * h[a];
                             p[uAxis] += ((k == 1 || k == 2) ? 1 : -1) * h[uAxis];
                             p[vAxis] += (k >= 2 ? 1 : -1) * h[vAxis];
-                            _v.Add(p); _n.Add(n);
+                            _v.Add(Pose.MultiplyPoint3x4(p)); _n.Add(Pose.MultiplyVector(n).normalized);
                             _uv.Add(new Vector2(p[uAxis] / Tile + shift + a * 0.31f, p[vAxis] / Tile + shift * 1.7f));
                         }
                         var e1 = _v[i0 + 1] - _v[i0]; var e2 = _v[i0 + 3] - _v[i0];
-                        bool flip = Vector3.Dot(Vector3.Cross(e1, e2), n) < 0;
+                        bool flip = Vector3.Dot(Vector3.Cross(e1, e2), _n[i0]) < 0;
                         _t.AddRange(flip ? new[] { i0, i0 + 2, i0 + 1, i0, i0 + 3, i0 + 2 } : new[] { i0, i0 + 1, i0 + 2, i0, i0 + 2, i0 + 3 });
                     }
             }
 
-            public GameObject ToObject(string name, Transform parent)
+            public GameObject ToObject(string name, Transform parent, Material mat = null)
             {
                 var go = new GameObject(name);
                 go.transform.SetParent(parent, false);
@@ -363,7 +366,7 @@ namespace LastTide.Game
                 m.SetVertices(_v); m.SetNormals(_n); m.SetUVs(0, _uv); m.SetTriangles(_t, 0);
                 m.RecalculateTangents(); m.RecalculateBounds();
                 go.AddComponent<MeshFilter>().sharedMesh = m;
-                go.AddComponent<MeshRenderer>().sharedMaterial = Materials.Planks;
+                go.AddComponent<MeshRenderer>().sharedMaterial = mat ?? Materials.Planks;
                 return go;
             }
         }

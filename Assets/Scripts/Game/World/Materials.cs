@@ -50,6 +50,19 @@ namespace LastTide.Game
             }
         }
 
+        static Material _whitewash;
+        /// <summary>The same planking under a coat of lime (the Limewashed Shelter).</summary>
+        public static Material Whitewash
+        {
+            get
+            {
+                if (_whitewash != null || Planks == null) return _whitewash;
+                _whitewash = new Material(Planks) { name = "Whitewash" };
+                _whitewash.SetColor("_BaseColor", new Color(2.1f, 2.05f, 1.9f));
+                return _whitewash;
+            }
+        }
+
         static Material _kit;
 
         /// <summary>The world material for free kit models and the Quaternius characters: vertex colours, matte, no

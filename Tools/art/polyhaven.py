@@ -188,7 +188,7 @@ def install(ids):
 
 
 # Pieces the game doesn't place (set leftovers, models tried and dropped): removed by slim.
-UNUSED = ["tree_small_02", "coast_rocks_01", "ship_pinnace", "modular_wooden_pier", "lambis_shell", "wooden_barrels_01_a",
+UNUSED = ["portholes_a", "portholes_b", "portholes_c", "portholes_d", "tree_small_02", "coast_rocks_01", "ship_pinnace", "modular_wooden_pier", "lambis_shell", "wooden_barrels_01_a",
           "wooden_barrels_01_b", "wooden_barrels_01_c", "wooden_barrels_01_e", "wooden_barrels_01_f", "wooden_barrels_01_g",
           "wooden_barrels_01_h", "grass_medium_02_a", "grass_medium_02_b", "bananas_a", "bananas_b", "shrub_sorrel_01_d",
           "shrub_sorrel_01_e", "shrub_sorrel_01_f", "shrub_sorrel_01_g", "anthurium_botany_01_d", "anthurium_botany_01_f",

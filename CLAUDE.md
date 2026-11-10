@@ -134,7 +134,8 @@ setting only.
   the same once the plan is taken. The map's island panel shows an "Own:" line; CRAFT has a Camp tab.
   Their models and icons use free scans where one fits (`IslandModels.ScanNode`, `IconArt`, `Put`): the Sketchfab skep
   (CC0), fishing net and planks (CC BY), Poly Haven's cannon, clay pot, bowl, wine barrel, lantern, chest and table;
-  net cord, brass, the limewash, weir and sail icons are still built in code. The camp's sea chest, rain catcher and
+  net cord is a scanned rope coil (tarred), brass a pair of ship's portholes; the limewash, weir and sail pictures and
+  the hull wreckage are put together from the plank texture, sailcloth and driftwood (`BuiltIcon`, `PieceModels.PlankMesh`). The camp's sea chest, rain catcher and
   radio (`Models.ScanStructure`), the spring and tide pools (`Models.ScanPool`: scanned stones round the sea's own
   water shader over a dark bed), the sailors' bags (a burlap sack) and the storage box, chest, furnace, table and chair
   pieces (`PieceModels.ScanPiece`) are scans too. Floors, walls, the bed and the
