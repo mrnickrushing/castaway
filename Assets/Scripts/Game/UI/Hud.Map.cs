@@ -13,7 +13,7 @@ namespace LastTide.Game
     {
         RectTransform _mapUi, _islandUi, _pinLayer, _locPanel, _travelDots;
         Image _energyFill, _locArt;
-        Text _energyText, _energyTimer, _coinText, _hereName, _locTitle, _locBody, _bigButtonText, _bigButtonSub, _lockBanner, _travelText;
+        Text _energyText, _energyTimer, _coinText, _hereName, _locTitle, _locBody, _bigButtonText, _bigButtonSub, _lockBanner, _travelText, _locOwn;
         RectTransform _lootMain, _lootMaybe, _runWalk, _bigButton, _playerPin;
         Image _bigButtonRing;
         LocationDef _selected;
@@ -192,10 +192,15 @@ namespace LastTide.Game
             var x = UIKit.Button("Close", _locArt.transform, "✕", new Color(0, 0, 0, 0), () => Select(null), 60);
             ((RectTransform)x.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -10), new Vector2(84, 84));
             _locBody = UIKit.Label("Body", _locPanel, "", 32, new Color(1, 1, 1, 0.9f), TextAnchor.UpperLeft, false);
-            _locBody.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -446), new Vector2(600, 190));
-            _lootMain = UIKit.Rect("Main loot", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -680), new Vector2(600, 110));
-            _lootMaybe = UIKit.Rect("Possible loot", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -835), new Vector2(600, 110));
-            _runWalk = UIKit.Rect("Run walk", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -960), new Vector2(600, 260));
+            _locBody.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -446), new Vector2(600, 172));
+            // The island's own reward, one line between the blurb and the loot (it shrinks rather than wraps).
+            _locOwn = UIKit.Label("Own", _locPanel, "", 26, Color.white, TextAnchor.MiddleLeft, false);
+            _locOwn.supportRichText = true;
+            _locOwn.resizeTextForBestFit = true; _locOwn.resizeTextMinSize = 14; _locOwn.resizeTextMaxSize = 26;
+            _locOwn.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -620), new Vector2(600, 38));
+            _lootMain = UIKit.Rect("Main loot", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -704), new Vector2(600, 110));
+            _lootMaybe = UIKit.Rect("Possible loot", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -859), new Vector2(600, 110));
+            _runWalk = UIKit.Rect("Run walk", _locPanel).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -984), new Vector2(600, 260));
             _locPanel.gameObject.SetActive(false);
         }
 
@@ -224,6 +229,7 @@ namespace LastTide.Game
             _locArt.color = art != null ? Color.white : PlaceColor(l);
             Clear(_lootMain); Clear(_lootMaybe); Clear(_runWalk);
             bool loot = l.MainLoot.Length > 0;
+            _locOwn.text = loot ? IslandLine(l) ?? "" : "";
             _locBody.text = loot ? "" : l.Blurb;
             if (loot)
             {

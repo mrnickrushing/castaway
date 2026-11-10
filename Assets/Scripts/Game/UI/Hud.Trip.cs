@@ -101,7 +101,7 @@ namespace LastTide.Game
             Sfx.Play("quest");
         }
 
-        static string Plural(string name, int n) { return n == 1 || name.EndsWith("s") ? name : name + "s"; }
+        static string Plural(string name, int n) { return n == 1 || name.EndsWith("s") || name.EndsWith("age") ? name : name + "s"; } // "hull wreckage" stays as it is
 
         public bool TripShowing { get { return _trip != null; } }
 

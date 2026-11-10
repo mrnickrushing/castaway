@@ -95,10 +95,10 @@ namespace LastTide.Core
             // Once a second: a step finished by an item that arrived some other way (a crate, a reward, a purchase).
             _questCheck -= dt;
             if (_questCheck <= 0) { _questCheck = 1; if (State.waiting.Count > 0) DeliverWaiting(); CheckQuests(); }
-            State.hunger = Clamp(State.hunger - Content.HungerDecay * dt);
+            State.hunger = Clamp(State.hunger - Content.HungerDecay * HungerScale * dt);
             State.thirst = Clamp(State.thirst - Content.ThirstDecay * dt);
             if (State.hunger <= 0 || State.thirst <= 0) Damage(Content.StarveDamage * dt * ((State.hunger <= 0 ? 1 : 0) + (State.thirst <= 0 ? 1 : 0)), "starving");
-            else if (State.hunger > Content.RegenAbove && State.thirst > Content.RegenAbove) State.health = Clamp(State.health + Content.RegenRate * dt);
+            else if (State.hunger > Content.RegenAbove && State.thirst > Content.RegenAbove) State.health = Clamp(State.health + Content.RegenRate * RegenScale * dt);
 
             // Finished crafts drop into the backpack (they wait at the station while it is full).
             for (int i = State.jobs.Count - 1; i >= 0; i--)
@@ -106,6 +106,7 @@ namespace LastTide.Core
                 var j = State.jobs[i];
                 if (Now < j.doneAt) continue;
                 var r = Content.Recipes[j.recipe];
+                if (Content.IsPerk(r.Output)) { ApplyPerk(r.Output); Tally("craft", 1); State.jobs.RemoveAt(i); Changed?.Invoke(); CheckQuests(); continue; }
                 int got = Inventory.Add(State.backpack, r.Output, j.count);
                 if (got > 0) { Gained?.Invoke(r.Output, got); Tally("craft", got); if (r.Station == "campfire") SetFlag("cooked"); }
                 j.count -= got;
@@ -214,6 +215,8 @@ namespace LastTide.Core
                 n.respawnAt = d.Respawn < 0 ? 0 : Now + d.Respawn;
             }
             if (kind == "hatchet_pickup") SetFlag("got_hatchet");
+            if (kind == "plan") FindPlan(State.location);
+            if (kind == "fishspot" && HasPerk("perk_weir") && _rng.NextDouble() < 0.5) Give("fish", 1);
             RollPossibleLoot();
             AddXp(2);
             if (d.Needs != ToolUse.None) Wear(ToolFor(d.Needs));
@@ -419,7 +422,7 @@ namespace LastTide.Core
                 return true;
             }
             if (d.Food == 0 && d.Drink == 0 && d.Heal == 0) return false;
-            State.hunger = Clamp(State.hunger + d.Food);
+            State.hunger = Clamp(State.hunger + d.Food * FoodScale);
             State.thirst = Clamp(State.thirst + d.Drink);
             if (d.Heal != 0) State.health = Clamp(State.health + d.Heal);
             s.n--;
@@ -470,6 +473,7 @@ namespace LastTide.Core
             if (enemy == "pirate" || enemy == "redjack") Tally("kill:raider");
             if (IsNight) Tally("nightkill");
             foreach (var d in Enemies.All[enemy].Drops) Give(d.id, d.n);
+            IslandDrop();
             var rare = Enemies.All[enemy].Rare;
             if (rare != null && _rng.NextDouble() < 0.25) Give(rare.Value.id, rare.Value.n);
             AddXp(Enemies.All[enemy].Xp);

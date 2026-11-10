@@ -69,7 +69,7 @@ namespace LastTide.Core
         static float Dist(LocationDef a, LocationDef b) { float dx = a.MapX - b.MapX, dz = a.MapZ - b.MapZ; return (float)Math.Sqrt(dx * dx + dz * dz); }
 
         /// <summary>Energy to run from where the castaway is now to <paramref name="to"/>.</summary>
-        public int RunCost(LocationDef to) { return Math.Max(3, (int)Math.Round(Dist(Here, to) / 13f)); }
+        public int RunCost(LocationDef to) { return Math.Max(3, (int)Math.Round(Dist(Here, to) / 13f * SailScale)); }
         public int RunSeconds(LocationDef to) { return Math.Max(3, (int)Math.Round(Dist(Here, to) / 30f)); }
         public int WalkSeconds(LocationDef to) { return Math.Max(30, (int)Math.Round(Dist(Here, to) * 1.6f)); }
 
@@ -194,7 +194,7 @@ namespace LastTide.Core
         }
 
         /// <summary>Recipes that a survivor has to teach first.</summary>
-        public bool Knows(string recipe) { return recipe != "harpoon" || Flag("recipe_harpoon"); }
+        public bool Knows(string recipe) { return Content.IsPerk(recipe) ? HasPlan(Content.IslandOf(recipe)) : recipe != "harpoon" || Flag("recipe_harpoon"); }
 
         // ------------------------------------------------------------------ trading post
 

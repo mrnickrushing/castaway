@@ -146,6 +146,8 @@ namespace LastTide.Game
                     return hs;
                 }
             }
+            var island = IslandModels.Art(kind, parent, h0);
+            if (island != null) return island;
             string free = kind == "crate" ? "crate" : kind == "barrel" ? "barrel" : kind == "treasure" ? "chest"
                 : kind == "boulder" ? (h0 < 0.33f ? "rock_a" : h0 < 0.66f ? "rock_b" : "rock_c") : null;
             if (free != null && ModelRegistry.Has(ModelRegistry.Free, free))

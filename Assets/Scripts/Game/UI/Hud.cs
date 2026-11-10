@@ -76,6 +76,7 @@ namespace LastTide.Game
             s.QuestDone += q => { _questFlash = 1.6f; Sfx.Play("quest"); };
             s.Changed += () => _dirty = true;
             s.Died += PassOut;
+            s.PlanFound += ShowPlan;
             s.LevelUp += l => { _levelFlash = 2f; Sfx.Play("levelup"); };
         }
 
@@ -362,7 +363,7 @@ namespace LastTide.Game
         {
             Vector2 pos = Vector2.zero;
             bool down = false, began = false;
-            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _seasonOpen || _rewardCard.gameObject.activeSelf || _trip != null || _building || (InvOpen && _station != "radio")) { _finger = -2; Stick = Vector2.zero; return; }
+            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _seasonOpen || _rewardCard.gameObject.activeSelf || _trip != null || _plan != null || _building || (InvOpen && _station != "radio")) { _finger = -2; Stick = Vector2.zero; return; }
             if (Input.touchCount > 0)
             {
                 for (int i = 0; i < Input.touchCount; i++)

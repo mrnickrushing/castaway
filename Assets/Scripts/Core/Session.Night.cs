@@ -27,7 +27,7 @@ namespace LastTide.Core
         public bool Settled { get { return (Built("shelter") && Day >= 2) || State.level >= 3; } }
 
         /// <summary>How far an animal or raider notices the castaway: further at night, much less when sneaking.</summary>
-        public float AggroScale(bool sneaking) { return (IsNight ? 1.35f : 1f) * (sneaking ? 0.45f : 1f); }
+        public float AggroScale(bool sneaking) { return (IsNight ? NightAggro : 1f) * (sneaking ? 0.45f : 1f); }
 
         // ------------------------------------------------------------------ Biscuit
 

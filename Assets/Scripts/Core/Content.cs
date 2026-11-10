@@ -168,6 +168,7 @@ namespace LastTide.Core
             Node("treasure", "Smuggler's Chest", ToolUse.None, 3.0f, 1, 1800f, new[] { I("doubloon", 8), I("pearl", 1) }, null);
             Node("hatchet_pickup", "Hatchet", ToolUse.None, 0.6f, 1, -1f, new[] { I("hatchet", 1) }, null);
             ExtendBase();
+            ExtendIslands();
         }
 
         public static ItemCount I(string id, int n) { return new ItemCount(id, n); }

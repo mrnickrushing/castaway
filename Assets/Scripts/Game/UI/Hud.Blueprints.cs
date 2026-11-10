@@ -17,8 +17,8 @@ namespace LastTide.Game
         int _bpTab;
         string _bpSel;
         int _bpQty = 1;
-        static readonly string[] BpTabs = { "All", "Tools", "Weapons", "Clothes", "Food", "Materials" };
-        static readonly string[] BpIcons = { "craft", "pickaxe", "spear", "hide_vest", "meat", "rope" };
+        static readonly string[] BpTabs = { "All", "Tools", "Weapons", "Clothes", "Food", "Materials", "Camp" };
+        static readonly string[] BpIcons = { "craft", "pickaxe", "spear", "hide_vest", "meat", "rope", "perk_larder" };
 
         void BuildBlueprints()
         {
@@ -30,7 +30,7 @@ namespace LastTide.Game
             var t = UIKit.Label("Title", _bp, "BLUEPRINTS", 52, new Color(0.9f, 0.9f, 0.85f), TextAnchor.MiddleLeft, false);
             t.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(136, -30), new Vector2(500, 60));
             _bpGrid = UIKit.Rect("Grid", _bp).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(220, -120), new Vector2(5 * 168, 800));
-            _bpTabs = UIKit.Rect("Tabs", _bp).Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(220, 40), new Vector2(6 * 140, 100));
+            _bpTabs = UIKit.Rect("Tabs", _bp).Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(220, 40), new Vector2(7 * 140, 100));
             _bpCard = UIKit.Rect("Card", _bp).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-250, 0), new Vector2(720, 1000));
             var x = UIKit.Button("Close", _bp, "X", new Color(0, 0, 0, 0), () => { _bpOpen = false; _dirty = true; }, 80);
             ((RectTransform)x.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-70, -20), new Vector2(120, 120));
@@ -148,16 +148,25 @@ namespace LastTide.Game
             int max = s.MaxCraft(r.Id);
             _bpQty = Mathf.Clamp(_bpQty, 1, max);
             bool afford = s.Short(r.Inputs) == null;   // "1/1" when not even one can be paid for reads as "ready"
-            var q = UIKit.Label("Q", _bpCard, afford ? "Quantity: " + _bpQty + "/" + max : "Quantity: 1", 30, new Color(0.45f, 0.9f, 0.85f), TextAnchor.MiddleCenter, false);
-            q.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -726), new Vector2(400, 44));
-            var minus = UIKit.Button("Minus", _bpCard, "-", new Color(0.33f, 0.35f, 0.33f), () => { _bpQty = Mathf.Max(1, _bpQty - 1); RefreshBlueprints(); }, 54);
-            ((RectTransform)minus.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(-280, -770), new Vector2(90, 80));
-            var plus = UIKit.Button("Plus", _bpCard, "+", new Color(0.15f, 0.55f, 0.5f), () => { _bpQty = Mathf.Min(max, _bpQty + 1); RefreshBlueprints(); }, 54);
-            ((RectTransform)plus.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(280, -770), new Vector2(90, 80));
-            var track = UIKit.Img("Track", _bpCard, null, new Color(0, 0, 0, 0.5f)).rectTransform;
-            track.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -800), new Vector2(420, 12));
-            var knob = UIKit.Img("Knob", track, null, Color.white).rectTransform;
-            knob.Place(new Vector2(max <= 1 ? 0 : (_bpQty - 1) / (float)(max - 1), 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14, 44));
+            if (Content.IsPerk(r.Id))
+            {
+                // A camp improvement is built once: no quantity to choose.
+                var once = UIKit.Label("Once", _bpCard, s.HasPerk(r.Id) ? "Built at camp" : "Built once, for good", 30, new Color(0.45f, 0.9f, 0.85f), TextAnchor.MiddleCenter, false);
+                once.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -750), new Vector2(560, 60));
+            }
+            else
+            {
+                var q = UIKit.Label("Q", _bpCard, afford ? "Quantity: " + _bpQty + "/" + max : "Quantity: 1", 30, new Color(0.45f, 0.9f, 0.85f), TextAnchor.MiddleCenter, false);
+                q.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -726), new Vector2(400, 44));
+                var minus = UIKit.Button("Minus", _bpCard, "-", new Color(0.33f, 0.35f, 0.33f), () => { _bpQty = Mathf.Max(1, _bpQty - 1); RefreshBlueprints(); }, 54);
+                ((RectTransform)minus.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(-280, -770), new Vector2(90, 80));
+                var plus = UIKit.Button("Plus", _bpCard, "+", new Color(0.15f, 0.55f, 0.5f), () => { _bpQty = Mathf.Min(max, _bpQty + 1); RefreshBlueprints(); }, 54);
+                ((RectTransform)plus.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(280, -770), new Vector2(90, 80));
+                var track = UIKit.Img("Track", _bpCard, null, new Color(0, 0, 0, 0.5f)).rectTransform;
+                track.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -800), new Vector2(420, 12));
+                var knob = UIKit.Img("Knob", track, null, Color.white).rectTransform;
+                knob.Place(new Vector2(max <= 1 ? 0 : (_bpQty - 1) / (float)(max - 1), 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14, 44));
+            }
             string why = s.CraftBlocked(r.Id, _bpQty);
             var craft = UIKit.Button("Craft", _bpCard, "CRAFT", why == null ? new Color(0.8f, 0.62f, 0.12f) : new Color(0.4f, 0.38f, 0.3f), () =>
             {

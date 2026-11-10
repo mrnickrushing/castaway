@@ -570,7 +570,13 @@ namespace LastTide.Game
                 tl.rectTransform.Place(new Vector2(0, 1), new Vector2(0.5f, 1), new Vector2(410, -318), new Vector2(360, 40));
             }
             // Quantity, make, skip.
-            if (job == null)
+            if (job == null && Content.IsPerk(_recipe))
+            {
+                // A camp improvement is built once: no quantity to choose.
+                var once = UIKit.Label("Once", area, s.HasPerk(_recipe) ? "Built at camp" : "Built once, for good", 28, new Color(0.4f, 0.9f, 0.85f), TextAnchor.MiddleCenter, false);
+                once.rectTransform.Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(40, 10), new Vector2(424, 74));
+            }
+            else if (job == null)
             {
                 int max = s.MaxCraft(_recipe);
                 var minus = UIKit.Button("Minus", area, "-", new Color(0.33f, 0.35f, 0.33f), () => { _qty = Mathf.Max(1, _qty - 1); _dirty = true; }, 50);

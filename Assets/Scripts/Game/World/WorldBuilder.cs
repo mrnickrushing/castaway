@@ -259,6 +259,20 @@ namespace LastTide.Game
                 if (ship != null) { ship.AddComponent<Bob>(); ModelRegistry.BlackSails(ship); }
                 ShipSpot.Create(nodes, Island.Ground(shore));
             }
+            PlanSpot(nodes, loc);
+        }
+
+        /// <summary>The plans left at the landmark (Content.Islands). Placed last and always looked for, found or not,
+        /// so picking them up never moves anything else on the island.</summary>
+        static void PlanSpot(Transform nodes, LocationDef loc)
+        {
+            var isl = Content.IslandOf(loc.Id);
+            if (isl == null) return;
+            var near = loc.Biome == Biome.Ridge ? new Vector3(-6, 0, Island.Radius * 0.15f) : Island.Landmark;
+            var at = Find(q => { float d = Vector3.Distance(q, near); return d < 24 && Island.Distance01(q.x, q.z) < 0.88f; }, 3f, near + new Vector3(8, 0, -6));
+            Take(at, 3f);
+            if (G.Session.HasPlan(isl)) return;
+            NodeSpot.Create(nodes, "plan", _prefix + "plan", Island.Ground(at), IslandModels.Plan(at.x), 1.7f, 0.5f);
         }
 
         /// <summary>Places <paramref name="n"/> harvestable things of a kind where that kind belongs.</summary>
@@ -285,6 +299,12 @@ namespace LastTide.Game
                 case "crate": Count("crate", n, nodes, p => Island.Distance01(p.x, p.z) < 0.9f, 3f, (k, i) => Models.Crate(i + 1), 1.7f, 0.7f); break;
                 case "barrel": Count("barrel", n, nodes, p => Island.Distance01(p.x, p.z) < 0.9f, 3f, (k, i) => Models.Barrel(i + 3), 1.6f, 0.5f); break;
                 case "treasure": Count("treasure", n, nodes, p => Island.Distance01(p.x, p.z) < 0.6f && Vector3.Distance(p, Island.Camp) > 20, 6f, (k, i) => Models.Treasure(i), 1.8f, 0.8f); break;
+                case "hull": case "oldnet":   // washed up along the shore
+                    Count(kind, n, nodes, p => { float d = Island.Distance01(p.x, p.z); return d > 0.76f && d < 0.93f; }, 4f, (k, i) => IslandModels.Node(k, i + 1), 2.0f, 0.7f);
+                    break;
+                case "hive": case "limeseam": case "oildrum": case "saltcrust": case "brasswreck":
+                    Count(kind, n, nodes, p => Island.Distance01(p.x, p.z) < 0.82f && Vector3.Distance(p, Island.Camp) > 12, 4f, (k, i) => IslandModels.Node(k, i + 1), 1.9f, kind == "hive" ? 0.5f : 0.8f);
+                    break;
                 case "fishspot":
                     // Off the end and sides of the pier, else along the water's edge.
                     int made = 0;
