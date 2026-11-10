@@ -17,6 +17,12 @@ namespace LastTide.Core
             {
                 string made = r.Station == "hand" ? "Crafted by hand (CRAFT)" : "Made at the " + Session.StationName(r.Station);
                 // The harpoon has to be taught first: say by whom, or the recipe looks broken.
+                if (IsPerk(id))
+                {
+                    // A camp improvement: say where its plan is, and what it does for good.
+                    var isl = IslandOf(id); var home = isl != null ? World.Location(isl.Location) : null;
+                    return isl == null ? made : "Built once at the workbench, from the plan on " + (home != null ? home.Name : isl.Location) + "\n" + char.ToUpper(isl.Effect[0]) + isl.Effect.Substring(1) + ", for good";
+                }
                 var teacher = World.Signals.FirstOrDefault(sg => sg.Unlocks == r.Id);
                 return teacher != null ? made + ", once " + teacher.Npc + " shows you how" : made;
             }
@@ -49,7 +55,14 @@ namespace LastTide.Core
             if (by.Count > 0) lines.Add("Dropped by: " + string.Join(", ", by));
             // Sailors' bags and lucky finds roll from each island's loot (Session.RollPossibleLoot, the loot window).
             var at = World.Locations.Where(l => !l.Home && !barrels.Contains(l.Name) && (l.MainLoot.Contains(id) || l.PossibleLoot.Contains(id))).Select(l => l.Name).ToList();
-            if (at.Count > 0) lines.Add("Found on: " + string.Join(", ", at.Take(3)) + (at.Count > 3 ? " and more" : ""));
+            var own = IslandOf(id);
+            if (own != null && own.Ingredient == id && at.Count > 0)
+            {
+                // An island's own material: nowhere else, and what it's for.
+                lines.Add("Only on " + at[0] + " (also in its sailors' bags and on its creatures)");
+                lines.Add("Builds the " + NameOf(own.Perk));
+            }
+            else if (at.Count > 0) lines.Add("Found on: " + string.Join(", ", at.Take(3)) + (at.Count > 3 ? " and more" : ""));
             if (lines.Count == 0 && (Season.CrateLoot.Any(c => c.id == id) || Season.Free.Concat(Season.Premium).Any(c => c.id == id)
                 || Season.Events.Any(e => e.Rewards.Any(rw => rw.Any(c => c.id == id))) || id.StartsWith("pet_")))
                 lines.Add("A reward from the season and events (the star-shield button)");

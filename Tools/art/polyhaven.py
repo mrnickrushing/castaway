@@ -67,6 +67,9 @@ MODELS = {
     "wine_barrel_01": ("prop", 1.0, 2000),
     "modular_fort_01": ("prop", 9.0, 5000),
     "gothic_statue": ("prop", 2.8, 8000),
+    # The islands' own items (icons and camp improvements).
+    "ceramic_pot": ("prop", 0.45, 1500),
+    "wooden_bowl_02": ("prop", 0.4, 1200),
 }
 
 
