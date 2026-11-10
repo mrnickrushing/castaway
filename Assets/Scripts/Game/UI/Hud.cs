@@ -494,7 +494,8 @@ namespace LastTide.Game
                     if (!sp.Active) continue;
                     bool site = sp is SiteSpot;
                     float d = Vector3.Distance(sp.Pos, p.transform.position);
-                    bool show = sp == p.Current || (site && d < 16f && sp.Label != null && sp.Detail != null);
+                    bool plan = sp is NodeSpot ns && ns.NodeKind == "plan";   // the plan calls from a little way off
+                    bool show = sp == p.Current || ((site ? d < 16f : plan && d < 12f) && sp.Label != null && sp.Detail != null);
                     if (!show) continue;
                     string label = sp.Label, detail = sp.Detail;
                     if (label == null && detail == null) continue;

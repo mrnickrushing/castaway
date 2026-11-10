@@ -179,7 +179,21 @@ namespace LastTide.Game
         public override bool Active { get { return _standing && _fall <= 0; } }
         public override float Fill { get { return Mathf.Clamp01(_timer / G.Session.HarvestSeconds(NodeKind)); } }
         public override bool Blocked { get { return G.Session.Blocked(NodeKind) != null; } }
-        public override string Label { get { return Blocked ? G.Session.Blocked(NodeKind) : null; } }
+        /// <summary>One of the island's own things: its material's node, or the plan at its landmark.</summary>
+        public bool IslandOwn { get { return NodeKind == "plan" || Content.IslandOf(NodeKind) != null; } }
+        // The island's own nodes are named (nobody knows a chalk seam from a rock the first time); the rest only say what's missing.
+        public override string Label { get { return IslandOwn ? (_timer > 0 ? null : Content.Nodes[NodeKind].Name) : Blocked ? G.Session.Blocked(NodeKind) : null; } }
+        public override string Detail
+        {
+            get
+            {
+                if (!IslandOwn || _timer > 0) return null;   // once work starts, the gains pop up in that spot
+                if (Blocked) return G.Session.Blocked(NodeKind);
+                if (NodeKind == "plan") return "Take a look";
+                var isl = Content.IslandOf(NodeKind);
+                return Content.NameOf(isl.Ingredient) + ": only found here";
+            }
+        }
 
         public override Act Work(Player p, float dt)
         {
@@ -196,13 +210,9 @@ namespace LastTide.Game
                 }
                 Refresh();
             }
-            switch (NodeKind)
-            {
-                case "palm": return Act.Chop;
-                case "boulder": return Act.Mine;
-                case "spring": return Act.Drink;
-                default: return Act.Gather;
-            }
+            // By what it takes: the hull is chopped like a palm, the vein, the seam and the cannon mined like a boulder.
+            var needs = Content.Nodes[NodeKind].Needs;
+            return NodeKind == "spring" ? Act.Drink : needs == ToolUse.Chop ? Act.Chop : needs == ToolUse.Mine ? Act.Mine : Act.Gather;
         }
 
         public override void Leave() { _timer = 0; }
