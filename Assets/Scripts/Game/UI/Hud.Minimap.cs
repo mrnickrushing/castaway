@@ -65,6 +65,8 @@ namespace LastTide.Game
                 var at = To(sp.Pos, out inside2);
                 if (!inside2) continue;
                 bool camp = sp is SiteSpot || sp is PieceView;
+                var node = sp as NodeSpot;   // the island's own material and plan: gold
+                if (node != null && node.IslandOwn && !sp.Blocked) { Dot(at, new Color(1f, 0.78f, 0.25f), node.NodeKind == "plan" ? 16 : 12); continue; }
                 Dot(at, camp ? new Color(0.85f, 0.6f, 0.3f) : sp is LootSpot ? new Color(0.9f, 0.85f, 0.55f) : sp.Blocked ? new Color(0.6f, 0.6f, 0.4f, 0.7f) : new Color(0.45f, 0.9f, 0.4f), camp ? 14 : 9);
             }
             foreach (var e in Enemy.All)
