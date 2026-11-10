@@ -136,6 +136,7 @@ namespace LastTide.Game
             float y = 0;
             Setting(ref y, "Name: " + s.DisplayName, "CHANGE", AskName);
             Setting(ref y, "Sound", s.State.muted ? "OFF" : "ON", () => { s.State.muted = !s.State.muted; Sfx.Muted = s.State.muted; RefreshHelp(); });
+            Setting(ref y, "Battery saver: 30 frames a second, a cooler phone", FrameBudget.BatterySaver ? "ON" : "OFF", () => { FrameBudget.BatterySaver = !FrameBudget.BatterySaver; RefreshHelp(); });
             var pets = s.OwnedPets;
             if (pets.Count > 1)
                 Setting(ref y, "Companion: " + s.ActivePet.Name, "CHANGE", () =>
