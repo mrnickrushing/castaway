@@ -814,6 +814,25 @@ namespace LastTide.Game
             return holder;
         }
 
+        /// <summary>A piece of the Gull's sailcloth laid over any surface (a blanket, a flag, a kennel roof);
+        /// null when the ship's sail isn't there.</summary>
+        public static GameObject SailSheet(Transform parent, System.Func<float, float, Vector3> at, Vector4 uvRect, Color? tint = null)
+        {
+            var shipSail = ModelRegistry.SailMaterial;
+            if (shipSail == null) return null;
+            Material sail;
+            var key = tint ?? new Color(1.1f, 1.06f, 0.98f);
+            if (!_sailTints.TryGetValue(key, out sail))
+            {
+                sail = new Material(shipSail) { name = "Sailcloth" };
+                sail.SetFloat("_Smoothness", 0.12f);
+                sail.SetColor("_BaseColor", key);
+                _sailTints[key] = sail;
+            }
+            return Cloth(parent, sail, SheetMesh(at, uvRect));
+        }
+        static readonly Dictionary<Color, Material> _sailTints = new Dictionary<Color, Material>();
+
         /// <summary>A sheet of sailcloth over any surface: <paramref name="at"/> maps (u, w) in 0..1 to a local point.</summary>
         static Mesh SheetMesh(System.Func<float, float, Vector3> at, Vector4 uvRect)
         {

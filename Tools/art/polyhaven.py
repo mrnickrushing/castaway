@@ -4,6 +4,7 @@
   python3 Tools/art/polyhaven.py terrain          # download + pack the six ground layers into Resources/Textures
   python3 Tools/art/polyhaven.py fetch [ids...]   # download models (glTF, 2k maps) into art-src/polyhaven/<id>
   python3 Tools/art/polyhaven.py install [ids...] # Blender: split, decimate, bake, export to Resources/Models/Scan
+  python3 Tools/art/polyhaven.py surfaces         # tileable plank texture for walls and floors (Resources/Textures)
   python3 Tools/art/polyhaven.py slim             # after install: drop unused pieces, cap maps at 1024, normals to JPG
 
 Terrain layers are in the order Terrain.shader expects: grass, leaf litter, dirt, sand, rock, pebbles.
@@ -140,6 +141,20 @@ def terrain():
     print("packed", out)
 
 
+# Tileable surfaces for things built in code (walls and floors): name in Resources/Textures -> Poly Haven texture id.
+SURFACES = {"Planks": "brown_planks_03"}
+
+
+def surfaces():
+    """Downloads each surface's 1k colour and normal map into Resources/Textures/<Name>.jpg and <Name>Normal.jpg."""
+    out = os.path.join(ROOT, "Assets", "Resources", "Textures")
+    for name, tid in SURFACES.items():
+        files = get_json(API + "/files/" + tid)
+        download(files["Diffuse"]["1k"]["jpg"]["url"], os.path.join(out, name + ".jpg"))
+        download(files["nor_gl"]["1k"]["jpg"]["url"], os.path.join(out, name + "Normal.jpg"))
+        print("surface", name, "<-", tid)
+
+
 def fetch(ids):
     for mid in ids:
         files = get_json(API + "/files/" + mid)
@@ -224,6 +239,8 @@ if __name__ == "__main__":
         terrain()
     elif cmd == "slim":
         slim()
+    elif cmd == "surfaces":
+        surfaces()
     elif cmd == "fetch":
         fetch(rest or list(MODELS))
     else:

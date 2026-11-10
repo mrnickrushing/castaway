@@ -137,7 +137,11 @@ setting only.
   net cord, brass, the limewash, weir and sail icons are still built in code. The camp's sea chest, rain catcher and
   radio (`Models.ScanStructure`), the spring and tide pools (`Models.ScanPool`: scanned stones round the sea's own
   water shader over a dark bed), the sailors' bags (a burlap sack) and the storage box, chest, furnace, table and chair
-  pieces (`PieceModels.ScanPiece`) are scans too. Still built in code: floors and walls, bed, dog house, torch, flag. Nodes are named over their ring, gold on
+  pieces (`PieceModels.ScanPiece`) are scans too. Floors, walls, the bed and the
+  dog house are boxes mapped with a tileable scanned plank texture (`PieceModels.Planked`, `Materials.Planks`,
+  `Resources/Textures/Planks*.jpg` from `polyhaven.py surfaces`; the normal map needs the import rule in
+  `Editor/ArtImport.cs` or vertical faces go black); blanket, kennel roof and flag are the ship's sailcloth
+  (`Models.SailSheet`), torch and flag poles scanned driftwood. Nodes are named over their ring, gold on
   the radar, and worked with the tool they need.
 - Combat feedback (`App/CombatFx.cs`, `UI/Hud.Combat.cs`): enemies telegraph each strike for `EnemyDef.Windup` seconds
   (they stop, crouch, a red ring of reach 2.1 m fills under them, red "!" overhead); stepping out of reach makes them
