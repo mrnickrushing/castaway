@@ -22,6 +22,9 @@ namespace LastTide.Core
         public int Damage;                   // weapons (and tools used as weapons)
         public ToolUse Use;                  // tools
         public int Durability;               // tools and weapons: hits before it breaks (0 = unbreakable)
+        public int Worth;                    // doubloons it sells for from the backpack (0 = not for sale)
+        /// <summary>Drunk rather than eaten: water, coconuts, rum (anything that only quenches thirst).</summary>
+        public bool Drunk { get { return Kind == ItemKind.Drink || (Kind == ItemKind.Food && Food <= 0 && Drink > 0); } }
     }
 
     /// <summary>One item and how many.</summary>
@@ -120,7 +123,7 @@ namespace LastTide.Core
             // Tools and weapons
             Tool("hatchet", "Rusty Hatchet", ToolUse.Chop, 10, 60);
             Tool("pickaxe", "Stone Pickaxe", ToolUse.Mine, 9, 60);
-            Tool("spear", "Bamboo Spear", ToolUse.None, 18, 45);
+            Tool("spear", "Wooden Spear", ToolUse.None, 18, 45);
             Tool("club", "Spiked Club", ToolUse.None, 26, 70);
             Tool("rod", "Fishing Rod", ToolUse.Fish, 4, 40);
             Tool("harpoon", "Iron Harpoon", ToolUse.None, 32, 90);
@@ -144,7 +147,7 @@ namespace LastTide.Core
             // Camp structures
             Build("campfire", "Campfire", "Cook food and keep the night at bay.", I("wood", 6), I("stone", 5));
             Build("shelter", "Palm Shelter", "Rest to heal. You wake up here if you fall.", I("wood", 12), I("fiber", 10), I("cloth", 2));
-            Build("workbench", "Workbench", "Craft tools, weapons and rope.", I("wood", 14), I("stone", 8), I("scrap", 4));
+            Build("workbench", "Workbench", "Craft tools, weapons, clothes and planks.", I("wood", 14), I("stone", 8), I("scrap", 4));
             Build("raincatcher", "Rain Catcher", "Collects fresh water over time.", I("wood", 8), I("cloth", 3), I("scrap", 2));
             Build("radio", "Ship's Radio", "Listen for other survivors calling for help.", I("scrap", 8), I("rope", 2), I("cloth", 2));
             Build("chest", "Sea Chest", "Store what you can't carry. Safe if you fall.", I("wood", 16), I("scrap", 3), I("rope", 2));

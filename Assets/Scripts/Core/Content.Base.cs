@@ -41,7 +41,7 @@ namespace LastTide.Core
             Tool("iron_hatchet", "Iron Hatchet", ToolUse.Chop, 16, 160);
             Tool("iron_pickaxe", "Iron Pickaxe", ToolUse.Mine, 15, 160);
             Gear("palm_hat", "Palm-Leaf Hat", GearSlot.Head, 2, "Woven from palm leaves. Keeps the sun off and a little of the blows.");
-            Gear("hide_vest", "Hide Vest", GearSlot.Body, 6, "Boar hide stitched with fibre. Turns a tusk, mostly.");
+            Gear("hide_vest", "Hide Vest", GearSlot.Body, 6, "Boar hide stitched with fiber. Turns a tusk, mostly.");
             Gear("hide_pants", "Hide Leggings", GearSlot.Legs, 4, "Tough leggings for the undergrowth.");
             Gear("hide_boots", "Hide Boots", GearSlot.Feet, 2, "Better than bare feet on coral.");
             Gear("tricorn", "Raider's Tricorn", GearSlot.Head, 5, "Taken from one of Red Jack's men.");
@@ -77,15 +77,32 @@ namespace LastTide.Core
             Piece("table", "Table", "Furniture", PieceKind.Object, "A rough plank table.", 0, null, true, I("wood", 8));
             Piece("chair", "Chair", "Furniture", PieceKind.Object, "Somewhere to sit at last.", 0, null, false, I("wood", 4));
             Piece("torch", "Torch", "Furniture", PieceKind.Object, "Lights up the camp.", 0, null, false, I("wood", 2), I("cloth", 1));
-            Piece("flag", "Camp Flag", "Furniture", PieceKind.Object, "Your own colours, made from the Gull's sail.", 0, null, true, I("wood", 4), I("cloth", 3));
+            Piece("flag", "Camp Flag", "Furniture", PieceKind.Object, "Your own colors, made from the Gull's sail.", 0, null, true, I("wood", 4), I("cloth", 3));
 
-            // Descriptions for the blueprints screen.
+            // Descriptions (the backpack's item panel and the blueprints screen): what each thing is for.
+            Blurb("wood", "Palm timber and driftwood. Nearly everything starts with it.");
+            Blurb("stone", "Beach stones and broken rock. For fires, tools and the furnace.");
+            Blurb("fiber", "Pulled from fern bushes. Twist it into rope or stitch with it.");
+            Blurb("scrap", "Iron fittings from the Gull. Hammered into nails and tools.");
+            Blurb("cloth", "Canvas from the Gull's sails. For the shelter, bandages and the rain catcher.");
+            Blurb("hide", "Tough boar hide. The workbench turns it into clothes.");
+            Blurb("iron_ore", "Rust-red rock from an iron vein. Smelt it into bars at the furnace.");
+            Blurb("pearl", "A smooth pearl from the smugglers' hoard. Any trader pays doubloons for it: SELL it from the backpack.");
+            Item("pearl").Worth = 15;
+            Blurb("gunpowder", "Dry powder from the smugglers' kegs. Ned has a plan for it.");
+            Blurb("coconut", "Sweet milk and a little flesh. Good for thirst.");
+            Blurb("berries", "Sharp and juicy. A bite to eat, and stew at a stone hearth.");
+            Blurb("raw_meat", "Raw boar meat. Roast it at the campfire: eaten raw it makes you ill.");
+            Blurb("crab", "Raw crab from a tide pool. Grill it at the campfire.");
+            Blurb("fish", "Fresh from the line. Grill it at the campfire.");
+            Blurb("water", "Fresh water in a stoppered flask. Drink it, or cook stew with it.");
+            Blurb("rum", "Red Jack's favorite. Quenches thirst and dulls the pain.");
             Blurb("hatchet", "A rusty hatchet from the Gull's locker. Chops palms.");
             Blurb("pickaxe", "A sharp stone lashed to a handle. Breaks rock and iron veins.");
-            Blurb("spear", "Bamboo with a stone point. Keeps boars at a distance.");
+            Blurb("spear", "A driftwood pole with a stone point, lashed with fiber. Keeps boars at a distance.");
             Blurb("club", "Heavy wood studded with ship's iron.");
-            Blurb("rope", "Plaited plant fibre. Holds most things together.");
-            Blurb("bandage", "Clean sailcloth and fibre. Stops the bleeding.");
+            Blurb("rope", "Plaited plant fiber. Holds most things together.");
+            Blurb("bandage", "Clean sailcloth and fiber. Stops the bleeding.");
             Blurb("nails", "Iron nails for chests and better buildings.");
             Blurb("rod", "A springy rod with a line. Fish bite at the pier.");
             Blurb("harpoon", "An iron-barbed harpoon, as Mara taught you.");

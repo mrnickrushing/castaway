@@ -189,7 +189,8 @@ namespace LastTide.Game
                 if (G.Session.Harvest(Key, NodeKind))
                 {
                     _shake = 0.35f;
-                    Sfx.Play(NodeKind == "palm" ? "chop" : NodeKind == "boulder" ? "mine" : NodeKind == "spring" ? "drink" : "gather", Pos);
+                    var tool = Content.Nodes[NodeKind].Needs; // by what it takes: the iron vein rings like the boulder
+                    Sfx.Play(tool == ToolUse.Chop ? "chop" : tool == ToolUse.Mine ? "mine" : NodeKind == "spring" ? "drink" : "gather", Pos);
                 }
                 Refresh();
             }

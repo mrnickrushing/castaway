@@ -436,8 +436,9 @@ namespace LastTide.Game
             return b;
         }
 
-        /// <summary>An item picture: the art if there is some, else a coloured disc with the initial.</summary>
-        public static void ItemIcon(Transform parent, string id, float size)
+        /// <summary>An item picture: the art if there is some, else a coloured disc with the initial. Unless it is part of a
+        /// button (or tip is false), tapping it shows the item's description.</summary>
+        public static void ItemIcon(Transform parent, string id, float size, bool tip = true)
         {
             var art = ItemArt(id) ?? ModelIcons.Item(id);
             if (art != null)
@@ -445,6 +446,7 @@ namespace LastTide.Game
                 var img = Img("Icon", parent, art, Color.white);
                 img.preserveAspect = true;
                 img.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, size));
+                if (tip) Tappable(img, id);
                 return;
             }
             var disc = Img("Icon", parent, Circle, ItemColor(id));
@@ -453,6 +455,15 @@ namespace LastTide.Game
             var t = Label("Initial", disc.transform, name.Substring(0, 1), Mathf.RoundToInt(size * 0.42f), Color.white, TextAnchor.MiddleCenter);
             t.rectTransform.Fill();
             Outlined(t, 1.5f);
+            if (tip) Tappable(disc, id);
+        }
+
+        /// <summary>A picture that isn't part of a button shows the item's description when tapped.</summary>
+        static void Tappable(Image img, string id)
+        {
+            if (id == "doubloon" || img.GetComponentInParent<Button>() != null) return;
+            img.raycastTarget = true;
+            img.gameObject.AddComponent<ItemTipTarget>().Id = id;
         }
 
         static string Content(string id) { return LastTide.Core.Content.NameOf(id); }

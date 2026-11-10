@@ -20,8 +20,8 @@ namespace LastTide.Game
             ("build", "Building your base", "Story blueprints glow green: stand in their ring to build them. BUILD at camp lets you lay floors, walls, doors and windows on the grid, and add boxes, a bed, a furnace and more. Tap a piece in build mode to take it down."),
             ("map", "The map", "Take the raft on the beach (or the MAP button) to see the islands. SAIL there fast for energy, or PADDLE for free and wait. Energy refills over time. Some islands need a higher level."),
             ("radio", "The radio", "Rebuild the ship's radio at camp and tune it in. Survivors call for help: bring them what they need to rescue them and move the story on."),
-            ("coin", "Doubloons", "Earn doubloons from treasure, pirates, rescues and levelling up. Spend them at the trading post, to refill energy, to arrive at once or finish a craft. You can buy more in the shop."),
-            ("bolt", "Fighting", "With AUTO on your castaway fights anything that comes close; turn it off and tap the weapon button to strike, the target button to pick an enemy. Sneak (the crouching button) to slip past. Biscuit the dog fights at your side once you find him. Wear clothes for armour."),
+            ("coin", "Doubloons", "Earn doubloons from treasure, pirates, rescues and leveling up, or SELL pearls from the backpack. Spend them at the trading post (the gift button), to refill energy, to arrive at once, finish a craft or recover a lost backpack. You can buy more in the shop."),
+            ("bolt", "Fighting", "With AUTO on your castaway fights anything that comes close; turn it off and tap the weapon button to strike, the target button to pick an enemy. Sneak (the crouching button) to slip past. Biscuit the dog fights at your side once you find him. Wear clothes for armor."),
             ("season", "Season and events", "The star-shield button at the top opens the season: everything that earns experience fills the season bar, and each level pays a free reward (premium pass: a second one, with companions). EVENTS shows the week's calendar: each event counts one thing, like boars hunted or wood gathered, and pays at three milestones."),
             ("path", "Survivor's Path", "Every finished step of the guide pays a reward: claim it on the PATH screen. The Ultra pass adds a golden reward to every step. LEVEL UP! under the quest card collects the gifts for each new level."),
         };
@@ -63,7 +63,7 @@ namespace LastTide.Game
                 tab.color = i == _helpTab ? new Color(0.8f, 0.62f, 0.12f) : new Color(1, 1, 1, 0.1f);
             }
             Clear(_helpBody);
-            _helpIn = UIKit.Phone ? UIKit.Scroller(_helpBody) : _helpBody;
+            _helpIn = UIKit.Scroller(_helpBody); // pages that fit don't move; Settings with all its rows scrolls on an iPad too
             if (_helpTab == 0) HelpHowTo();
             else if (_helpTab == 1) HelpStory();
             else HelpSettings();
@@ -134,6 +134,7 @@ namespace LastTide.Game
         {
             var s = G.Session;
             float y = 0;
+            Setting(ref y, "Name: " + s.DisplayName, "CHANGE", AskName);
             Setting(ref y, "Sound", s.State.muted ? "OFF" : "ON", () => { s.State.muted = !s.State.muted; Sfx.Muted = s.State.muted; RefreshHelp(); });
             var pets = s.OwnedPets;
             if (pets.Count > 1)
@@ -163,16 +164,12 @@ namespace LastTide.Game
                 "Crab and snake: scans by ffishAsia-and-floraZia, CC0. " +
                 "Story art, movies, icons, boar and palms made for this game. Fonts: Barlow (SIL Open Font License).",
                 26, new Color(1, 1, 1, 0.6f), TextAnchor.UpperLeft, false);
-            if (UIKit.Phone)
-            {
-                // The page scrolls: the credits take the room they need at full size.
-                credits.resizeTextForBestFit = false;
-                credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(_helpBody.sizeDelta.x, 100));
-                float h = credits.preferredHeight + 20;
-                credits.rectTransform.sizeDelta = new Vector2(_helpBody.sizeDelta.x, h);
-                UIKit.ScrollHeight(_helpIn, y + 30 + h + 20);
-            }
-            else credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(1600, 330));
+            // The page scrolls: the credits take the room they need at full size.
+            credits.resizeTextForBestFit = false;
+            credits.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y - 30), new Vector2(_helpBody.sizeDelta.x, 100));
+            float h = credits.preferredHeight + 20;
+            credits.rectTransform.sizeDelta = new Vector2(_helpBody.sizeDelta.x, h);
+            UIKit.ScrollHeight(_helpIn, y + 30 + h + 20);
         }
 
         void Setting(ref float y, string label, string button, System.Action act)
@@ -183,7 +180,7 @@ namespace LastTide.Game
             t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(30, 0);
             var b = UIKit.Button("Button", row, button, new Color(0.25f, 0.45f, 0.45f), act, 30);
             ((RectTransform)b.transform).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(300, 72));
-            y += 106; // six rows (with a companion to choose) still leave room for the credits
+            y += 106;
         }
     }
 }

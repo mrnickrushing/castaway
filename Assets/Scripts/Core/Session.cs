@@ -165,13 +165,22 @@ namespace LastTide.Core
         }
 
         /// <summary>Why the player can't harvest this right now, or null when they can.</summary>
+        /// <summary>Where the simplest tool of a kind is made: ": craft one (CRAFT)" or ": make one at the Workbench".</summary>
+        public static string ToolHint(ToolUse use)
+        {
+            var r = Content.Recipes.Values.Where(x => Content.Item(x.Output) != null && Content.Item(x.Output).Use == use)
+                .OrderBy(x => x.Station == "hand" ? 0 : 1).ThenBy(x => x.MinLevel).FirstOrDefault();
+            if (r == null) return "";
+            return r.Station == "hand" ? ": craft one (CRAFT)" : ": make one at the " + StationName(r.Station);
+        }
+
         public string Blocked(string kind)
         {
             var d = Content.Nodes[kind];
-            if (d.Needs == ToolUse.Chop && ToolFor(ToolUse.Chop) < 0) return "Needs a hatchet";
-            if (d.Needs == ToolUse.Mine && ToolFor(ToolUse.Mine) < 0) return "Needs a pickaxe";
+            if (d.Needs == ToolUse.Chop && ToolFor(ToolUse.Chop) < 0) return "Needs a hatchet" + ToolHint(ToolUse.Chop);
+            if (d.Needs == ToolUse.Mine && ToolFor(ToolUse.Mine) < 0) return "Needs a pickaxe" + ToolHint(ToolUse.Mine);
             if (d.ThirstPerHit > 0) return State.thirst >= 99.5f ? "Not thirsty" : null;
-            if (d.Needs == ToolUse.Fish && ToolFor(ToolUse.Fish) < 0) return "Needs a fishing rod";
+            if (d.Needs == ToolUse.Fish && ToolFor(ToolUse.Fish) < 0) return "Needs a fishing rod" + ToolHint(ToolUse.Fish);
             foreach (var y in d.Yield) if (y.id != "doubloon" && Inventory.Room(State.backpack, y.id) <= 0) return "Backpack full";
             return null;
         }
@@ -371,7 +380,7 @@ namespace LastTide.Core
 
         // ------------------------------------------------------------------ using items
 
-        /// <summary>Eats, drinks, bandages or equips the item in a backpack slot.</summary>
+        /// <summary>Eats, drinks, bandages, equips or sells the item in a backpack slot.</summary>
         public bool Use(int slot)
         {
             if (slot < 0 || slot >= State.backpack.Count) return false;
@@ -384,6 +393,13 @@ namespace LastTide.Core
             {
                 State.equipped = State.equipped == slot ? -1 : slot;
                 Changed?.Invoke();
+                return true;
+            }
+            if (d.Worth > 0)                                    // pearls: sold one at a time for doubloons
+            {
+                s.n--;
+                if (s.n <= 0) s.Clear();
+                Give("doubloon", d.Worth);
                 return true;
             }
             if (d.Food == 0 && d.Drink == 0 && d.Heal == 0) return false;
@@ -571,6 +587,11 @@ namespace LastTide.Core
                 var q = Quests.All[State.quest];
                 if (!q.Done(this)) break;
                 State.quest++;
+                foreach (var h in q.Hands)
+                {
+                    int gone = Inventory.Remove(State.backpack, h.id, h.n);
+                    if (gone > 0) Toast?.Invoke("Handed over " + gone + " " + Content.NameOf(h.id));
+                }
                 AddXp(15);
                 QuestDone?.Invoke(q);
             }

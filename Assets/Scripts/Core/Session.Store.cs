@@ -37,7 +37,7 @@ namespace LastTide.Core
             new ProductDef { Id = "lasttide.doubloons.small", Name = "Pouch of Doubloons", Blurb = "120 doubloons", FallbackPrice = "$0.99", Coins = 120, Art = "doubloon" },
             new ProductDef { Id = "lasttide.doubloons.medium", Name = "Purse of Doubloons", Blurb = "650 doubloons", FallbackPrice = "$4.99", Coins = 650, Art = "doubloon" },
             new ProductDef { Id = "lasttide.doubloons.large", Name = "Chest of Doubloons", Blurb = "1,400 doubloons", FallbackPrice = "$9.99", Coins = 1400, Art = "doubloon", Best = true },
-            new ProductDef { Id = "lasttide.starter", Name = "Castaway Starter Pack", Blurb = "300 doubloons, a full meal, medicine, rope and a bamboo spear. Once only.", FallbackPrice = "$1.99",
+            new ProductDef { Id = "lasttide.starter", Name = "Castaway Starter Pack", Blurb = "300 doubloons, a full meal, medicine, rope and a wooden spear. Once only.", FallbackPrice = "$1.99",
                 Coins = 300, Energy = 100, Consumable = false, Art = "offer_starter",
                 Items = new[] { Content.I("spear", 1), Content.I("bandage", 5), Content.I("meat", 6), Content.I("water", 6), Content.I("rope", 6) } },
             new ProductDef { Id = "lasttide.bigpack", Name = "Sailor's Big Backpack", Blurb = "10 more backpack slots, for good.", FallbackPrice = "$2.99", Consumable = false, Perk = "bigpack", Art = "offer_bigpack" },

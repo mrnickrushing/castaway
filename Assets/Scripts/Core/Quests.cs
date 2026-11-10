@@ -15,6 +15,8 @@ namespace LastTide.Core
         public string Craft;
         /// <summary>A rescue step: the radio signal whose survivor needs things brought.</summary>
         public string Signal;
+        /// <summary>Handed over when the step is done (Ned takes the powder kegs for the palisade).</summary>
+        public ItemCount[] Hands = new ItemCount[0];
         public ItemCount[] Reward = new ItemCount[0];
         /// <summary>The Ultra track's reward for this step (Survivor's Path).</summary>
         public ItemCount[] Premium = new ItemCount[0];
@@ -39,12 +41,12 @@ namespace LastTide.Core
             Q("shelter", "Build a palm shelter", s => s.Built("shelter"), build: "shelter", reward: new[] { Content.I("bandage", 1) }),
             Count("scrap", "Salvage ship scrap from the wreck", "scrap", 4, "workbench", node: "crate"),
             Q("workbench", "Build a workbench", s => s.Built("workbench"), build: "workbench"),
-            new Quest { Id = "spear", Text = "Craft a bamboo spear (CRAFT)", Done = s => s.Has("spear") || s.Has("club") || s.State.kills > 0, Craft = "spear" },
+            new Quest { Id = "spear", Text = "Craft a wooden spear (CRAFT)", Done = s => s.Has("spear") || s.Has("club") || s.State.kills > 0, Craft = "spear" },
             Q("hunt", "Hunt a wild boar in the jungle", s => s.State.kills > 0, node: "boar", reward: new[] { Content.I("bandage", 1) }),
             Q("cook", "Roast meat on the campfire", s => s.Flag("cooked"), build: "campfire"),
             Q("rain", "Build a rain catcher", s => s.Built("raincatcher"), build: "raincatcher", reward: new[] { Content.I("water", 2) }),
             Q("chest", "Build a sea chest for your supplies", s => s.Built("chest"), build: "chest"),
-            Q("map", "Open the map and sail to Palm Grove", s => s.Flag("visited_grove"), node: "exit", reward: new[] { Content.I("doubloon", 10) }),
+            Q("map", "Open the map and travel to Palm Grove", s => s.Flag("visited_grove"), node: "exit", reward: new[] { Content.I("doubloon", 10) }),
             Q("level3", "Gather, build and hunt to reach level 3", s => s.State.level >= 3),
             Q("dog", "Find the Gull's dog on Driftwood Shore", s => s.FoundBiscuit, node: "pet"),
             Q("radio", "Rebuild the ship's radio at camp", s => s.Built("radio"), build: "radio", reward: new[] { Content.I("doubloon", 10) }),
@@ -53,7 +55,8 @@ namespace LastTide.Core
             Q("pier", "Reach level 6, then answer Mara's call from the pier", s => s.Flag("done_fisher"), node: "npc"),
             Q("captive", "Free Ned from the Smuggler's Cave (level 10)", s => s.Flag("done_captive"), node: "npc"),
             new Quest { Id = "powder", Text = "Gather gunpowder for Ned's plan", Need = 6, Have = s => s.Count("gunpowder"),
-                Done = s => s.Count("gunpowder") >= 6 || s.Flag("redjack_dead"), PointNode = "skeleton", Reward = new[] { Content.I("bandage", 3) } },
+                Done = s => s.Count("gunpowder") >= 6 || s.Flag("redjack_dead"), PointNode = "skeleton", Reward = new[] { Content.I("bandage", 3) },
+                Hands = new[] { Content.I("gunpowder", 6) } },
             Q("redjack", "Defeat Red Jack at the Pirate Camp (level 12)", s => s.Flag("redjack_dead"), node: "redjack", reward: new[] { Content.I("doubloon", 50) }),
             Q("sail", "Board Red Jack's ship and sail on the Last Tide", s => s.Flag("ending"), node: "ship"),
             Q("free", "The islands are yours: explore and build", s => false),

@@ -156,7 +156,7 @@ namespace LastTide.Tests
         public void FishingNeedsARod()
         {
             var g = Fresh();
-            Assert.AreEqual("Needs a fishing rod", g.Blocked("fishspot"));
+            StringAssert.StartsWith("Needs a fishing rod", g.Blocked("fishspot"));
             g.Give("rod", 1);
             Assert.IsTrue(g.Harvest("pier:fishspot#0", "fishspot"));
             Assert.AreEqual(1, g.Count("fish"));

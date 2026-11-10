@@ -249,7 +249,7 @@ namespace LastTide.Game
             var why = s.TravelBlocked(l, run);
             if (why != null) { Toast(why); return; }
             s.Travel(l, run);
-            Sfx.Play(run ? "run" : "walk");
+            Sfx.Play("depart"); // the ship's bell, under sail or paddling
             Select(null);
         }
 

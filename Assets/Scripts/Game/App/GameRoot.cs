@@ -327,7 +327,7 @@ namespace LastTide.Game
             Player.Instance.Place(p, 0);
             Save();
             if (G.Session.NewestBag != null)
-                Hud.Instance.Confirm("Recover your backpack?", "Everything you carried lies where you fell. Get it back right now for " + Session.RecoverBagCost + " doubloons, or walk back for it.", "RECOVER " + Session.RecoverBagCost,
+                Hud.Instance.Confirm("Recover your backpack?", "Your backpack lies where you fell (the pockets stayed with you). Get it back right now for " + Session.RecoverBagCost + " doubloons, or walk back for it.", "RECOVER " + Session.RecoverBagCost,
                     () => { if (G.Session.RecoverBag()) Sfx.Play("coin"); });
         }
 

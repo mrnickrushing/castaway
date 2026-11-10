@@ -33,7 +33,7 @@ namespace LastTide.Tests
         public void PalmsNeedAHatchetAndFallAfterFourChops()
         {
             var g = Fresh();
-            Assert.AreEqual("Needs a hatchet", g.Blocked("palm"));
+            StringAssert.StartsWith("Needs a hatchet", g.Blocked("palm"));
             Assert.IsFalse(g.Harvest("palm#1", "palm"));
             Assert.IsTrue(g.Harvest("h", "hatchet_pickup"));
             Assert.IsFalse(g.Standing("h", "hatchet_pickup"), "the hatchet is picked up for good");
