@@ -106,6 +106,11 @@ setting only.
   Wood", or "craft 2 Rope (CRAFT)") and the arrow leads to a node that yields it, or its ingredients, then the station;
   crafting steps (`Quest.Craft`) list missing ingredients, then "ready: tap CRAFT". When a hunt target is all dead, the
   arrow leads toward the next den but stops 30 m short (dens only refill with the castaway over 26 m away).
+- Trips and pacing: `Core/Session.Trip.cs` logs a trip from landing away until home (`State.trip`: finds, kills, XP,
+  doubloons, falls; recipes learned and survivors rescued as a diff), then `State.lastTrip` waits for the HUD's BACK AT
+  card (`UI/Hud.Trip.cs`: FOUND, DEFEATED, NOW YOU CAN from `Session.NowPossible`, NEXT; the PlayBot closes it).
+  `Session.Settled` (shelter built and day 2, or level 3) gates the season button, gift, the shop "+"s and the map's
+  RADIO/TRADE/SHOP (`UI/Hud.Pacing.cs`, `_later`), with a toast when they appear.
 - Combat feedback (`App/CombatFx.cs`, `UI/Hud.Combat.cs`): enemies telegraph each strike for `EnemyDef.Windup` seconds
   (they stop, crouch, a red ring of reach 2.1 m fills under them, red "!" overhead); stepping out of reach makes them
   miss ("DODGED"). Hits play a hit-stop (`CombatFx.HitStop`, keeps the bot's timeScale) and a weapon sound

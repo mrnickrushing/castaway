@@ -314,6 +314,7 @@ namespace LastTide.Game
             _coinsIsland.rectTransform.Fill(); _coinsIsland.rectTransform.offsetMin = new Vector2(66, 0);
             var plus = UIKit.Button("Plus", coins, "+", new Color(0, 0, 0, 0), OpenShop, 46);
             ((RectTransform)plus.transform).Fill();
+            _later.Add(plus.gameObject);
             plus.GetComponentInChildren<Text>().alignment = TextAnchor.MiddleRight;
             plus.GetComponentInChildren<Text>().color = new Color(0.3f, 0.85f, 0.8f);
         }
@@ -361,7 +362,7 @@ namespace LastTide.Game
         {
             Vector2 pos = Vector2.zero;
             bool down = false, began = false;
-            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _seasonOpen || _rewardCard.gameObject.activeSelf || _building || (InvOpen && _station != "radio")) { _finger = -2; Stick = Vector2.zero; return; }
+            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _seasonOpen || _rewardCard.gameObject.activeSelf || _trip != null || _building || (InvOpen && _station != "radio")) { _finger = -2; Stick = Vector2.zero; return; }
             if (Input.touchCount > 0)
             {
                 for (int i = 0; i < Input.touchCount; i++)
@@ -441,6 +442,8 @@ namespace LastTide.Game
             _worldLayer.gameObject.SetActive(!MapOpen);
             UpdateWorldLabels();
             UpdateCombat();
+            UpdateTrip();
+            UpdatePacing();
             UpdatePops();
             UpdateOverlays();
             // Rebuild the panels when something changed, and tick a craft's progress bar while it runs.

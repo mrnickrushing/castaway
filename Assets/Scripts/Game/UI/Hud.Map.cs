@@ -86,6 +86,7 @@ namespace LastTide.Game
             _coinText = UIKit.Outlined(UIKit.Label("Coins", top, "0", 36, Color.white), 1.5f);
             _coinText.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(76, -118), new Vector2(200, 50));
             var plus = UIKit.Button("Plus", top, "+", new Color(1, 1, 1, 0.12f), OpenShop, 46);
+            _later.Add(plus.gameObject);
             // Tap the energy bar to refill it with doubloons.
             var refill = UIKit.Button("Refill", top, null, new Color(0, 0, 0, 0), () => Confirm("Refill energy?", "Fill your energy to " + World.EnergyMax + " now for " + Session.RefillEnergyCost + " doubloons.\nYou have " + G.Session.State.coins + ".", "REFILL", () => { if (G.Session.RefillEnergy()) Sfx.Play("coin"); }));
             ((RectTransform)refill.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 0), new Vector2(450, 100));
@@ -108,6 +109,7 @@ namespace LastTide.Game
             {
                 var b = UIKit.Button(label, strip.transform, null, new Color(1, 1, 1, 0.08f), act);
                 ((RectTransform)b.transform).Place(new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(bx, -24), new Vector2(104, 104));
+                if (label == "RADIO" || label == "TRADE" || label == "SHOP") _later.Add(b.gameObject);
                 if (sym == "?")
                 {
                     var q = UIKit.Label("Icon", b.transform, "?", 56, new Color(0.85f, 0.88f, 0.9f), TextAnchor.MiddleCenter, false);

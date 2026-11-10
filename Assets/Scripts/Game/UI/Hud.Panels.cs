@@ -75,6 +75,7 @@ namespace LastTide.Game
             var si = UIKit.Img("I", srt, UIKit.Symbol("season"), Color.white); si.rectTransform.Fill(18);
             _seasonBadge = Badge(srt);
             var gift = UIKit.Button("Gift", safe, null, new Color(0, 0, 0, 0), OpenOffers);
+            _later.Add(srt.gameObject); _later.Add(gift.gameObject);
             ((RectTransform)gift.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-330, -20), new Vector2(80, 80));
             var gi = UIKit.Img("I", gift.transform, UIKit.Symbol("gift"), Color.white); gi.rectTransform.Fill(8);
             var gear = UIKit.Button("Settings", safe, null, new Color(0, 0, 0, 0), () => OpenHelp(2));
@@ -156,6 +157,7 @@ namespace LastTide.Game
             _invCoins = UIKit.Label("N", coinBox, "0", 36, Color.white, TextAnchor.MiddleLeft, false);
             _invCoins.rectTransform.Fill(); _invCoins.rectTransform.offsetMin = new Vector2(80, 0);
             var plus = UIKit.Button("Plus", coinBox, "+", new Color(0, 0, 0, 0), OpenShop, 56);
+            _later.Add(plus.gameObject);
             ((RectTransform)plus.transform).Place(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(64, 60));
             plus.GetComponentInChildren<Text>().color = new Color(0.3f, 0.8f, 0.75f);
             _invGear = UIKit.Rect("Gear", _inv).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(60, -120), new Vector2(130, 4 * Cell));

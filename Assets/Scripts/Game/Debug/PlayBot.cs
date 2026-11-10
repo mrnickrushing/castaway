@@ -97,6 +97,7 @@ namespace LastTide.Game
             // Movies and story cards: watch a moment, then tap on.
             if (Cinema.Playing) { _tapT += Time.unscaledDeltaTime; if (_tapT > 2.5f) { _tapT = 0; Cinema.Skip(); Log("skipped a movie"); } return; }
             if (hud.StoryPlaying) { _tapT += Time.unscaledDeltaTime; if (_tapT > 0.6f) { _tapT = 0; hud.TapStory(); } return; }
+            if (hud.TripShowing) { _tapT += Time.unscaledDeltaTime; if (_tapT > 1f) { _tapT = 0; hud.CloseTrip(); Log("read the trip summary"); } return; }
 
             if (s.State.quest != _lastQuest)
             {

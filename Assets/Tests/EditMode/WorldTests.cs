@@ -67,6 +67,46 @@ namespace LastTide.Tests
         }
 
         [Test]
+        public void ATripIsLoggedUntilHomeAndSummarisedOnce()
+        {
+            var g = Fresh();
+            var grove = World.Location("grove");
+            Assert.IsTrue(g.Travel(grove, true)); _now += 600; g.Arrive();
+            Assert.IsNotNull(g.State.trip);
+            g.Give("wood", 4); g.Give("wood", 2); g.Give("doubloon", 15);
+            g.Killed("boar");
+            Assert.AreEqual(6, g.State.trip.gained.Find(x => x.id == "wood").n);
+            Assert.AreEqual(15, g.State.trip.coins);
+            Assert.AreEqual(1, g.State.trip.kills.Find(x => x.id == "boar").n);
+            Assert.Greater(g.State.trip.xp, 0);
+            Assert.IsNull(g.LastTrip, "nothing to show until home");
+
+            // Saved and loaded mid-trip: still the same trip.
+            var st = g.State; st.lastTrip = new TripLog(); st.Repair();
+            Assert.IsNull(st.lastTrip, "an empty log loaded from a save is no log");
+            Assert.IsNotNull(st.trip);
+
+            g.UpdateEnergy();
+            Assert.IsTrue(g.Travel(World.Location(World.HomeId), true)); _now += 600; g.Arrive();
+            Assert.IsNull(g.State.trip);
+            Assert.IsNotNull(g.LastTrip);
+            CollectionAssert.AreEqual(new[] { "grove" }, g.LastTrip.places);
+            g.TripSeen();
+            Assert.IsNull(g.LastTrip);
+
+            // A trip where nothing happened isn't worth a card.
+            g.UpdateEnergy(); g.State.energy = World.EnergyMax;
+            Assert.IsTrue(g.Travel(grove, true)); _now += 600; g.Arrive();
+            g.UpdateEnergy(); g.State.energy = World.EnergyMax;
+            Assert.IsTrue(g.Travel(World.Location(World.HomeId), true)); _now += 600; g.Arrive();
+            Assert.IsNull(g.LastTrip);
+
+            // Home with the materials for the campfire on hand: the summary says it can go up now.
+            g.Give("wood", 30); g.Give("stone", 30);
+            CollectionAssert.Contains(g.NowPossible(), "Build the " + Content.Builds["campfire"].Name.ToLower());
+        }
+
+        [Test]
         public void LockedLocationsNeedALevel()
         {
             var g = Fresh();
