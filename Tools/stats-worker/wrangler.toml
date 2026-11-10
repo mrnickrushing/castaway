@@ -1,0 +1,12 @@
+name = "lasttide-stats"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+[triggers]
+crons = ["17 4 * * *"]   # daily: drop events older than a year
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lasttide-stats"
+database_id = "12740ff0-f508-4e0d-b522-e28af0fa1da9"
