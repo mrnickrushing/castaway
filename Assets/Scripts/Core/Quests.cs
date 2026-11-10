@@ -56,7 +56,7 @@ namespace LastTide.Core
                 Done = s => s.Count("gunpowder") >= 6 || s.Flag("redjack_dead"), PointNode = "skeleton", Reward = new[] { Content.I("bandage", 3) } },
             Q("redjack", "Defeat Red Jack at the Pirate Camp (level 12)", s => s.Flag("redjack_dead"), node: "redjack", reward: new[] { Content.I("doubloon", 50) }),
             Q("sail", "Board Red Jack's ship and sail on the Last Tide", s => s.Flag("ending"), node: "ship"),
-            Q("free", "Captain of the islands: explore, build and survive", s => false),
+            Q("free", "The islands are yours: explore and build", s => false),
         };
 
         /// <summary>Every step pays something on the free track and more on the Ultra track.</summary>

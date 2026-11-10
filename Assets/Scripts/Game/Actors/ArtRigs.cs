@@ -253,9 +253,24 @@ namespace LastTide.Game
             if (shaft.sqrMagnitude < 1e-4f) shaft = transform.parent.forward;
             shaft.Normalize();
             // Tools are built with the handle along +Y from the grip and the head toward +Z.
-            _held.transform.position = _handR.position + fore * 0.04f - shaft * 0.14f;
-            _held.transform.rotation = Quaternion.LookRotation(fore, shaft);
+            var rot = Quaternion.LookRotation(fore, shaft);
+            // On the move with nothing to do, carry it upright beside the body, leaning back a little: held square to
+            // the forearm, the jog's arm swing swept a cutlass through the legs at every stride.
+            bool carry = _move > 0.08f && _act == Act.None && _swing < 0;
+            _carry = Mathf.MoveTowards(_carry, carry ? 1 : 0, Time.deltaTime * 5f);
+            if (_carry > 0)
+            {
+                var body = transform.parent;
+                var flat = Vector3.ProjectOnPlane(body.forward, Vector3.up).normalized;
+                var lean = (Vector3.up - flat * 0.5f).normalized;                  // tip back over the shoulder
+                var upright = Quaternion.LookRotation(Vector3.Cross(Vector3.Cross(Vector3.up, flat), lean), lean);
+                rot = Quaternion.Slerp(rot, upright, Mathf.SmoothStep(0, 1, _carry));
+            }
+            _held.transform.rotation = rot;
+            _held.transform.position = _handR.position + fore * 0.04f - (rot * Vector3.up) * 0.14f;
         }
+
+        float _carry;
     }
 
     /// <summary>The AI-made boar (Resources/Models/Animals/boar) with its Walk clip; strikes and falls by tilting the model.</summary>

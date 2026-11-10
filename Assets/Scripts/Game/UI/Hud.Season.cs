@@ -225,7 +225,7 @@ namespace LastTide.Game
             var tag = UIKit.Img("Tag", rt, null, premium ? new Color(0.62f, 0.46f, 0.08f) : new Color(0.25f, 0.6f, 0.25f)).rectTransform;
             tag.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 0), new Vector2(0, -26), new Vector2(size + 6, 26));
             var tagT = UIKit.Label("T", tag, premium ? "PREMIUM" : "FREE", 18, Color.white, TextAnchor.MiddleCenter, false); tagT.rectTransform.Fill();
-            if (locked) { var l = UIKit.Img("Lock", rt, UIKit.Symbol("lock"), new Color(1f, 0.85f, 0.4f)); l.rectTransform.Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-4, 4), new Vector2(30, 30)); }
+            if (locked) { var l = UIKit.Img("Lock", rt, UIKit.Symbol("lock"), new Color(1f, 0.85f, 0.4f)); l.rectTransform.Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(4, 4), new Vector2(30, 30)); } // bottom left: the count has the right
             if (taken)
             {
                 var c = UIKit.Img("Taken", rt, null, new Color(0, 0, 0, 0.55f)); c.rectTransform.Fill();
@@ -412,10 +412,13 @@ namespace LastTide.Game
             // Merge duplicates.
             var merged = new List<ItemCount>();
             foreach (var it in items) { int i = merged.FindIndex(m => m.id == it.id); if (i < 0) merged.Add(it); else merged[i] = new ItemCount(it.id, merged[i].n + it.n); }
-            var band = UIKit.Img("Band", _rewardCard, Fade(), new Color(0.2f, 0.36f, 0.36f, 0.85f)).rectTransform;
-            band.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 10), new Vector2(1500, 520));
-            var band2 = UIKit.Img("Band", _rewardCard, Fade(), new Color(0.2f, 0.36f, 0.36f, 0.85f)).rectTransform;
-            band2.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 10), new Vector2(1500, 520)); band2.localScale = new Vector3(-1, 1, 1);
+            // A band that fades out towards both ends: two halves from the middle, the left one mirrored.
+            foreach (float side in new[] { 1f, -1f })
+            {
+                var band = UIKit.Img("Band", _rewardCard, Fade(), new Color(0.2f, 0.36f, 0.36f, 0.85f)).rectTransform;
+                band.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 10), new Vector2(800, 520));
+                band.localScale = new Vector3(side, 1, 1);
+            }
             foreach (float ly in new[] { 270f, -250f })
             {
                 var l = UIKit.Img("Line", _rewardCard, null, new Color(0.95f, 0.78f, 0.15f)).rectTransform;
