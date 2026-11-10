@@ -143,6 +143,8 @@ namespace LastTide.Tests
                 O("take off", 3, (t, g, r, c) => t.Conserving(g, c, () => g.TakeOff((GearSlot)(1 + r.Next(4))))),
                 O("store", 4, (t, g, r, c) => { int s = OddSlot(g, r); t.Conserving(g, c, () => g.StoreSlot(s) > 0); }),
                 O("store resources", 2, (t, g, r, c) => t.Conserving(g, c, () => g.StoreResources() > 0)),
+                O("move pocket", 4, (t, g, r, c) => { int s = AnySlot(g, r); t.Conserving(g, c, () => g.MoveSlot(s) >= 0); }),
+                O("make room", 2, (t, g, r, c) => t.Conserving(g, c, () => { g.MakeRoom(r.Next(2) == 0 ? null : new[] { "wood" }); return true; })),
                 O("take from chest", 4, (t, g, r, c) => { int s = r.Next(Content.ChestSlots + 4) - 2; t.Conserving(g, c, () => g.TakeFromChest(s) > 0); }),
                 O("box", 10, (t, g, r, c) =>
                 {

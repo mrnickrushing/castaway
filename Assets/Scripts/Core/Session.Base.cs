@@ -107,6 +107,53 @@ namespace LastTide.Core
             Changed?.Invoke();
         }
 
+        /// <summary>Empty slots, pockets included: room for that many new kinds of thing.</summary>
+        public int FreeSlots { get { return State.backpack.Count(s => s.Empty); } }
+
+        /// <summary>Moves a stack from the backpack into the pockets (kept when the castaway passes out), or back.
+        /// It goes to the first empty slot on the other side; the held item stays held. Returns where it went, or -1.</summary>
+        public int MoveSlot(int slot)
+        {
+            var s = State.backpack[slot];
+            if (s.Empty) return -1;
+            bool toPocket = !IsPocket(slot);
+            int from = toPocket ? 0 : Content.PocketSlots, to = toPocket ? Content.PocketSlots : State.backpack.Count;
+            int into = -1;
+            for (int i = from; i < to; i++) if (State.backpack[i].Empty) { into = i; break; }
+            if (into < 0) { Toast?.Invoke(toPocket ? "Pockets full: move something to the backpack first" : "No room in the backpack"); return -1; }
+            var e = State.backpack[into];
+            e.id = s.id; e.n = s.n; e.wear = s.wear;
+            s.Clear();
+            if (State.equipped == slot) State.equipped = into;
+            Changed?.Invoke();
+            return into;
+        }
+
+        /// <summary>One tap to free the backpack: tops up stacks, then (at home) stores every material that isn't in
+        /// <paramref name="keep"/> (what the current goal needs) in the chest and boxes. Pockets, tools, weapons,
+        /// clothes, food and medicine stay. Returns how many items were stored.</summary>
+        public int MakeRoom(ICollection<string> keep = null)
+        {
+            Sort();
+            int moved = 0;
+            if (AtHome)
+            {
+                foreach (var store in Storages)
+                    for (int i = Content.PocketSlots; i < State.backpack.Count; i++)
+                    {
+                        var s = State.backpack[i];
+                        if (s.Empty || i == State.equipped || Content.Item(s.id)?.Kind != ItemKind.Resource) continue;
+                        if (keep != null && keep.Contains(s.id)) continue;
+                        int k = Inventory.Add(store, s.id, s.n, s.wear);
+                        s.n -= k; moved += k;
+                        if (s.n <= 0) s.Clear();
+                    }
+                if (moved > 0) Sort();
+            }
+            Changed?.Invoke();
+            return moved;
+        }
+
         public bool Discard(int slot)
         {
             var s = State.backpack[slot];

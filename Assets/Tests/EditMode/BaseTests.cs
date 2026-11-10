@@ -39,6 +39,52 @@ namespace LastTide.Tests
         }
 
         [Test]
+        public void MovingBetweenPocketsAndBackpackKeepsWhatIsHeld()
+        {
+            var g = Fresh();
+            foreach (var s in g.State.backpack) s.Clear();
+            g.State.equipped = -1;
+            var bag = g.State.backpack;
+            bag[Content.PocketSlots + 2].id = "spear"; bag[Content.PocketSlots + 2].n = 1; bag[Content.PocketSlots + 2].wear = 3;
+            g.State.equipped = Content.PocketSlots + 2;
+            Assert.AreEqual(0, g.MoveSlot(Content.PocketSlots + 2));
+            Assert.AreEqual("spear", bag[0].id, "into the first free pocket");
+            Assert.AreEqual(3, bag[0].wear);
+            Assert.AreEqual(0, g.State.equipped, "still held");
+            Assert.IsTrue(bag[Content.PocketSlots + 2].Empty);
+            Assert.AreEqual(Content.PocketSlots, g.MoveSlot(0));
+            Assert.AreEqual("spear", bag[Content.PocketSlots].id, "back to the first free backpack slot");
+            for (int i = 0; i < Content.PocketSlots; i++) { bag[i].id = "stone"; bag[i].n = 1; }
+            Assert.AreEqual(-1, g.MoveSlot(Content.PocketSlots), "pockets full");
+            Assert.AreEqual("spear", bag[Content.PocketSlots].id);
+        }
+
+        [Test]
+        public void MakeRoomStoresSpareMaterialsAtHomeOnly()
+        {
+            var g = Fresh();
+            foreach (var s in g.State.backpack) s.Clear();
+            g.State.equipped = -1;
+            g.State.builds.Add(new BuildState { id = "chest", done = true });
+            var bagPart = g.State.backpack.GetRange(Content.PocketSlots, g.State.backpack.Count - Content.PocketSlots);
+            Inventory.Add(bagPart, "stone", 7); Inventory.Add(bagPart, "wood", 5); Inventory.Add(bagPart, "spear", 1);
+            g.State.backpack[0].id = "fiber"; g.State.backpack[0].n = 4;  // in a pocket: stays
+
+            g.State.location = "grove";
+            Assert.IsFalse(g.AtHome);
+            Assert.AreEqual(0, g.MakeRoom(new[] { "wood" }), "nothing to store into away from home");
+            Assert.AreEqual(7, g.Count("stone"));
+
+            g.State.location = World.HomeId;
+            Assert.AreEqual(7, g.MakeRoom(new[] { "wood" }));
+            Assert.AreEqual(0, g.Count("stone"));
+            Assert.AreEqual(7, Inventory.Count(g.State.chest, "stone"));
+            Assert.AreEqual(5, g.Count("wood"), "needed for the current goal: kept");
+            Assert.AreEqual(1, g.Count("spear"), "weapons stay");
+            Assert.AreEqual(4, g.State.backpack[0].n, "pockets stay");
+        }
+
+        [Test]
         public void CraftingSeveralAtOnceAtTheRightStation()
         {
             var g = Fresh();
