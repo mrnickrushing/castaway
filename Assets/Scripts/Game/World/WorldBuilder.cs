@@ -210,9 +210,10 @@ namespace LastTide.Game
         static void PopulateZone(Transform world, Transform nodes)
         {
             var loc = Island.Location;
-            ExitSpot.Create(nodes, Island.Ground(Island.Start + new Vector3(5f, 0, -3.5f)), 160);
+            ExitSpot.Create(nodes, Island.Ground(Island.RaftAt), 160);
             Take(Island.Camp, 9f);
             Take(Island.Start, 5f);
+            Take(Island.RaftAt, 4f);
             Landmark(world, nodes, loc);
 
             // The rescue (if the radio sent the castaway here).

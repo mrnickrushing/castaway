@@ -10,7 +10,7 @@ namespace LastTide.Game
     public sealed class DayNight : MonoBehaviour
     {
         public static DayNight Instance { get; private set; }
-        Light _sun;
+        Light _sun, _halo;
         public float Night { get; private set; }   // 0 day .. 1 full night
 
         static readonly Color SunDay = new Color(1f, 0.95f, 0.84f), SunGold = new Color(1f, 0.68f, 0.4f), Moon = new Color(0.55f, 0.65f, 1f);
@@ -25,6 +25,14 @@ namespace LastTide.Game
         {
             var d = sun.gameObject.AddComponent<DayNight>();
             d._sun = sun;
+            // A pool of moonlight that keeps the castaway and the ground round them readable on a phone at night.
+            d._halo = new GameObject("Night halo").AddComponent<Light>();
+            d._halo.transform.SetParent(d.transform, false);
+            d._halo.type = LightType.Point;
+            d._halo.range = 12;
+            d._halo.color = new Color(0.78f, 0.86f, 1f);
+            d._halo.shadows = LightShadows.None;
+            d._halo.enabled = false;
 #if LASTTIDE_URP
             // Night grading: darker, bluer, a little desaturated, blended in by the night's weight.
             var go = new GameObject("Night grading");
@@ -74,6 +82,14 @@ namespace LastTide.Game
             var fog = Color.Lerp(Color.Lerp(FogDay, FogDusk, dusk * 0.7f), FogNight, night);
             RenderSettings.fogColor = fog;
             if (CameraRig.Instance != null) CameraRig.Instance.Cam.backgroundColor = fog;
+            var pl = Player.Instance;
+            bool halo = night > 0.01f && pl != null && pl.gameObject.activeInHierarchy;
+            _halo.enabled = halo;
+            if (halo)
+            {
+                _halo.transform.position = pl.transform.position + Vector3.up * 4f;
+                _halo.intensity = 16f * night; // 4 m up: point lights fall off with the square of distance
+            }
             Shader.SetGlobalFloat("_NightGlow", night);
             if (_grade != null) _grade.weight = night;
             Shader.SetGlobalColor("_GlowColor", new Color(1f, 0.75f, 0.4f));
