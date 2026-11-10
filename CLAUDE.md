@@ -71,6 +71,14 @@ setting only.
 - Far detail: any model with an `<id>_far` next to it (Scan or Trees category) gets a LODGroup in `ModelRegistry.Spawn`
   (full detail above 0.6 of screen height; `GameRoot` sets lodBias 1). `island_tree_02_far` (6k tris, shares the near
   tree's textures through its JSON slot names) and `Trees/palm_far` keep every island near 1.2M tris (was ~1.95M).
+- Play statistics (`App/Telemetry.cs`, TelemetryDeck ingest v2 over HTTP, no SDK): Session.started/paused,
+  Guide.stepReached, Progress.levelUp, Travel.arrived, Survival.passedOut, Camp.built, Island.planFound,
+  Island.improvementBuilt, Performance.sample (every 5 min), each with step/level/location/day/minutes played. The
+  player is a random id hashed on the device; TestFlight/debug builds are marked test mode (`Plugins/iOS/LastTideEnv.mm`).
+  Off in the Editor (`Telemetry.Recent` keeps the last events to inspect), until `Telemetry.AppId` is set, and when the
+  player turns it off in Settings; Delete account gives a new id and keeps a "no". Privacy policy: gh-pages `privacy.html`.
+- Tests: build sessions with `TestGame.New()` (fixed clock, seeded dice) so a run never depends on the machine's clock
+  or luck.
 - Phone performance (`App/FrameBudget.cs`, device only): the 3D view renders at most ~2000 px across (URP
   `renderScale`) and drops 0.05 at a time to 0.6 while frames run long, back up after 20 steady seconds; Settings'
   Battery saver runs at 30 fps (PlayerPrefs `lt_battery_saver`, per device). SSAO is half resolution. Measured

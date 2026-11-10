@@ -6,7 +6,7 @@ namespace LastTide.Tests
 {
     public class BaseTests
     {
-        static Session Fresh() { return new Session(GameState.New()); }
+        static Session Fresh() { return TestGame.New(); }   // fixed clock, seeded dice
 
         [Test]
         public void ClothesSoakUpBlows()

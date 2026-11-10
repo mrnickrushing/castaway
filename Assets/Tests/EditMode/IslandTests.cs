@@ -6,7 +6,7 @@ namespace LastTide.Tests
 {
     public class IslandTests
     {
-        static Session Fresh() { return new Session(GameState.New()); }
+        static Session Fresh() { return TestGame.New(); }   // fixed clock, seeded dice
 
         [Test]
         public void EveryIslandHasItsOwnMaterialPlanAndImprovement()
@@ -82,7 +82,7 @@ namespace LastTide.Tests
         public void ATripSummaryNamesThePlanFoundAndTheIslandsMaterial()
         {
             double now = 1000000;
-            var g = new Session(GameState.New()); g.RealNow = () => now;
+            var g = TestGame.Seed(new Session(GameState.New())); g.RealNow = () => now;
             g.State.level = 10;
             g.State.builds.Add(new BuildState { id = "workbench", done = true });
             Assert.IsTrue(g.Travel(World.Location("grove"), true)); now += 600; g.Arrive();

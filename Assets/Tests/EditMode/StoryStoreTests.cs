@@ -7,7 +7,7 @@ namespace LastTide.Tests
     public class StoryStoreTests
     {
         double _now = 5000;
-        Session Fresh() { var s = new Session(GameState.New()); s.RealNow = () => _now; return s; }
+        Session Fresh() { var s = new Session(GameState.New()); s.RealNow = () => _now; return TestGame.Seed(s); }
 
         [Test]
         public void EveryPurchaseIsGrantedOncePerTransaction()

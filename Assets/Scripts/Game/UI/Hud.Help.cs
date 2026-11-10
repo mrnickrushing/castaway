@@ -137,6 +137,7 @@ namespace LastTide.Game
             Setting(ref y, "Name: " + s.DisplayName, "CHANGE", AskName);
             Setting(ref y, "Sound", s.State.muted ? "OFF" : "ON", () => { s.State.muted = !s.State.muted; Sfx.Muted = s.State.muted; RefreshHelp(); });
             Setting(ref y, "Battery saver: 30 frames a second, a cooler phone", FrameBudget.BatterySaver ? "ON" : "OFF", () => { FrameBudget.BatterySaver = !FrameBudget.BatterySaver; RefreshHelp(); });
+            Setting(ref y, "Share anonymous play statistics (where players get stuck; nothing about you)", Telemetry.Sharing ? "ON" : "OFF", () => { Telemetry.Sharing = !Telemetry.Sharing; RefreshHelp(); });
             var pets = s.OwnedPets;
             if (pets.Count > 1)
                 Setting(ref y, "Companion: " + s.ActivePet.Name, "CHANGE", () =>
@@ -222,11 +223,14 @@ namespace LastTide.Game
                 + "Purchases come back with Restore purchases. This cannot be undone.\n<size=26>To remove the app from your Apple ID too: iPhone Settings > your name > Sign in with Apple.</size>",
                 "DELETE", () =>
                 {
+                    bool sharing = Telemetry.Sharing;   // a "no" to statistics outlives the account
                     CloudSave.Erase();
                     AppleAccount.SignOut();
                     SaveSystem.Delete();
                     PlayerPrefs.DeleteAll();
                     PlayerPrefs.Save();
+                    Telemetry.Forget();
+                    if (!sharing) Telemetry.Sharing = false;
                     GameRoot.Instance.Restart();
                 }, null, "KEEP IT");
         }
