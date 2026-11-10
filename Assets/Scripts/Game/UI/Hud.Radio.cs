@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using LastTide.Core;
 using UnityEngine;
@@ -127,6 +128,20 @@ namespace LastTide.Game
                 var arrow = UIKit.Label("Arrow", row.transform, ">", 40, Color.white, TextAnchor.MiddleRight, false);
                 arrow.rectTransform.Fill(); arrow.rectTransform.offsetMax = new Vector2(-26, 0);
             }
+            // The calls already answered, below the live ones: who was saved and where.
+            int k = signals.Length;
+            foreach (var done in World.Signals.Where(x => G.Session.Rescued(x)))
+            {
+                var row = UIKit.Img("Rescued", _signalList, null, new Color(0.11f, 0.12f, 0.12f, 0.5f)).rectTransform;
+                row.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -k * 104), new Vector2(660, 92));
+                var at = World.Location(done.Location);
+                var t = UIKit.Label("Name", row, done.Npc + "   <size=24><color=#9AA>" + (at != null ? at.Name : "") + "</color></size>", 32, new Color(1, 1, 1, 0.55f), TextAnchor.MiddleLeft, false);
+                t.supportRichText = true;
+                t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(26, 0);
+                var ok = UIKit.Label("Done", row, "RESCUED", 26, new Color(0.45f, 0.85f, 0.5f), TextAnchor.MiddleRight, false);
+                ok.rectTransform.Fill(); ok.rectTransform.offsetMax = new Vector2(-26, 0);
+                k++;
+            }
             RefreshChat();
         }
 
@@ -145,7 +160,11 @@ namespace LastTide.Game
             Clear(_chat);
             if (_tuning == null)
             {
-                Line(0, "YOU CAN HEAR ONLY WHITE NOISE", G.Session.Signals.Length > 0 ? "Tap a signal on the left to tune to its frequency" : "No one is calling... yet. Try again when you are more experienced.");
+                var ss = G.Session;
+                var next = World.Signals.Where(x => !ss.Rescued(x) && x.Level > ss.State.level).OrderBy(x => x.Level).FirstOrDefault();
+                if (ss.Signals.Length > 0) Line(0, "YOU CAN HEAR ONLY WHITE NOISE", "Tap a signal on the left to tune to its frequency");
+                else if (next != null) Line(0, "YOU CAN HEAR ONLY WHITE NOISE", "No one is calling... yet. The next call comes through at level " + next.Level + ".");
+                else Line(0, "THE AIRWAVES ARE QUIET", "Everyone who called for help has been rescued. Well done, sailor.");
                 return;
             }
             var s = _tuning;

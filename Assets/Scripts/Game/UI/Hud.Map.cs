@@ -102,12 +102,26 @@ namespace LastTide.Game
             _hereName = UIKit.Label("Here", strip.transform, "", 64, Color.white, TextAnchor.UpperLeft);
             _hereName.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(328, -58), new Vector2(900, 80));
             float bx = -1030;
-            foreach (var (sym, act) in new (string, System.Action)[] { ("radio", OpenRadio), ("gift", OpenOffers), ("coin", OpenShop), ("pack", () => { _bagOpen = !_bagOpen; _dirty = true; }), ("person", () => OpenHelp()) })
+            // Captioned like the field HUD's bottom row, so nobody has to guess what a symbol opens.
+            foreach (var (sym, label, act) in new (string, string, System.Action)[] { ("radio", "RADIO", OpenRadio), ("gift", "TRADE", OpenOffers), ("coin", "SHOP", OpenShop),
+                ("pack", "BAG", () => { _bagOpen = !_bagOpen; _dirty = true; }), ("?", "HELP", () => OpenHelp()) })
             {
-                var b = UIKit.Button(sym, strip.transform, null, new Color(1, 1, 1, 0.08f), act);
+                var b = UIKit.Button(label, strip.transform, null, new Color(1, 1, 1, 0.08f), act);
                 ((RectTransform)b.transform).Place(new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(bx, -24), new Vector2(104, 104));
-                var ic = UIKit.Img("Icon", b.transform, UIKit.Symbol(sym), new Color(0.85f, 0.88f, 0.9f));
-                ic.rectTransform.Fill(20);
+                if (sym == "?")
+                {
+                    var q = UIKit.Label("Icon", b.transform, "?", 56, new Color(0.85f, 0.88f, 0.9f), TextAnchor.MiddleCenter, false);
+                    q.rectTransform.Fill(); q.rectTransform.offsetMin = new Vector2(0, 24);
+                }
+                else
+                {
+                    var ic = UIKit.Img("Icon", b.transform, UIKit.Symbol(sym), sym == "coin" ? new Color(1f, 0.82f, 0.3f) : new Color(0.85f, 0.88f, 0.9f));
+                    ic.preserveAspect = true;
+                    ic.rectTransform.Fill(); ic.rectTransform.offsetMin = new Vector2(24, 32); ic.rectTransform.offsetMax = new Vector2(-24, -10);
+                }
+                var cap = UIKit.Label("Cap", b.transform, label, 22, new Color(1, 1, 1, 0.8f), TextAnchor.LowerCenter, false);
+                cap.rectTransform.anchorMin = Vector2.zero; cap.rectTransform.anchorMax = new Vector2(1, 0); cap.rectTransform.pivot = new Vector2(0.5f, 0);
+                cap.rectTransform.anchoredPosition = new Vector2(0, 4); cap.rectTransform.sizeDelta = new Vector2(0, 26);
                 bx += 124;
             }
             // The big round button: back to the island, or enter where the journey ended.
@@ -121,7 +135,8 @@ namespace LastTide.Game
             _bigButtonText = UIKit.Label("Text", _bigButton, "BACK", 40, new Color(0.45f, 0.95f, 0.85f), TextAnchor.MiddleCenter);
             _bigButtonText.rectTransform.Fill(); _bigButtonText.rectTransform.offsetMin = new Vector2(0, 18);
             _bigButtonSub = UIKit.Label("Sub", _bigButton, "", 26, new Color(1, 1, 1, 0.75f), TextAnchor.MiddleCenter, false);
-            _bigButtonSub.rectTransform.Fill(); _bigButtonSub.rectTransform.offsetMax = new Vector2(0, -50);
+            _bigButtonSub.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -32), new Vector2(170, 38)); // one line under BACK
+            _bigButtonSub.resizeTextMaxSize = Mathf.Max(26, _bigButtonSub.fontSize); _bigButtonSub.resizeTextForBestFit = true; _bigButtonSub.resizeTextMinSize = 16; // "Fisherman's Pier" stays inside the ring
 
             var rushBtn = UIKit.Button("Rush", _mapUi, "RUSH", new Color(0.8f, 0.62f, 0.12f), () =>
             {

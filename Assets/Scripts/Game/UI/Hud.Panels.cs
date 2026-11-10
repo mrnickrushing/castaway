@@ -270,8 +270,15 @@ namespace LastTide.Game
             var d = Content.Item(s.State.backpack[_sel].id);
             var crate = s.OpenCrate(_sel);
             if (crate != null) { if (crate.Count > 0) { Sfx.Play("coin"); ShowRewards(d.Name.ToUpper(), crate); } } // empty: no room, stays shut
-            else if (d != null && d.Gear != GearSlot.None) { if (s.PutOn(_sel)) Sfx.Play("click"); }
-            else if (s.Use(_sel)) Sfx.Play(d == null ? "click" : d.Worth > 0 ? "coin" : d.Drunk ? "drink" : d.Kind == ItemKind.Food ? "eat" : "click");
+            else if (d != null && d.Gear != GearSlot.None) { if (s.PutOn(_sel)) Sfx.Play("cloth"); }
+            else if (s.Wasted(_sel) != null) { Toast(s.Wasted(_sel)); Sfx.Play("error"); }
+            else
+            {
+                bool holding = s.State.equipped == _sel;
+                if (s.Use(_sel))
+                    Sfx.Play(d == null ? "click" : d.Worth > 0 ? "coin" : d.Drunk ? "drink" : d.Kind == ItemKind.Food ? "eat"
+                        : d.Kind == ItemKind.Medical ? "cloth" : d.Kind == ItemKind.Weapon || d.Kind == ItemKind.Tool ? (holding ? "cloth" : "swing") : "click");
+            }
             if (s.State.backpack[_sel].Empty) _sel = -1;
         }
 
@@ -549,12 +556,20 @@ namespace LastTide.Game
                 int max = s.MaxCraft(_recipe);
                 var minus = UIKit.Button("Minus", area, "-", new Color(0.33f, 0.35f, 0.33f), () => { _qty = Mathf.Max(1, _qty - 1); _dirty = true; }, 50);
                 ((RectTransform)minus.transform).Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(40, 10), new Vector2(84, 74));
-                var q = UIKit.Label("Qty", area, "Quantity: " + _qty + "/" + max, 30, new Color(0.4f, 0.9f, 0.85f), TextAnchor.MiddleCenter, false);
+                bool afford = s.Short(Content.Recipes[_recipe].Inputs) == null;
+                var q = UIKit.Label("Qty", area, afford ? "Quantity: " + _qty + "/" + max : "Quantity: 1", 30, new Color(0.4f, 0.9f, 0.85f), TextAnchor.MiddleCenter, false);
                 q.rectTransform.Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(130, 10), new Vector2(240, 74));
                 var plus = UIKit.Button("Plus", area, "+", new Color(0.15f, 0.55f, 0.5f), () => { _qty = Mathf.Min(max, _qty + 1); _dirty = true; }, 50);
                 ((RectTransform)plus.transform).Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(380, 10), new Vector2(84, 74));
             }
             string why = s.CraftBlocked(_recipe, _qty);
+            if (job == null && why != null)
+            {
+                // Under the result: why the button is grey (a station level, a missing ingredient), not only in a toast.
+                string say = why.StartsWith("Needs ") && why.Contains(" level ") && s.UpgradeCost(station) != null ? why + ": upgrade it (top right)" : why;
+                var wl = UIKit.Label("Why", area, say, 26, UIKit.Red, TextAnchor.UpperCenter, false);
+                wl.rectTransform.Place(new Vector2(0, 1), new Vector2(0.5f, 1), new Vector2(410, -296), new Vector2(300, 110)); // as wide as the name above: the iPad panel is narrow
+            }
             if (job != null)
             {
                 int cost = s.RushCost(station);

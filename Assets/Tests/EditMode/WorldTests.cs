@@ -118,9 +118,9 @@ namespace LastTide.Tests
         public void TheHarpoonHasToBeTaught()
         {
             var g = Fresh();
-            Assert.AreEqual("A survivor must teach you this", g.CraftBlocked("harpoon"));
+            Assert.AreEqual("Rescue Mara at Fisherman's Pier to learn this", g.CraftBlocked("harpoon"));
             g.SetFlag("recipe_harpoon");
-            Assert.AreNotEqual("A survivor must teach you this", g.CraftBlocked("harpoon"));
+            StringAssert.DoesNotContain("learn this", g.CraftBlocked("harpoon") ?? "");
         }
 
         [Test]

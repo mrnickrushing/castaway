@@ -106,7 +106,7 @@ namespace LastTide.Tests
         {
             var g = Fresh();
             g.Give("fiber", 4);
-            Assert.AreEqual("Missing materials", g.CraftBlocked("rope", int.MaxValue / 2), "4 fibre x a billion wraps to a negative cost in int");
+            StringAssert.StartsWith("Need lots of Plant Fiber", g.CraftBlocked("rope", int.MaxValue / 2), "4 fibre x a billion wraps to a negative cost in int");
             Assert.IsFalse(g.Craft("rope", int.MaxValue / 2));
             Assert.AreEqual(4, g.Count("fiber"));
             Assert.IsNull(g.Job("hand"));

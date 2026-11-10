@@ -48,9 +48,14 @@ namespace LastTide.Game
             string blurb = d != null && !string.IsNullOrEmpty(d.Blurb) ? d.Blurb : "";
             _tipBody.text = blurb + (origin != null ? (blurb.Length > 0 ? "\n" : "") + "<color=#8FE3A8>" + origin + "</color>" : "");
 
-            // As tall as the text needs (the name takes the top 66).
-            float bodyH = _tipBody.cachedTextGeneratorForLayout.GetPreferredHeight(_tipBody.text, _tipBody.GetGenerationSettings(new Vector2(620 - 48, 0))) / _tipBody.pixelsPerUnit;
-            _tip.sizeDelta = new Vector2(620, Mathf.Clamp(66 + bodyH + 24, 130, 300));
+            // As tall as the text needs (the name takes the top 66), measured at the biggest size best fit may pick,
+            // so long origins on a phone (where labels grow) never spill out of the card. Wider on phones.
+            float cardW = UIKit.Phone ? 780 : 620;
+            var gs = _tipBody.GetGenerationSettings(new Vector2(cardW - 48, 0));
+            gs.resizeTextForBestFit = false;
+            gs.fontSize = _tipBody.resizeTextMaxSize;
+            float bodyH = _tipBody.cachedTextGeneratorForLayout.GetPreferredHeight(_tipBody.text, gs) / _tipBody.pixelsPerUnit;
+            _tip.sizeDelta = new Vector2(cardW, Mathf.Clamp(66 + bodyH + 30, 130, 520));
             _tipName.rectTransform.offsetMin = new Vector2(24, 0);
 
             // Above the finger, kept on screen.

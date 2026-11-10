@@ -595,6 +595,7 @@ namespace LastTide.Game
         // ------------------------------------------------------------------ toasts, flash, passing out
 
         Text _toast;
+        Image _toastBack;   // a dark pill behind the line, so it reads over open panels as well as the island
         float _toastT;
         Image _flash, _black;
         Text _passText;
@@ -602,8 +603,12 @@ namespace LastTide.Game
 
         void BuildOverlays()
         {
-            _toast = UIKit.Outlined(UIKit.Label("Toast", _root, "", 40, Color.white, TextAnchor.MiddleCenter), 2.5f);
-            _toast.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -150), new Vector2(1000, 60));
+            _toastBack = UIKit.Img("Toast", _root, UIKit.Round, new Color(0.05f, 0.06f, 0.06f, 0));
+            _toastBack.raycastTarget = false;
+            _toastBack.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -150), new Vector2(600, 84));
+            _toast = UIKit.Outlined(UIKit.Label("Text", _toastBack.transform, "", 40, Color.white, TextAnchor.MiddleCenter), 2.5f);
+            _toast.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1000, 60));
+            _toast.raycastTarget = false;
             _flash = UIKit.Img("Hurt", _root, null, new Color(0.8f, 0, 0, 0));
             _flash.rectTransform.Fill();
             _black = UIKit.Img("PassOut", _root, null, new Color(0, 0, 0, 0));
@@ -617,6 +622,9 @@ namespace LastTide.Game
         {
             _toast.text = msg;
             _toastT = 2.2f;
+            float w = Mathf.Min(_toast.preferredWidth, 1000) + 70;
+            _toastBack.rectTransform.sizeDelta = new Vector2(w, 84);
+            _toastBack.transform.SetAsLastSibling();
         }
 
         public void Flash() { _flashT = 0.35f; }
@@ -634,6 +642,7 @@ namespace LastTide.Game
             UpdateItemTip();
             _toastT -= Time.deltaTime;
             _toast.color = new Color(1, 1, 1, Mathf.Clamp01(_toastT * 2));
+            _toastBack.color = new Color(0.05f, 0.06f, 0.06f, 0.82f * Mathf.Clamp01(_toastT * 2));
             _flashT -= Time.deltaTime;
             float low = G.Session.State.health < 25 ? 0.12f + 0.08f * Mathf.Sin(Time.time * 5) : 0;
             _flash.color = MapOpen ? Color.clear : new Color(0.75f, 0, 0, Mathf.Max(Mathf.Clamp01(_flashT) * 0.9f, low));

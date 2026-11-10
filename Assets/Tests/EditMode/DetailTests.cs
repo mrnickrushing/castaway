@@ -82,5 +82,33 @@ namespace LastTide.Tests
             var g = Fresh();
             StringAssert.Contains("craft one (CRAFT)", g.Blocked("ironvein"));
         }
+
+        /// <summary>Every item says where it comes from, the harpoon who teaches it, rum every place it's found.</summary>
+        [Test]
+        public void EveryItemSaysWhereItComesFrom()
+        {
+            foreach (var d in Content.Items.Values)
+                Assert.IsNotNull(Content.Origin(d.Id), d.Id + " has no source");
+            StringAssert.Contains("Mara", Content.Origin("harpoon"));
+            StringAssert.Contains("Smuggler's Cave", Content.Origin("rum"));
+            StringAssert.Contains("Found on", Content.Origin("pearl"));
+            StringAssert.Contains("season", Content.Origin("gold_chest"));
+        }
+
+        [Test]
+        public void FullMetersDontWasteFoodOrBandages()
+        {
+            var g = Fresh();
+            g.State.backpack.Clear();
+            g.State.backpack.Add(new Slot { id = "bandage", n = 2 });
+            g.State.backpack.Add(new Slot { id = "water", n = 1 });
+            g.State.backpack.Add(new Slot { id = "raw_meat", n = 1 });
+            g.State.health = 100; g.State.thirst = 100; g.State.hunger = 100;
+            Assert.AreEqual("Health is already full", g.Wasted(0));
+            Assert.AreEqual("Not thirsty", g.Wasted(1));
+            Assert.IsNull(g.Wasted(2), "raw meat only hurts: still allowed");
+            g.State.health = 60;
+            Assert.IsNull(g.Wasted(0));
+        }
     }
 }
