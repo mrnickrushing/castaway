@@ -273,6 +273,8 @@ namespace LastTide.Core
         public string CraftBlocked(string recipe, int qty)
         {
             var r = Content.Recipes[recipe];
+            var perk = PerkBlocked(recipe);
+            if (perk != null) return perk;
             if (!Knows(recipe))
             {
                 var t = World.Signals.FirstOrDefault(sg => sg.Unlocks == recipe);
@@ -314,12 +316,12 @@ namespace LastTide.Core
             var r = Content.Recipes[recipe];
             int n = 99;
             foreach (var c in r.Inputs) n = Math.Min(n, Count(c.id) / c.n);
-            return Math.Max(1, Math.Min(n, 20));
+            return Math.Max(1, Math.Min(n, Content.IsPerk(recipe) ? 1 : 20));  // an improvement is built once
         }
 
         public bool Craft(string recipe, int qty)
         {
-            if (qty < 1 || CraftBlocked(recipe, qty) != null) return false;
+            if (qty < 1 || CraftBlocked(recipe, qty) != null || (Content.IsPerk(recipe) && qty > 1)) return false;
             var r = Content.Recipes[recipe];
             foreach (var c in r.Inputs) Inventory.Remove(State.backpack, c.id, c.n * qty);
             State.jobs.Add(new JobState { station = r.Station, recipe = recipe, doneAt = Now + r.Seconds * qty / StationSpeed(r.Station), count = r.Count * qty });

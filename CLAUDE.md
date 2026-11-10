@@ -111,6 +111,13 @@ setting only.
   card (`UI/Hud.Trip.cs`: FOUND, DEFEATED, NOW YOU CAN from `Session.NowPossible`, NEXT; the PlayBot closes it).
   `Session.Settled` (shelter built and day 2, or level 3) gates the season button, gift, the shop "+"s and the map's
   RADIO/TRADE/SHOP (`UI/Hud.Pacing.cs`, `_later`), with a toast when they appear.
+- Island rewards (`Core/Content.Islands.cs`, `Core/Session.Islands.cs`, `UI/Hud.Islands.cs`, models in
+  `World/IslandModels.cs`): each location has a material found only there (its own node, its sailors' bags, a 30% drop
+  from its creatures), a plan picked up once near its landmark (node `plan`, flag `plan_<location>`, a story card) and
+  the permanent camp improvement it teaches (`perk_*`: a workbench recipe built once, no item; `ApplyPerk` sets the
+  flag and the rules read `FoodScale`, `RegenScale`, `HungerScale`, `NightAggro`, `SailScale`, the weir's extra fish
+  and the chest's `ChestBrace` slots). `WorldBuilder.PlanSpot` always draws its position so the island layout stays
+  the same once the plan is taken. The map's island panel shows an "Own:" line; CRAFT has a Camp tab.
 - Combat feedback (`App/CombatFx.cs`, `UI/Hud.Combat.cs`): enemies telegraph each strike for `EnemyDef.Windup` seconds
   (they stop, crouch, a red ring of reach 2.1 m fills under them, red "!" overhead); stepping out of reach makes them
   miss ("DODGED"). Hits play a hit-stop (`CombatFx.HitStop`, keeps the bot's timeScale) and a weapon sound

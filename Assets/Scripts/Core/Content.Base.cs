@@ -136,6 +136,7 @@ namespace LastTide.Core
         {
             var d = Item(r.Output);
             if (d == null) return "Other";
+            if (IsPerk(r.Output)) return "Camp";
             if (d.Gear != GearSlot.None) return "Clothes";
             if (d.Kind == ItemKind.Weapon) return "Weapons";
             if (d.Kind == ItemKind.Tool) return "Tools";

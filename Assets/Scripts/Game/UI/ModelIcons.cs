@@ -113,6 +113,8 @@ namespace LastTide.Game
                 if (id.StartsWith("iron_")) t.transform.localRotation = Quaternion.Euler(0, 0, 45) * t.transform.localRotation;
                 return holder;
             }
+            var isl = IslandModels.Icon(id);
+            if (isl != null) { var ig = isl.ToObject(id, null); ig.GetComponent<MeshRenderer>().sharedMaterial = Materials.Kit; return ig; }
             var mb = new MeshBuilder();
             Color hide = Palette.Hex(0x8C5A3A), dark = Palette.Hex(0x5C3A21), fibre = Palette.Hex(0xB8A060);
             switch (id)
