@@ -81,8 +81,8 @@ namespace LastTide.Game
             _energyFill.rectTransform.offsetMin = _energyFill.rectTransform.offsetMax = Vector2.zero;
             _energyTimer = UIKit.Outlined(UIKit.Label("Timer", top, "", 30, Color.white, TextAnchor.UpperRight), 1.5f);
             _energyTimer.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(240, -78), new Vector2(200, 40));
-            var coin = UIKit.Img("Coin", top, UIKit.Symbol("coin"), new Color(1f, 0.82f, 0.3f));
-            coin.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -112), new Vector2(60, 60));
+            // The painted doubloon, as on the field HUD and in the shop (it was a flat yellow disc here).
+            UIKit.ItemIcon(UIKit.Rect("Coin", top).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -112), new Vector2(60, 60)), "doubloon", 60);
             _coinText = UIKit.Outlined(UIKit.Label("Coins", top, "0", 36, Color.white), 1.5f);
             _coinText.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(76, -118), new Vector2(200, 50));
             var plus = UIKit.Button("Plus", top, "+", new Color(1, 1, 1, 0.12f), OpenShop, 46);
@@ -117,7 +117,8 @@ namespace LastTide.Game
                 }
                 else
                 {
-                    var ic = UIKit.Img("Icon", b.transform, UIKit.Symbol(sym), sym == "coin" ? new Color(1f, 0.82f, 0.3f) : new Color(0.85f, 0.88f, 0.9f));
+                    var gold = sym == "coin" ? UIKit.ItemArt("doubloon") : null;   // the shop's button wears the painted doubloon
+                    var ic = UIKit.Img("Icon", b.transform, gold ?? UIKit.Symbol(sym), gold != null ? Color.white : sym == "coin" ? new Color(1f, 0.82f, 0.3f) : new Color(0.85f, 0.88f, 0.9f));
                     ic.preserveAspect = true;
                     ic.rectTransform.Fill(); ic.rectTransform.offsetMin = new Vector2(24, 32); ic.rectTransform.offsetMax = new Vector2(-24, -10);
                 }
@@ -298,12 +299,12 @@ namespace LastTide.Game
             t.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 44), new Vector2(500, 40));
             for (int i = 0; i < items.Length; i++)
             {
-                var cell = UIKit.Img("Item", row, UIKit.Round, new Color(0.25f, 0.26f, 0.24f, 0.95f));
+                // The tile is one colour (its frame a touch brighter): a grey square used to show behind every icon that didn't fill it.
+                var cell = UIKit.Img("Item", row, UIKit.Round, new Color(frame.r * 0.86f, frame.g * 0.86f, frame.b * 0.86f, 1f));
                 cell.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(i * 104, -4), new Vector2(96, 96));
                 var edge = UIKit.Img("Edge", cell.transform, UIKit.Round, frame);
                 edge.rectTransform.Fill(); edge.type = Image.Type.Sliced; edge.fillCenter = false;
-                if (items[i] == "doubloon") { var c = UIKit.Img("Icon", cell.transform, UIKit.Symbol("coin"), new Color(1f, 0.82f, 0.3f)); c.rectTransform.Fill(16); }
-                else UIKit.ItemIcon(cell.transform, items[i], 86);
+                UIKit.ItemIcon(cell.transform, items[i], 86);
             }
         }
 
