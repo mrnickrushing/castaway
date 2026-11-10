@@ -38,6 +38,17 @@ namespace LastTide.Game
             return c;
         }
 
+        Light _lamp;
+
+        void LateUpdate()
+        {
+            // Like the campfire: a soft glow by day, the camp's second light after dark.
+            if (_lamp == null) { var p = transform.Find("perk_lamp"); if (p != null) _lamp = p.GetComponentInChildren<Light>(); if (_lamp == null) return; }
+            float night = DayNight.Instance != null ? DayNight.Instance.Night : 0;
+            _lamp.intensity = (1.5f + Mathf.PerlinNoise(Time.time * 4, 3) * 0.4f) * (1 + night * 2.6f);
+            _lamp.range = 8 + night * 5;
+        }
+
         void OnDestroy() { if (_session != null) _session.Gained -= OnGained; }
 
         void OnGained(string id, int n) { if (Content.IsPerk(id)) Refresh(true); }
@@ -50,6 +61,7 @@ namespace LastTide.Game
                 var pos = byRaft ? Shallows() : Island.Ground(Island.Camp + at);
                 var prop = Build(perk);
                 if (prop == null) continue;
+                prop.name = perk;
                 prop.transform.SetParent(transform, false);
                 prop.transform.position = pos;
                 prop.transform.rotation = Quaternion.Euler(0, yaw, 0) * prop.transform.rotation;
@@ -94,6 +106,7 @@ namespace LastTide.Game
                 l.type = LightType.Point; l.range = 9; l.intensity = 1.8f; l.color = new Color(1f, 0.72f, 0.4f);
                 l.transform.SetParent(holder.transform, false);
                 l.transform.localPosition = new Vector3(0.5f, 1.9f, 0);
+                Flames.Create(holder.transform, new Vector3(0.5f, 1.82f, 0)).transform.localScale = Vector3.one * 0.16f;   // the wick
                 return holder;
             }
             if (perk == "perk_limewash") return IslandModels.IconArt("lime");   // the lime bucket by the shelter's door
