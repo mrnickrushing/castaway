@@ -123,7 +123,7 @@ namespace LastTide.Game
             {
                 if (d.Damage > 0) stats.Add("Damage " + d.Damage);
                 if (d.Armor > 0) stats.Add("Armor " + d.Armor);
-                if (d.Durability > 0) stats.Add("Lasts " + d.Durability);
+                if (d.Durability > 0) stats.Add("Lasts " + d.Durability + " hits");
                 if (d.Food > 0) stats.Add("Food +" + d.Food);
                 if (d.Drink > 0) stats.Add("Water +" + d.Drink);
                 if (d.Heal > 0) stats.Add("Health +" + d.Heal);
@@ -147,7 +147,8 @@ namespace LastTide.Game
             }
             int max = s.MaxCraft(r.Id);
             _bpQty = Mathf.Clamp(_bpQty, 1, max);
-            var q = UIKit.Label("Q", _bpCard, "Quantity: " + _bpQty + "/" + max, 30, new Color(0.45f, 0.9f, 0.85f), TextAnchor.MiddleCenter, false);
+            bool afford = s.Short(r.Inputs) == null;   // "1/1" when not even one can be paid for reads as "ready"
+            var q = UIKit.Label("Q", _bpCard, afford ? "Quantity: " + _bpQty + "/" + max : "Quantity: 1", 30, new Color(0.45f, 0.9f, 0.85f), TextAnchor.MiddleCenter, false);
             q.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -726), new Vector2(400, 44));
             var minus = UIKit.Button("Minus", _bpCard, "-", new Color(0.33f, 0.35f, 0.33f), () => { _bpQty = Mathf.Max(1, _bpQty - 1); RefreshBlueprints(); }, 54);
             ((RectTransform)minus.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(-280, -770), new Vector2(90, 80));
@@ -165,7 +166,7 @@ namespace LastTide.Game
                 RefreshBlueprints();
             }, 44);
             ((RectTransform)craft.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -864), new Vector2(560, 96));
-            if (why != null && why != "Missing materials")
+            if (why != null)
             {
                 var w = UIKit.Label("Why", _bpCard, why, 26, UIKit.Red, TextAnchor.UpperCenter, false);
                 w.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -966), new Vector2(660, 40));

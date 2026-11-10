@@ -381,6 +381,19 @@ namespace LastTide.Core
         // ------------------------------------------------------------------ using items
 
         /// <summary>Eats, drinks, bandages, equips or sells the item in a backpack slot.</summary>
+        /// <summary>Why eating, drinking or a bandage would be wasted right now (every meter it fills is already full),
+        /// else null. Raw food that only hurts is still allowed: the player may want to.</summary>
+        public string Wasted(int slot)
+        {
+            if (slot < 0 || slot >= State.backpack.Count || State.backpack[slot].Empty) return null;
+            var d = Content.Item(State.backpack[slot].id);
+            if (d == null || d.Gear != GearSlot.None || d.Worth > 0 || d.Kind == ItemKind.Weapon || d.Kind == ItemKind.Tool) return null;
+            if (d.Food == 0 && d.Drink == 0 && d.Heal == 0) return null;
+            bool food = d.Food > 0 && State.hunger < 99.5f, drink = d.Drink > 0 && State.thirst < 99.5f, heal = d.Heal > 0 && State.health < 99.5f;
+            if (food || drink || heal || d.Heal < 0) return null;
+            return d.Kind == ItemKind.Medical ? "Health is already full" : d.Drunk ? "Not thirsty" : "Not hungry";
+        }
+
         public bool Use(int slot)
         {
             if (slot < 0 || slot >= State.backpack.Count) return false;

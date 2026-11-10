@@ -209,7 +209,9 @@ namespace LastTide.Core
         public bool Upgrade(string id)
         {
             var cost = UpgradeCost(id);
-            if (cost == null || !Pay(cost)) { if (cost != null) Toast?.Invoke("Missing materials"); return false; }
+            if (cost == null) return false;
+            var short_ = Short(cost, 1, true);
+            if (short_ != null || !Pay(cost)) { Toast?.Invoke(short_ ?? "Missing materials"); return false; }
             var b = Build(id);
             b.level = Math.Max(1, b.level) + 1;
             Toast?.Invoke(Content.Builds[id].Name + " upgraded to level " + b.level + "!");
@@ -224,13 +226,31 @@ namespace LastTide.Core
         public string CraftBlocked(string recipe, int qty)
         {
             var r = Content.Recipes[recipe];
-            if (!Knows(recipe)) return "A survivor must teach you this";
+            if (!Knows(recipe))
+            {
+                var t = World.Signals.FirstOrDefault(sg => sg.Unlocks == recipe);
+                var at = t != null ? World.Location(t.Location) : null;
+                return t != null ? "Rescue " + t.Npc + (at != null ? " at " + at.Name : "") + " to learn this" : "A survivor must teach you this";
+            }
             int lv = Level(r.Station);
             if (lv == 0) return r.Station == "furnace" ? "Build a furnace first" : "Build the " + Content.Builds[r.Station].Name.ToLower() + " first";
             if (lv < r.MinLevel) return "Needs " + StationName(r.Station) + " level " + r.MinLevel;
-            if (Job(r.Station) != null) return "Busy";
-            foreach (var c in r.Inputs) if (Count(c.id) < (long)c.n * qty) return "Missing materials";   // long: a huge qty must not wrap
-            return null;
+            if (Job(r.Station) != null) return "The " + StationName(r.Station).ToLower() + " is busy";
+            return Short(r.Inputs, qty);
+        }
+
+        /// <summary>"Need 1 Stone, 2 Plant Fiber": what the backpack is short of to pay <paramref name="cost"/>
+        /// <paramref name="times"/> over, or null when it can pay. Crafting pays from the backpack only; building and
+        /// upgrades also from the camp's storage (<paramref name="storages"/>). Long maths: a huge quantity must not wrap.</summary>
+        public string Short(ItemCount[] cost, long times = 1, bool storages = false)
+        {
+            var miss = new List<string>();
+            foreach (var c in cost)
+            {
+                long need = c.n * times - (storages ? CountAll(c.id) : Count(c.id));
+                if (need > 0) miss.Add((need > 9999 ? "lots of" : need.ToString()) + " " + Content.NameOf(c.id));
+            }
+            return miss.Count == 0 ? null : "Need " + string.Join(", ", miss);
         }
 
         public static string StationName(string station)
@@ -286,7 +306,7 @@ namespace LastTide.Core
                 if (d.Kind == PieceKind.Edge && p.rot != (rot & 1)) continue;
                 return "Something is already there";
             }
-            if (!CanPay(d.Cost)) return "Missing materials";
+            if (!CanPay(d.Cost)) return Short(d.Cost, 1, true) ?? "Missing materials";
             return null;
         }
 

@@ -172,6 +172,28 @@ def squeal(src="grunt.wav", length=0.42, up=1.35, peak=0.8):
     return normalise(out[:, None], peak)
 
 
+def rustle(swishes=3, length=0.5, peak=0.55, seed=11):
+    """Cloth: putting clothes on, wrapping a bandage, stowing a tool. A few soft swishes of mid noise, each
+    rising and falling, so it reads as fabric rather than as a hiss."""
+    rng = np.random.default_rng(seed)
+    n = int(length * SR)
+    w = rng.standard_normal(n)
+    spec = np.fft.rfft(w)
+    f = np.fft.rfftfreq(n, 1 / SR)
+    spec *= np.clip((f - 400) / 300, 0, 1) * np.clip((5000 - f) / 1500, 0, 1)
+    a = np.fft.irfft(spec, n)
+    t = np.arange(n) / SR
+    env = np.zeros(n)
+    for i in range(swishes):
+        c = length * (0.18 + 0.62 * i / max(1, swishes - 1)) + rng.uniform(-0.02, 0.02)
+        wd = rng.uniform(0.045, 0.075)
+        env += np.exp(-((t - c) / wd) ** 2) * rng.uniform(0.6, 1.0)
+    a = a * env * (1 + 0.35 * rng.standard_normal(n).cumsum() / np.sqrt(n))  # a little grain
+    a[:int(0.01 * SR)] *= np.linspace(0, 1, int(0.01 * SR))
+    a[-int(0.03 * SR):] *= np.linspace(1, 0, int(0.03 * SR))
+    return normalise(a[:, None], peak)
+
+
 def main():
     if not os.path.isdir(SRC):
         sys.exit("missing " + SRC)
@@ -179,6 +201,7 @@ def main():
         print(name, save(name, sfx(name, *spec)))
     print("hit", save("hit", impact()))
     print("squeal", save("squeal", squeal()))
+    print("cloth", save("cloth", rustle()))
     for name, spec in NOISE.items():
         print(name, save(name, noise(*spec)))
     for name, spec in LOOPS.items():

@@ -92,14 +92,14 @@ namespace LastTide.Core
             Blurb("gunpowder", "Dry powder from the smugglers' kegs. Ned has a plan for it.");
             Blurb("coconut", "Sweet milk and a little flesh. Good for thirst.");
             Blurb("berries", "Sharp and juicy. A bite to eat, and stew at a stone hearth.");
-            Blurb("raw_meat", "Raw boar meat. Roast it at the campfire: eaten raw it makes you ill.");
+            Blurb("raw_meat", "Raw meat from the hunt. Roast it at the campfire: eaten raw it makes you ill.");
             Blurb("crab", "Raw crab from a tide pool. Grill it at the campfire.");
             Blurb("fish", "Fresh from the line. Grill it at the campfire.");
             Blurb("water", "Fresh water in a stoppered flask. Drink it, or cook stew with it.");
             Blurb("rum", "Red Jack's favorite. Quenches thirst and dulls the pain.");
-            Blurb("hatchet", "A rusty hatchet from the Gull's locker. Chops palms.");
+            Blurb("hatchet", "Rusty but sharp. Chops palm trees for wood and knocks down coconuts.");
             Blurb("pickaxe", "A sharp stone lashed to a handle. Breaks rock and iron veins.");
-            Blurb("spear", "A driftwood pole with a stone point, lashed with fiber. Keeps boars at a distance.");
+            Blurb("spear", "A driftwood pole with a stone point, lashed with fiber. Your first real weapon.");
             Blurb("club", "Heavy wood studded with ship's iron.");
             Blurb("rope", "Plaited plant fiber. Holds most things together.");
             Blurb("bandage", "Clean sailcloth and fiber. Stops the bleeding.");

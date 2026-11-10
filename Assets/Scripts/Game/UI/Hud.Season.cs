@@ -94,11 +94,20 @@ namespace LastTide.Game
             var banner = UIKit.Img("Banner", _seasonBody, null, Slate).rectTransform;
             banner.anchorMin = new Vector2(0, 1); banner.anchorMax = new Vector2(1, 1); banner.pivot = new Vector2(0.5f, 1);
             banner.offsetMin = new Vector2(0, -300); banner.offsetMax = Vector2.zero;
-            var art = UIKit.Img("Art", banner, UIKit.Place("pirates"), new Color(0.75f, 0.75f, 0.75f));
+            // Premium highlights on the right (the companions and the gold chest): as many as fit beside a 1000-wide
+            // painting, three on a wide phone, two on 16:9 and iPad. The painting fills the rest.
+            int room = Mathf.Clamp(Mathf.FloorToInt((_root.rect.width - 380 - 1020) / 220f), 0, 3);
+            float artW = Mathf.Max(1000, _root.rect.width - 380 - room * 220 - 30);
+            banner.gameObject.AddComponent<RectMask2D>();
+            var sprite = UIKit.Place("pirates");
+            var art = UIKit.Img("Art", banner, sprite, new Color(0.75f, 0.75f, 0.75f));
             art.preserveAspect = false;
-            art.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(1000, 300));
+            // A little squeezed (the painting is 3:2, the banner over 4:1) and cropped from the bottom, so the flag
+            // and Red Jack's ship stay in view.
+            float artH = sprite != null ? Mathf.Max(300, artW * sprite.rect.height / sprite.rect.width * 0.55f) : 300;
+            art.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 10), new Vector2(artW, artH));
             var fade = UIKit.Img("Fade", banner, Fade(), new Color(0.24f, 0.26f, 0.24f, 1f));
-            fade.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(1000, 0), new Vector2(400, 300));
+            fade.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(artW - 130, 0), new Vector2(260, 300)); // over the painting's right end, flipped: clear to slate
             fade.rectTransform.localScale = new Vector3(-1, 1, 1);
             var clock = UIKit.Outlined(UIKit.Label("Time", banner, "◷ " + Left(s.SeasonLeft), 34, Color.white, TextAnchor.MiddleLeft, false), 1.5f);
             clock.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -14), new Vector2(400, 50));
@@ -124,10 +133,7 @@ namespace LastTide.Game
             var free = UIKit.Label("Free", banner, "free, three a day", 24, new Color(1, 1, 1, 0.65f), TextAnchor.MiddleLeft, false);
             free.rectTransform.Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(720, 52), new Vector2(260, 50));
 
-            // Premium highlights on the right: the companions and the gold chest.
-            // As many as fit beside the 1000-wide painting (three on a wide phone, two on 16:9 and iPad).
             float hx = -30;
-            int room = Mathf.Clamp(Mathf.FloorToInt((_root.rect.width - 380 - 1020) / 220f), 0, 3);
             foreach (var (id, col) in new[] { ("pet_wolf", new Color(0.45f, 0.36f, 0.6f)), ("pet_husky", new Color(0.62f, 0.52f, 0.2f)), ("gold_chest", new Color(0.62f, 0.52f, 0.2f)) })
             {
                 if (room-- <= 0) break;
@@ -150,28 +156,29 @@ namespace LastTide.Game
             content.anchoredPosition = Vector2.zero;
             var sr = track.gameObject.AddComponent<ScrollRect>();
             sr.viewport = view; sr.content = content; sr.horizontal = true; sr.vertical = false; sr.movementType = ScrollRect.MovementType.Clamped; sr.inertia = true; sr.scrollSensitivity = 30;
-            float trackH = 1080 - 140 - 50 - 320 - 120 - 32;   // about the visible height of the track
+            float trackH = _root.rect.height - 140 - 50 - 320 - 120 - 32;   // about the visible height of the track
             float tile = Mathf.Min(128, (trackH - 90) / 2 - 10);
+            float lift = Mathf.Max(0, (trackH - (70 + 2 * tile + 34)) / 2);  // centred in the box (an iPad's is much taller)
             int level = s.SeasonLevel;
             // Progress line along the diamonds.
             var line = UIKit.Img("Line", content, null, new Color(0, 0, 0, 0.35f)).rectTransform;
             line.anchorMin = line.anchorMax = new Vector2(0, 0); line.pivot = new Vector2(0, 0.5f);
-            line.anchoredPosition = new Vector2(10, 34); line.sizeDelta = new Vector2(colW * Season.Levels, 10);
+            line.anchoredPosition = new Vector2(10, 34 + lift); line.sizeDelta = new Vector2(colW * Season.Levels, 10);
             var lineFill = UIKit.Img("Fill", content, null, new Color(1f, 0.8f, 0.2f)).rectTransform;
             lineFill.anchorMin = lineFill.anchorMax = new Vector2(0, 0); lineFill.pivot = new Vector2(0, 0.5f);
-            lineFill.anchoredPosition = new Vector2(10, 34);
+            lineFill.anchoredPosition = new Vector2(10, 34 + lift);
             lineFill.sizeDelta = new Vector2(colW * (level - 1) + colW * 0.5f + colW * s.SeasonInLevel / (float)Season.PointsPerLevel * (level < Season.Levels ? 1 : 0), 10);
             for (int lv = 1; lv <= Season.Levels; lv++)
             {
                 float cx = 10 + (lv - 1) * colW + colW / 2;
-                SeasonTile(content, lv, true, new Vector2(cx, 70 + tile + 14 + tile / 2), tile);
-                SeasonTile(content, lv, false, new Vector2(cx, 70 + tile / 2), tile);
+                SeasonTile(content, lv, true, new Vector2(cx, lift + 70 + tile + 14 + tile / 2), tile);
+                SeasonTile(content, lv, false, new Vector2(cx, lift + 70 + tile / 2), tile);
                 var dia = UIKit.Img("Diamond", content, null, lv <= level ? new Color(1f, 0.8f, 0.2f) : new Color(0.15f, 0.16f, 0.15f)).rectTransform;
                 dia.anchorMin = dia.anchorMax = new Vector2(0, 0);
-                dia.anchoredPosition = new Vector2(cx, 34); dia.sizeDelta = new Vector2(46, 46); dia.localRotation = Quaternion.Euler(0, 0, 45);
+                dia.anchoredPosition = new Vector2(cx, 34 + lift); dia.sizeDelta = new Vector2(46, 46); dia.localRotation = Quaternion.Euler(0, 0, 45);
                 var dn = UIKit.Label("N", content, lv.ToString(), 26, lv <= level ? new Color(0.2f, 0.15f, 0.05f) : Color.white, TextAnchor.MiddleCenter);
                 dn.rectTransform.anchorMin = dn.rectTransform.anchorMax = new Vector2(0, 0);
-                dn.rectTransform.anchoredPosition = new Vector2(cx, 34); dn.rectTransform.sizeDelta = new Vector2(60, 46);
+                dn.rectTransform.anchoredPosition = new Vector2(cx, 34 + lift); dn.rectTransform.sizeDelta = new Vector2(60, 46);
             }
             // Open on the first reward waiting, else around the current level.
             if (_trackScroll < 0)
