@@ -20,6 +20,7 @@ namespace LastTide.Core
             var i = Content.IslandOf(location);
             if (i == null || i.Location != location || HasPlan(i)) return false;
             SetFlag("plan_" + location);
+            TripPlan(location);
             AddXp(25);
             PlanFound?.Invoke(i);
             Changed?.Invoke();

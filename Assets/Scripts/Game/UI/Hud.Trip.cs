@@ -79,6 +79,24 @@ namespace LastTide.Game
                 facts.Add("<color=#8FE3A8>RESCUED</color>  " + string.Join(", ", t.rescued.Select(r => World.Signal(r)?.Npc ?? r)));
             if (t.learned.Count > 0)
                 facts.Add("<color=#8FE3A8>LEARNED</color>  " + string.Join(", ", t.learned.Where(Content.Recipes.ContainsKey).Select(r => Content.NameOf(Content.Recipes[r].Output))));
+            // The islands' own rewards: plans found, improvements finished at camp meanwhile, materials only found there.
+            foreach (var loc in t.plans)
+            {
+                var isl = Content.IslandOf(loc);
+                if (isl != null) facts.Add("<color=#FFC24A>FOUND PLAN</color>  " + isl.PlanTitle + ": teaches the " + Content.NameOf(isl.Perk));
+            }
+            foreach (var perk in t.perks)
+            {
+                var isl = Content.IslandOf(perk);
+                if (isl != null) facts.Add("<color=#FFC24A>NEW CAMP IMPROVEMENT</color>  " + Content.NameOf(perk) + ": " + isl.Effect);
+            }
+            var own = t.gained.Where(g => { var i = Content.IslandOf(g.id); return i != null && i.Ingredient == g.id; }).ToList();
+            if (own.Count > 0)
+                facts.Add("<color=#8FE3A8>ISLAND REWARD</color>  " + string.Join(", ", own.Select(g =>
+                {
+                    var l = World.Location(Content.IslandOf(g.id).Location);
+                    return g.n + " " + Content.NameOf(g.id) + " (only on " + (l != null ? l.Name : "its island") + ")";
+                })));
             if (t.falls > 0)
                 facts.Add("<color=#FF8A70>PASSED OUT " + (t.falls == 1 ? "ONCE" : t.falls + " TIMES") + "</color>  " + (s.State.lostBags.Count > 0 ? "your backpack waits where you fell" : "and got your things back"));
             foreach (var f in facts) Line("Fact", f, 30, Color.white, 44);

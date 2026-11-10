@@ -112,7 +112,7 @@ setting only.
   arrow leads toward the next den but stops 30 m short (dens only refill with the castaway over 26 m away).
 - Trips and pacing: `Core/Session.Trip.cs` logs a trip from landing away until home (`State.trip`: finds, kills, XP,
   doubloons, falls; recipes learned and survivors rescued as a diff), then `State.lastTrip` waits for the HUD's BACK AT
-  card (`UI/Hud.Trip.cs`: FOUND, DEFEATED, NOW YOU CAN from `Session.NowPossible`, NEXT; the PlayBot closes it).
+  card (`UI/Hud.Trip.cs`: FOUND, DEFEATED, FOUND PLAN, NEW CAMP IMPROVEMENT, ISLAND REWARD, NOW YOU CAN from `Session.NowPossible`, NEXT; the PlayBot closes it).
   `Session.Settled` (shelter built and day 2, or level 3) gates the season button, gift, the shop "+"s and the map's
   RADIO/TRADE/SHOP (`UI/Hud.Pacing.cs`, `_later`), with a toast when they appear.
 - Island rewards (`Core/Content.Islands.cs`, `Core/Session.Islands.cs`, `UI/Hud.Islands.cs`, models in
@@ -177,9 +177,9 @@ setting only.
 unity pipeline install --project-path .     # once per clone (local dev tool, never commit it)
 unity open . --until-ready
 Tools/unity-recompile.sh
-Tools/unity-test.sh                          # leaves Play mode first (the runner refuses to start during Play)
+Tools/unity-test.sh                          # EditMode tests: in the open Editor (leaves Play mode first), else batch mode
 Tools/unity-capture.sh out.png 8
-~/.dotnet8/dotnet test Tools/CoreTests       # Core tests without Unity
+Tools/core-test.sh                           # Core tests without Unity (finds a .NET 8 SDK; /usr/bin/dotnet is 6.0)
 ```
 
 In the Editor: WASD walks, F9 deletes the save.
