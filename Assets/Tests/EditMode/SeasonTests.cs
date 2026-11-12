@@ -123,5 +123,30 @@ namespace LastTide.Tests
             Assert.AreEqual("biscuit", g.ActivePet.Id);
             Assert.AreEqual(2, g.OwnedPets.Count);
         }
+    
+        [Test]
+        public void CratesHoldWhatTheirOddsSay()
+        {
+            foreach (var id in new[] { "supply_crate", "gold_chest" })
+            {
+                bool gold = id == "gold_chest";
+                var pool = gold ? Season.ChestLoot : Season.CrateLoot;
+                string text = Season.OddsText(id);
+                StringAssert.Contains("1 in " + pool.Length, text);
+                StringAssert.Contains(gold ? "40-80 doubloons" : "5-15 doubloons", text);
+                foreach (var e in pool) StringAssert.Contains(e.n + " " + Content.NameOf(e.id), text);
+                var g = TestGame.New();
+                for (int k = 0; k < 60; k++)
+                {
+                    foreach (var sl in g.State.backpack) sl.Clear();
+                    g.Give(id, 1);
+                    var got = g.OpenCrate(g.State.backpack.FindIndex(x => x.id == id));
+                    Assert.AreEqual(1 + (gold ? Season.ChestDraws : Season.CrateDraws), got.Count, id);
+                    int coins = got[0].n;
+                    Assert.That(coins >= (gold ? Season.ChestCoinsMin : Season.CrateCoinsMin) && coins <= (gold ? Season.ChestCoinsMax : Season.CrateCoinsMax), id + " coins " + coins);
+                    foreach (var d in got.Skip(1)) Assert.IsTrue(pool.Any(e => e.id == d.id && e.n == d.n), id + " gave " + d);
+                }
+            }
+        }
     }
 }

@@ -70,6 +70,32 @@ namespace LastTide.Core
 
         static ItemCount[] R(params ItemCount[] r) { return r; }
 
+        // What's inside a supply crate and a captain's gold chest: always some doubloons, then draws from the table,
+        // every entry as likely as the next (an entry listed twice is twice as likely). OddsText shows exactly this.
+        public const int CrateCoinsMin = 5, CrateCoinsMax = 15, CrateDraws = 3;
+        public const int ChestCoinsMin = 40, ChestCoinsMax = 80, ChestDraws = 2;
+
+        /// <summary>The odds as the player reads them (App Store rule 3.1.1: randomised paid rewards say their odds).</summary>
+        public static string OddsText(string id)
+        {
+            bool gold = id == "gold_chest";
+            var pool = gold ? ChestLoot : CrateLoot;
+            var parts = new List<string>();
+            var seen = new List<string>();
+            foreach (var e in pool)
+            {
+                string key = e.id + "x" + e.n;
+                if (seen.Contains(key)) continue;
+                seen.Add(key);
+                int k = 0; foreach (var o in pool) if (o.id == e.id && o.n == e.n) k++;
+                parts.Add(e.n + " " + Content.NameOf(e.id) + (k > 1 ? " (" + k + " in " + pool.Length + ")" : ""));
+            }
+            double each = 100.0 / pool.Length;
+            return Content.NameOf(id) + ": always " + (gold ? ChestCoinsMin + "-" + ChestCoinsMax : CrateCoinsMin + "-" + CrateCoinsMax)
+                + " doubloons, plus " + (gold ? ChestDraws : CrateDraws) + " draws. Each draw is one of these, each 1 in " + pool.Length
+                + " (" + each.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + "%): " + string.Join(", ", parts) + ".";
+        }
+
         // What's inside a supply crate and a captain's gold chest.
         public static readonly ItemCount[] CrateLoot =
         {

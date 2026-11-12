@@ -210,9 +210,10 @@ namespace LastTide.Core
             var s = State.backpack[slot];
             if (s.Empty || (s.id != "supply_crate" && s.id != "gold_chest")) return null;
             bool gold = s.id == "gold_chest";
-            var got = new List<ItemCount> { Content.I("doubloon", gold ? 40 + _rng.Next(41) : 5 + _rng.Next(11)) };
+            // Season.OddsText tells the player exactly this: keep the two together.
+            var got = new List<ItemCount> { Content.I("doubloon", gold ? _rng.Next(Season.ChestCoinsMin, Season.ChestCoinsMax + 1) : _rng.Next(Season.CrateCoinsMin, Season.CrateCoinsMax + 1)) };
             var pool = gold ? Season.ChestLoot : Season.CrateLoot;
-            for (int i = 0, rolls = gold ? 2 : 3; i < rolls; i++) got.Add(pool[_rng.Next(pool.Length)]);
+            for (int i = 0, rolls = gold ? Season.ChestDraws : Season.CrateDraws; i < rolls; i++) got.Add(pool[_rng.Next(pool.Length)]);
             // Opened only when what's inside fits: else it stays shut in the backpack.
             if (!Fits(got, s.id)) { NoRoom(); return new List<ItemCount>(); }
             s.n--;
