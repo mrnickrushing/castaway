@@ -46,6 +46,7 @@ namespace LastTide.Game
             _tipName.text = Content.NameOf(id);
             string origin = Content.Origin(id);
             string blurb = d != null && !string.IsNullOrEmpty(d.Blurb) ? d.Blurb : "";
+            if (id == "supply_crate" || id == "gold_chest") blurb += "\n<color=#FFFFFFB0>" + Season.OddsText(id) + "</color>";
             _tipBody.text = blurb + (origin != null ? (blurb.Length > 0 ? "\n" : "") + "<color=#8FE3A8>" + origin + "</color>" : "");
 
             // As tall as the text needs (the name takes the top 66), measured at the biggest size best fit may pick,

@@ -208,6 +208,10 @@ namespace LastTide.Game
                 ((RectTransform)prem.transform).Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(0, 10), new Vector2(540, 96));
                 var li = UIKit.Img("Lock", prem.transform, UIKit.Symbol("lock"), Color.white); li.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(44, 44));
             }
+            // The pass pays out supply crates and gold chests, whose contents are drawn at random: their odds, one tap away.
+            var odds = UIKit.Button("Odds", _seasonBody, "CRATE & CHEST ODDS", new Color(0, 0, 0, 0), () => ShowOdds("supply_crate", "gold_chest"), 24);
+            ((RectTransform)odds.transform).Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(0, 108), new Vector2(s.SeasonPremium ? 400 : 540, 44));
+            odds.GetComponentInChildren<Text>().color = new Color(1, 1, 1, 0.7f);
         }
 
         void SeasonTile(RectTransform content, int lv, bool premium, Vector2 pos, float size)

@@ -123,11 +123,23 @@ namespace LastTide.Game
             // Taller for long messages (deleting the account), so the text never runs under the buttons.
             float textH = b.cachedTextGeneratorForLayout.GetPreferredHeight(body, b.GetGenerationSettings(new Vector2(780, 0))) / b.pixelsPerUnit;
             box.sizeDelta = new Vector2(860, Mathf.Max(420, 110 + textH + 150));
-            var no = UIKit.Button("No", box, noLabel, new Color(0.35f, 0.35f, 0.36f), () => { Destroy(_confirm.gameObject); onNo?.Invoke(); }, 32);
-            ((RectTransform)no.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 34), new Vector2(330, 84));
+            if (noLabel != null)   // null: just the one button (an information box)
+            {
+                var no = UIKit.Button("No", box, noLabel, new Color(0.35f, 0.35f, 0.36f), () => { Destroy(_confirm.gameObject); onNo?.Invoke(); }, 32);
+                ((RectTransform)no.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 34), new Vector2(330, 84));
+            }
             bool harm = yes == "DELETE" || yes == "START OVER" || yes == "THROW AWAY"; // can't be undone: red, not gold
             var ok = UIKit.Button("Yes", box, yes, harm ? new Color(0.72f, 0.2f, 0.16f) : new Color(0.8f, 0.62f, 0.12f), () => { Destroy(_confirm.gameObject); onYes(); }, 32);
-            ((RectTransform)ok.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 34), new Vector2(330, 84));
+            ((RectTransform)ok.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(noLabel != null ? 190 : 0, 34), new Vector2(330, 84));
+        }
+
+        /// <summary>What a supply crate or gold chest can hold, and how likely each thing is.</summary>
+        public void ShowOdds(params string[] ids)
+        {
+            Sfx.Play("click");
+            var lines = new System.Collections.Generic.List<string>();
+            foreach (var id in ids) lines.Add(Season.OddsText(id));
+            Confirm("WHAT'S INSIDE", string.Join("\n\n", lines), "OK", () => { }, null, null);
         }
     }
 }

@@ -462,7 +462,13 @@ namespace LastTide.Game
             stats.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -330), new Vector2(560, 50));
             var blurb = UIKit.Label("Blurb", _invSide, d?.Blurb ?? "", 28, new Color(1, 1, 1, 0.75f), TextAnchor.UpperCenter, false);
             blurb.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -390), new Vector2(560, 160));
-            if (QuestNeeds().Contains(sl.id))
+            if (sl.id == "supply_crate" || sl.id == "gold_chest")
+            {
+                string oid = sl.id;
+                var odds = UIKit.Button("Odds", _invSide, "WHAT'S INSIDE?", new Color(0.33f, 0.35f, 0.33f), () => ShowOdds(oid), 26);
+                ((RectTransform)odds.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 136), new Vector2(300, 62));
+            }
+            else if (QuestNeeds().Contains(sl.id))
             {
                 var qn = UIKit.Label("Quest", _invSide, "Needed for: " + s.CurrentQuest.Label(s), 26, QuestGreen, TextAnchor.UpperCenter, false);
                 qn.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 128), new Vector2(560, 70));
