@@ -182,6 +182,10 @@ setting only.
 - Scans import Z-up with a -90° X rotation on their root: turn them with `Quaternion.Euler(0, yaw, 0) * t.rotation`,
   never by assigning a fresh rotation (that lays every fern, table and cliff on its side). The pets stay Quaternius: no realistic dog
   on Sketchfab has walk and run clips.
+- Camera (`App/CameraRig.cs`): pinch or the mouse wheel zooms 6-32 m; the pitch flattens from 52° (17 m and out) to 30°
+  close up, and the camera stays 1.2 m above the ground behind the castaway. Only fingers that came down on the open
+  view pinch (walking + tapping attack never zooms); two landing within 0.25 s pinch even if one took the stick
+  (`Hud.ReleaseStick`). No zooming while the map or a blocking card is up.
 - Trees, roofs and towers between the camera and the castaway (or the build ghost) switch to shadows-only while they
   block the view (`App/SeeThrough.cs`, ticked by `CameraRig`; bounds rays, no shader change, so the scans' URP Lit
   variants stay as they are). The HUD canvas uses `Expand` from 1920x1080: an iPad gets 1920x1440 and the panels fit.

@@ -423,7 +423,13 @@ namespace LastTide.Game
             img.color = new Color(1, 1, 1, 0.16f * a);
         }
 
-        static bool OverUI(int finger)
+        /// <summary>The finger steering the castaway (-2: none, -1: the mouse).</summary>
+        public int StickFinger { get { return _finger; } }
+
+        /// <summary>Lets go of the stick: the finger on it turned out to be half of a pinch.</summary>
+        public void ReleaseStick() { _finger = -2; Stick = Vector2.zero; }
+
+        internal static bool OverUI(int finger)
         {
             var es = EventSystem.current;
             if (es == null) return false;
