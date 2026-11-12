@@ -395,10 +395,16 @@ namespace LastTide.Game
             }
             if (d != null && d.Durability > 0)
             {
-                float left = 1 - sl.wear / (float)d.Durability;
-                var bar = UIKit.Img("Wear", b.transform, null, left > 0.3f ? new Color(0.2f, 0.7f, 0.7f) : UIKit.Red);
-                bar.rectTransform.anchorMin = new Vector2(0, 0); bar.rectTransform.anchorMax = new Vector2(0, left);
-                bar.rectTransform.offsetMin = new Vector2(2, 2); bar.rectTransform.offsetMax = new Vector2(8, -2);
+                // Condition: a meter up the left edge on a dark track, green while sound, amber when worn, red near breaking.
+                float left = Mathf.Clamp01(1 - sl.wear / (float)d.Durability);
+                var track = UIKit.Img("WearTrack", b.transform, null, new Color(0, 0, 0, 0.55f));
+                track.rectTransform.anchorMin = new Vector2(0, 0); track.rectTransform.anchorMax = new Vector2(0, 1);
+                track.rectTransform.offsetMin = new Vector2(4, 6); track.rectTransform.offsetMax = new Vector2(11, -6);
+                track.raycastTarget = false;
+                var bar = UIKit.Img("Wear", track.transform, null, left > 0.5f ? new Color(0.36f, 0.8f, 0.36f) : left > 0.25f ? UIKit.Amber : UIKit.Red);
+                bar.rectTransform.anchorMin = new Vector2(0, 0); bar.rectTransform.anchorMax = new Vector2(1, left);
+                bar.rectTransform.offsetMin = new Vector2(1, 1); bar.rectTransform.offsetMax = new Vector2(-1, -1);
+                bar.raycastTarget = false;
             }
             if (quest) QuestTab(b.transform, size);
             return rt;
