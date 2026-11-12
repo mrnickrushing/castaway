@@ -14,9 +14,9 @@ namespace LastTide.Game
         public float Night { get; private set; }   // 0 day .. 1 full night
 
         static readonly Color SunDay = new Color(1f, 0.95f, 0.84f), SunGold = new Color(1f, 0.68f, 0.4f), Moon = new Color(0.55f, 0.65f, 1f);
-        static readonly Color SkyDay = new Color(0.5f, 0.62f, 0.78f), SkyNight = new Color(0.2f, 0.28f, 0.55f);
-        static readonly Color EqDay = new Color(0.45f, 0.5f, 0.44f), EqNight = new Color(0.12f, 0.17f, 0.34f);
-        static readonly Color GroundDay = new Color(0.36f, 0.32f, 0.26f), GroundNight = new Color(0.04f, 0.05f, 0.1f);
+        internal static readonly Color SkyDay = new Color(0.5f, 0.62f, 0.78f), SkyNight = new Color(0.2f, 0.28f, 0.55f);
+        internal static readonly Color EqDay = new Color(0.45f, 0.5f, 0.44f), EqNight = new Color(0.12f, 0.17f, 0.34f);
+        internal static readonly Color GroundDay = new Color(0.36f, 0.32f, 0.26f), GroundNight = new Color(0.04f, 0.05f, 0.1f);
         static readonly Color FogDay = new Color(0.62f, 0.8f, 0.86f), FogDusk = new Color(0.86f, 0.6f, 0.5f), FogNight = new Color(0.05f, 0.08f, 0.16f);
 
         UnityEngine.Rendering.Volume _grade;
