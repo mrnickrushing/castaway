@@ -158,4 +158,5 @@ workflows:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true
+        # Upload only (internal testers); beta review for external testers waits until the owner asks for it.
+        submit_to_testflight: false
