@@ -38,11 +38,7 @@ namespace LastTide.Game
             {
                 var l = UIKit.Label(name, box, text, size, col, a, bold);
                 l.supportRichText = true;
-                // As tall as the text needs at its (phone-grown) size: a long list of foes wraps onto a second line
-                // instead of running into the next.
-                var gs = l.GetGenerationSettings(new Vector2(W - 120, 0));
-                gs.resizeTextForBestFit = false;
-                h = Mathf.Max(h, l.cachedTextGeneratorForLayout.GetPreferredHeight(text, gs) / l.pixelsPerUnit + 8);
+                h = FitHeight(l, W - 120, h);   // a long list of foes wraps onto a second line instead of running into the next
                 l.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, y), new Vector2(W - 120, h));
                 y -= h;
                 return l;
@@ -123,6 +119,15 @@ namespace LastTide.Game
             box.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(W, Mathf.Min(1040, -y)));
             StartCoroutine(PopIn(box, 0));
             Sfx.Play("quest");
+        }
+
+        /// <summary>How tall a card line must be for its text at its real (phone-grown) size, wrapped to
+        /// <paramref name="width"/>; never less than <paramref name="min"/>.</summary>
+        static float FitHeight(Text l, float width, float min)
+        {
+            var gs = l.GetGenerationSettings(new Vector2(width, 0));
+            gs.resizeTextForBestFit = false;
+            return Mathf.Max(min, l.cachedTextGeneratorForLayout.GetPreferredHeight(l.text, gs) / l.pixelsPerUnit + 8);
         }
 
         /// <summary>Keeps a name on one line when the list it's in wraps ("Old Lighthouse", "2 Wild Boars").</summary>

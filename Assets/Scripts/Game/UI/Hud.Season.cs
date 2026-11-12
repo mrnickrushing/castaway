@@ -427,7 +427,7 @@ namespace LastTide.Game
             foreach (float side in new[] { 1f, -1f })
             {
                 var band = UIKit.Img("Band", _rewardCard, Fade(), new Color(0.2f, 0.36f, 0.36f, 0.85f)).rectTransform;
-                band.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 10), new Vector2(800, 520));
+                band.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 10), new Vector2(700, 520));   // ends where the gold lines end
                 band.localScale = new Vector3(side, 1, 1);
             }
             foreach (float ly in new[] { 270f, -250f })
