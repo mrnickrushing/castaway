@@ -67,7 +67,21 @@ namespace LastTide.Game
             var rt = RenderTexture.GetTemporary(Size, Size, 24, RenderTextureFormat.ARGB32);
             rt.antiAliasing = 4;
             _cam.targetTexture = rt;
+            // Always photographed by day: the island's sun, moon and night ambient would otherwise make an icon first
+            // drawn after dark come out nearly black, and it stays that way for the session.
+            var lights = new List<Light>();
+            foreach (var l in Object.FindObjectsByType<Light>(FindObjectsSortMode.None)) if (l != _light && l.enabled) { l.enabled = false; lights.Add(l); }
+            Color sky = RenderSettings.ambientSkyColor, eq = RenderSettings.ambientEquatorColor, ground = RenderSettings.ambientGroundColor;
+            bool fog = RenderSettings.fog;
+            float glow = Shader.GetGlobalFloat("_NightGlow");
+            RenderSettings.ambientSkyColor = DayNight.SkyDay; RenderSettings.ambientEquatorColor = DayNight.EqDay; RenderSettings.ambientGroundColor = DayNight.GroundDay;
+            RenderSettings.fog = false;
+            Shader.SetGlobalFloat("_NightGlow", 0);
             _cam.Render();
+            RenderSettings.ambientSkyColor = sky; RenderSettings.ambientEquatorColor = eq; RenderSettings.ambientGroundColor = ground;
+            RenderSettings.fog = fog;
+            Shader.SetGlobalFloat("_NightGlow", glow);
+            foreach (var l in lights) l.enabled = true;
             var prev = RenderTexture.active;
             RenderTexture.active = rt;
             var tex = new Texture2D(Size, Size, TextureFormat.RGBA32, false);

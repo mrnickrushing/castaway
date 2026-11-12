@@ -299,11 +299,12 @@ namespace LastTide.Game
             t.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 44), new Vector2(500, 40));
             for (int i = 0; i < items.Length; i++)
             {
-                // The tile is one colour (its frame a touch brighter): a grey square used to show behind every icon that didn't fill it.
-                var cell = UIKit.Img("Item", row, UIKit.Round, new Color(frame.r * 0.86f, frame.g * 0.86f, frame.b * 0.86f, 1f));
+                // The tile is one colour with a thin lighter rim. (A darker middle inside a broad frame showed as a square
+                // behind any picture that doesn't fill its tile, like the honey pot.)
+                var cell = UIKit.Img("Item", row, UIKit.Round, frame);
                 cell.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(i * 104, -4), new Vector2(96, 96));
-                var edge = UIKit.Img("Edge", cell.transform, UIKit.Round, frame);
-                edge.rectTransform.Fill(); edge.type = Image.Type.Sliced; edge.fillCenter = false;
+                var edge = UIKit.Img("Edge", cell.transform, UIKit.Round, Color.Lerp(frame, Color.white, 0.3f));
+                edge.rectTransform.Fill(); edge.type = Image.Type.Sliced; edge.fillCenter = false; edge.pixelsPerUnitMultiplier = 4;
                 UIKit.ItemIcon(cell.transform, items[i], 86);
             }
         }
