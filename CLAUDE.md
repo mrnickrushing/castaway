@@ -183,7 +183,8 @@ setting only.
   never by assigning a fresh rotation (that lays every fern, table and cliff on its side). The pets stay Quaternius: no realistic dog
   on Sketchfab has walk and run clips.
 - Camera (`App/CameraRig.cs`): pinch or the mouse wheel zooms 6-32 m; the pitch flattens from 52° (17 m and out) to 30°
-  close up, and the camera stays 1.2 m above the ground behind the castaway. Only fingers that came down on the open
+  close up; where a hill or crest would come between them the camera swings up over it (`CameraRig.Clear` samples
+  the sight line), quickly up and slowly back. Only fingers that came down on the open
   view pinch (walking + tapping attack never zooms); two landing within 0.25 s pinch even if one took the stick
   (`Hud.ReleaseStick`). No zooming while the map or a blocking card is up.
 - Trees, roofs and towers between the camera and the castaway (or the build ghost) switch to shadows-only while they

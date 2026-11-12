@@ -13,7 +13,7 @@ namespace LastTide.Game
 
         static readonly (string icon, string title, string text)[] HowTo =
         {
-            ("person", "Moving", "Touch the left side of the screen and drag to walk. Let go to stop."),
+            ("person", "Moving", "Touch the left side of the screen and drag to walk. Let go to stop. Pinch with two fingers on the open view to zoom: wide to see around you, close to see your castaway."),
             ("pin", "Green rings", "Walk into a green ring and let go of the stick: your castaway chops, mines, gathers, builds or drinks there by themselves. An amber ring means you need a tool or room in your backpack. The hand button walks you to the nearest ring; sailors' bags open a loot window (TAKE ALL)."),
             ("heart", "Staying alive", "Health, food and water run down. Eat and drink from the backpack, cook at the campfire, rest in the shelter. Nights are dark and animals hunt farther: stay by the fire or sneak. If health hits zero you pass out and your backpack stays where you fell."),
             ("pack", "Backpack and crafting", "Pockets (the top row) stay with you when you pass out. CRAFT opens the blueprints: some things are made by hand, others at the campfire, workbench (wood into planks) or furnace. Stand at a station to cook, smelt and upgrade it."),
