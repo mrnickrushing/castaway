@@ -25,7 +25,7 @@ namespace LastTide.Game
 
         void BuildBuildMode()
         {
-            _buildBar = UIKit.Img("Build bar", _root, null, new Color(0.13f, 0.15f, 0.16f, 0.96f)).rectTransform;
+            _buildBar = UIKit.Img("Build bar", _root, null, new Color(0.13f, 0.15f, 0.16f, 1f)).rectTransform;   // opaque: in linear colour even 0.96 lets the field buttons glow through
             _buildBar.anchorMin = new Vector2(0, 0); _buildBar.anchorMax = new Vector2(1, 0); _buildBar.pivot = new Vector2(0.5f, 0);
             _buildBar.offsetMin = new Vector2(0, 0); _buildBar.offsetMax = new Vector2(0, 330);
             _buildBar.GetComponent<Image>().raycastTarget = true;
