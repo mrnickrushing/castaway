@@ -79,10 +79,13 @@ namespace LastTide.Game
                 var cell = UIKit.Button("Bp", _bpGrid, null, id == _bpSel ? new Color(0.15f, 0.5f, 0.5f) : new Color(0.13f, 0.14f, 0.13f), () => { _bpSel = id; _bpQty = 1; RefreshBlueprints(); });
                 ((RectTransform)cell.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2((i % 5) * 168, -(i / 5) * 190), new Vector2(160, 182));
                 cell.GetComponent<Image>().sprite = null;
-                var icon = UIKit.Rect("I", cell.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -8), new Vector2(120, 120));
-                UIKit.ItemIcon(icon, r.Output, 120);
-                var nm = UIKit.Label("N", cell.transform, Content.NameOf(r.Output), 22, can ? Color.white : new Color(1, 1, 1, 0.45f), TextAnchor.LowerLeft, false);
-                nm.rectTransform.Fill(8);
+                var icon = UIKit.Rect("I", cell.transform).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(104, 104));
+                UIKit.ItemIcon(icon, r.Output, 104);
+                // The name on its own dark band under the picture (a phone's larger type used to run up over it).
+                var band = UIKit.Img("Band", cell.transform, null, new Color(0, 0, 0, 0.32f));
+                band.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(160, 72)); band.raycastTarget = false;
+                var nm = UIKit.Label("N", band.transform, Content.NameOf(r.Output), 22, can ? Color.white : new Color(1, 1, 1, 0.45f), TextAnchor.MiddleLeft, false);
+                nm.rectTransform.Fill(); nm.rectTransform.offsetMin = new Vector2(8, 2); nm.rectTransform.offsetMax = new Vector2(-4, -2);
                 if (!can) { foreach (var g in cell.GetComponentsInChildren<Image>()) if (g.name == "Icon") g.color = new Color(1, 1, 1, 0.35f); }
             }
             if (_bpSel == null || !Content.Recipes.ContainsKey(_bpSel)) return;
