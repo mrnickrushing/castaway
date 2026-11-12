@@ -52,13 +52,37 @@ namespace LastTide.Game
         /// <summary>A jolt that dies away in about a third of a second (the castaway taking a blow). Bigger calls win.</summary>
         public static void Shake(float amount) { if (Instance != null) Instance._shake = Mathf.Max(Instance._shake, amount); }
 
+        float _pitchNow = 52f;
+
+        Vector3 Behind(float pitch) { return _focus + Vector3.up * 1.2f - Quaternion.Euler(pitch, 0, 0) * Vector3.forward * Distance; }
+
+        /// <summary>Is the line from the castaway's chest to the camera above the ground all the way (a crest between
+        /// them would hide the castaway even with the camera itself in the clear)?</summary>
+        bool Clear(float pitch)
+        {
+            var from = _focus + Vector3.up * 1.2f;
+            var to = Behind(pitch);
+            for (int i = 1; i <= 5; i++)
+            {
+                float t = i / 5f;
+                var q = Vector3.Lerp(from, to, t);
+                if (q.y < Island.Height(q.x, q.z) + (i == 5 ? 1.2f : 0.4f)) return false;
+            }
+            return true;
+        }
+
         void Snap()
         {
-            var rot = Quaternion.Euler(Pitch, 0, 0);
-            transform.rotation = rot;
-            var p = _focus + Vector3.up * 1.2f - rot * Vector3.forward * Distance;
-            // Close in, the camera sits low behind the castaway: never inside the hill behind them.
-            if (GameRoot.Instance != null && !GameRoot.Instance.OnMap) p.y = Mathf.Max(p.y, Island.Height(p.x, p.z) + 1.2f);
+            // Close in, the camera sits low behind the castaway. Where a hill or a crest rises behind them it swings up over
+            // it (same distance, still looking at them) rather than into it: quickly up, slowly back down.
+            float want = Pitch;
+            if (GameRoot.Instance != null && !GameRoot.Instance.OnMap)
+                for (; want < 80f; want += 3f) if (Clear(want)) break;
+            _pitchNow = Mathf.Lerp(_pitchNow, want, 1 - Mathf.Exp(-Time.unscaledDeltaTime * (want > _pitchNow ? 12f : 3f)));
+            if (Time.unscaledDeltaTime <= 0 || Mathf.Abs(_pitchNow - want) > 40f) _pitchNow = want;   // first frame, or a jump (landing)
+            transform.rotation = Quaternion.Euler(_pitchNow, 0, 0);
+            var p = Behind(_pitchNow);
+            if (GameRoot.Instance != null && !GameRoot.Instance.OnMap) p.y = Mathf.Max(p.y, Island.Height(p.x, p.z) + 0.6f);  // never under ground mid-swing
             transform.position = p;
             if (_shake > 0.001f)
             {
