@@ -52,7 +52,9 @@ namespace LastTide.Game
         /// <summary>A jolt that dies away in about a third of a second (the castaway taking a blow). Bigger calls win.</summary>
         public static void Shake(float amount) { if (Instance != null) Instance._shake = Mathf.Max(Instance._shake, amount); }
 
-        float _pitchNow = 52f;
+        float _pitchNow = 52f, _fightW;
+        Vector3 _fightOff;
+        const float FightPitch = 46f;
 
         Vector3 Behind(float pitch) { return _focus + Vector3.up * 1.2f - Quaternion.Euler(pitch, 0, 0) * Vector3.forward * Distance; }
 
@@ -75,7 +77,7 @@ namespace LastTide.Game
         {
             // Close in, the camera sits low behind the castaway. Where a hill or a crest rises behind them it swings up over
             // it (same distance, still looking at them) rather than into it: quickly up, slowly back down.
-            float want = Pitch;
+            float want = Mathf.Lerp(Pitch, Mathf.Max(Pitch, FightPitch), _fightW);
             if (GameRoot.Instance != null && !GameRoot.Instance.OnMap)
                 for (; want < 80f; want += 3f) if (Clear(want)) break;
             _pitchNow = Mathf.Lerp(_pitchNow, want, 1 - Mathf.Exp(-Time.unscaledDeltaTime * (want > _pitchNow ? 12f : 3f)));
@@ -129,7 +131,15 @@ namespace LastTide.Game
             if (_target == null) return;
             // Lead the castaway a little in the direction they're walking.
             var lead = Player.Instance != null ? Player.Instance.Velocity * 0.25f : Vector3.zero;
-            _focus = Vector3.Lerp(_focus, Focus ?? (_target.position + lead), 1 - Mathf.Exp(-Time.deltaTime * 5f));
+            // Zoomed in with a foe close, the castaway would stand right between the camera and it: aim between the two
+            // and look down a little more, so the foe and its wind-up show over the castaway's shoulder.
+            Enemy foe = null;
+            if (Focus == null && Distance < 13f && Player.Instance != null)
+                foe = Player.Instance.Locked ?? Enemy.Nearest(_target.position, 7f);
+            _fightW = Mathf.MoveTowards(_fightW, foe != null ? 1f : 0f, Time.deltaTime * 2.5f);
+            if (foe != null) { var off = foe.transform.position - _target.position; off.y = 0; _fightOff = off; }
+            var goal = Focus ?? (_target.position + lead + _fightOff * 0.4f * _fightW);
+            _focus = Vector3.Lerp(_focus, goal, 1 - Mathf.Exp(-Time.deltaTime * 5f));
             Pinch();
             if (!Hud.OverUI(-1) && !Blocked) Distance = Mathf.Clamp(Distance - Input.mouseScrollDelta.y, MinDist, MaxDist);
             Snap();

@@ -184,7 +184,8 @@ setting only.
   on Sketchfab has walk and run clips.
 - Camera (`App/CameraRig.cs`): pinch or the mouse wheel zooms 6-32 m; the pitch flattens from 52° (17 m and out) to 30°
   close up; where a hill or crest would come between them the camera swings up over it (`CameraRig.Clear` samples
-  the sight line), quickly up and slowly back. Only fingers that came down on the open
+  the sight line), quickly up and slowly back. Zoomed in (under 13 m) with a foe within 7 m (or locked), it aims 40% of
+  the way toward it and looks down at least 46°, so the foe shows over the castaway's shoulder. Only fingers that came down on the open
   view pinch (walking + tapping attack never zooms); two landing within 0.25 s pinch even if one took the stick
   (`Hud.ReleaseStick`). No zooming while the map or a blocking card is up.
 - Trees, roofs and towers between the camera and the castaway (or the build ghost) switch to shadows-only while they
