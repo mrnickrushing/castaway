@@ -98,6 +98,7 @@ namespace LastTide.Game
             if (Cinema.Playing) { _tapT += Time.unscaledDeltaTime; if (_tapT > 2.5f) { _tapT = 0; Cinema.Skip(); Log("skipped a movie"); } return; }
             if (hud.StoryPlaying) { _tapT += Time.unscaledDeltaTime; if (_tapT > 0.6f) { _tapT = 0; hud.TapStory(); } return; }
             if (hud.PlanShowing) { _tapT += Time.unscaledDeltaTime; if (_tapT > 1f) { _tapT = 0; hud.ClosePlan(); Log("read a plan's story"); } return; }
+            if (hud.RewardShowing) { _tapT += Time.unscaledDeltaTime; if (_tapT > 1f) { _tapT = 0; hud.CloseRewards(); Log("closed a reward card"); } return; }
             if (hud.TripShowing) { _tapT += Time.unscaledDeltaTime; if (_tapT > 1f) { _tapT = 0; hud.CloseTrip(); Log("read the trip summary"); } return; }
 
             if (s.State.quest != _lastQuest)

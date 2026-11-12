@@ -180,6 +180,7 @@ namespace LastTide.Game
         // ------------------------------------------------------------------ guide card
 
         RectTransform _questCard, _levelUp;
+        Text _levelUpText;
         Text _questText, _questTitle;
         Image _questBack;
         float _questFlash;
@@ -209,7 +210,7 @@ namespace LastTide.Game
             lb.GetComponent<Image>().sprite = UIKit.Circle; lb.GetComponent<Image>().type = Image.Type.Simple;
             ((RectTransform)lb.transform).Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(40, 0), new Vector2(76, 76));
             var la = UIKit.Img("Arrow", lb.transform, UIKit.Symbol("upgrade"), Color.white); la.rectTransform.Fill(14);
-            var lt = UIKit.Outlined(UIKit.Label("T", _levelUp, "LEVEL UP!", 36, UIKit.Amber, TextAnchor.MiddleLeft, false), 1.2f);
+            var lt = _levelUpText = UIKit.Outlined(UIKit.Label("T", _levelUp, "LEVEL UP!", 36, UIKit.Amber, TextAnchor.MiddleLeft, false), 1.2f);
             lt.rectTransform.Fill(); lt.rectTransform.offsetMin = new Vector2(134, 0);
             var tap = UIKit.Button("Tap", _levelUp, null, new Color(0, 0, 0, 0), ClaimLevelUp);
             ((RectTransform)tap.transform).Fill();
@@ -221,9 +222,11 @@ namespace LastTide.Game
             var got = G.Session.ClaimLevelRewards();
             if (got.Count == 0) return;
             Sfx.Play("levelup");
-            var parts = new System.Collections.Generic.List<string>();
-            foreach (var lv in got) foreach (var r in Session.LevelReward(lv)) parts.Add("+" + r.n + " " + Content.NameOf(r.id));
-            Say("Level " + got[got.Count - 1] + "!", string.Join("   ", parts) + "   +20 energy each level");
+            // The reward card, like the season's and the events': every level's things in one row, and the energy.
+            var items = new System.Collections.Generic.List<ItemCount>();
+            foreach (var lv in got) items.AddRange(Session.LevelReward(lv));
+            items.Add(new ItemCount("energy", 20 * got.Count));
+            ShowRewards(got.Count == 1 ? "LEVEL " + got[0] : "LEVELS " + got[0] + "-" + got[got.Count - 1], items);
         }
 
         static Sprite _fade;
@@ -297,6 +300,7 @@ namespace LastTide.Game
             }
             else { _questBack.color = new Color(0.08f, 0.1f, 0.1f, 0.85f); _questTitle.text = ChapterTitle(); }
             _levelUp.gameObject.SetActive(s.LevelRewardsWaiting > 0 && !MapOpen);
+            _levelUpText.text = s.LevelRewardsWaiting > 1 ? "LEVEL UP!  x" + s.LevelRewardsWaiting : "LEVEL UP!";  // one tap takes them all
             if (_levelUp.gameObject.activeSelf) _levelUp.GetChild(1).localScale = Vector3.one * (1 + 0.08f * Mathf.Sin(Time.time * 6));
         }
 

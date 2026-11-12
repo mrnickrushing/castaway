@@ -447,17 +447,22 @@ namespace LastTide.Game
                 float total = inRow * size + (inRow - 1) * gap;
                 var tile = UIKit.Img("Item", _rewardCard, null, new Color(0.14f, 0.18f, 0.18f, 0.95f)).rectTransform;
                 tile.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-total / 2 + size / 2 + (i % 8) * (size + gap), 20 + (rows - 1) * rowH / 2 - row * rowH), new Vector2(size, size));
-                UIKit.ItemIcon(tile, it.id, size * 0.82f);
+                if (it.id == "energy") { var bolt = UIKit.Img("Bolt", tile, UIKit.Symbol("bolt"), UIKit.Amber); bolt.rectTransform.Fill(size * 0.2f); }  // not an item: a refill
+                else UIKit.ItemIcon(tile, it.id, size * 0.82f);
                 if (it.n > 1) { var n = UIKit.Outlined(UIKit.Label("N", tile, it.n.ToString(), 32, Color.white, TextAnchor.LowerRight), 1.5f); n.rectTransform.Fill(6); }
-                var nm = UIKit.Label("Name", tile, Content.NameOf(it.id), rows > 2 ? 18 : 22, new Color(1, 1, 1, 0.8f), TextAnchor.UpperCenter, false);
+                var nm = UIKit.Label("Name", tile, it.id == "energy" ? "Energy" : Content.NameOf(it.id), rows > 2 ? 18 : 22, new Color(1, 1, 1, 0.8f), TextAnchor.UpperCenter, false);
                 nm.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(size + gap, 60));
                 tile.localScale = Vector3.one * 0.2f;
                 StartCoroutine(PopIn(tile, 0.08f * i));
             }
-            var close = UIKit.Button("Close", _rewardCard, "CLOSE", new Color(0, 0, 0, 0), () => { _rewardCard.gameObject.SetActive(false); }, 40);
+            var close = UIKit.Button("Close", _rewardCard, "CLOSE", new Color(0, 0, 0, 0), CloseRewards, 40);
             ((RectTransform)close.transform).Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -330), new Vector2(300, 80));
             close.GetComponentInChildren<Text>().color = new Color(1f, 0.82f, 0.2f);
         }
+
+        public bool RewardShowing { get { return _rewardCard != null && _rewardCard.gameObject.activeSelf; } }
+
+        public void CloseRewards() { if (_rewardCard != null) _rewardCard.gameObject.SetActive(false); }
 
         System.Collections.IEnumerator PopIn(RectTransform r, float delay)
         {
