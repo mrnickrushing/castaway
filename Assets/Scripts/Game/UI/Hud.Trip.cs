@@ -38,6 +38,11 @@ namespace LastTide.Game
             {
                 var l = UIKit.Label(name, box, text, size, col, a, bold);
                 l.supportRichText = true;
+                // As tall as the text needs at its (phone-grown) size: a long list of foes wraps onto a second line
+                // instead of running into the next.
+                var gs = l.GetGenerationSettings(new Vector2(W - 120, 0));
+                gs.resizeTextForBestFit = false;
+                h = Mathf.Max(h, l.cachedTextGeneratorForLayout.GetPreferredHeight(text, gs) / l.pixelsPerUnit + 8);
                 l.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, y), new Vector2(W - 120, h));
                 y -= h;
                 return l;
@@ -48,7 +53,8 @@ namespace LastTide.Game
             var earned = new List<string>();
             if (t.xp > 0) earned.Add("<color=#8FE3A8>+" + t.xp + " XP</color>");
             if (t.coins > 0) earned.Add("<color=#FFC24A>+" + t.coins + " doubloons</color>");
-            Line("Where", string.Join("  ·  ", where) + (earned.Count > 0 ? "      " + string.Join("   ", earned) : ""), 30, new Color(1, 1, 1, 0.75f), 50);
+            Line("Where", string.Join("  ·  ", where.Select(Nb)), 30, new Color(1, 1, 1, 0.75f), 44);
+            if (earned.Count > 0) Line("Earned", string.Join("      ", earned), 30, Color.white, 44);
             y -= 10;
 
             // What was found: the biggest hauls first, up to ten tiles.
@@ -74,11 +80,11 @@ namespace LastTide.Game
 
             var facts = new List<string>();
             if (t.kills.Count > 0)
-                facts.Add("<color=#FF8A70>DEFEATED</color>  " + string.Join(", ", t.kills.OrderByDescending(k => k.n).Select(k => k.n + " " + Plural(Enemies.All.TryGetValue(k.id, out var e) ? e.Name : k.id, k.n))));
+                facts.Add("<color=#FF8A70>DEFEATED</color>  " + string.Join(", ", t.kills.OrderByDescending(k => k.n).Select(k => Nb(k.n + " " + Plural(Enemies.All.TryGetValue(k.id, out var e) ? e.Name : k.id, k.n)))));
             if (t.rescued.Count > 0)
-                facts.Add("<color=#8FE3A8>RESCUED</color>  " + string.Join(", ", t.rescued.Select(r => World.Signal(r)?.Npc ?? r)));
+                facts.Add("<color=#8FE3A8>RESCUED</color>  " + string.Join(", ", t.rescued.Select(r => Nb(World.Signal(r)?.Npc ?? r))));
             if (t.learned.Count > 0)
-                facts.Add("<color=#8FE3A8>LEARNED</color>  " + string.Join(", ", t.learned.Where(Content.Recipes.ContainsKey).Select(r => Content.NameOf(Content.Recipes[r].Output))));
+                facts.Add("<color=#8FE3A8>LEARNED</color>  " + string.Join(", ", t.learned.Where(Content.Recipes.ContainsKey).Select(r => Nb(Content.NameOf(Content.Recipes[r].Output)))));
             // The islands' own rewards: plans found, improvements finished at camp meanwhile, materials only found there.
             foreach (var loc in t.plans)
             {
@@ -118,6 +124,9 @@ namespace LastTide.Game
             StartCoroutine(PopIn(box, 0));
             Sfx.Play("quest");
         }
+
+        /// <summary>Keeps a name on one line when the list it's in wraps ("Old Lighthouse", "2 Wild Boars").</summary>
+        static string Nb(string s) { return s.Replace(' ', '\u00A0'); }
 
         static string Plural(string name, int n) { return n == 1 || name.EndsWith("s") || name.EndsWith("age") ? name : name + "s"; } // "hull wreckage" stays as it is
 

@@ -44,7 +44,7 @@ namespace LastTide.Core
             new ProductDef { Id = "lasttide.ultra", Name = "Survivor's Path: Ultra", Blurb = "Unlocks the golden Ultra rewards on every step of the Survivor's Path, past and future.", FallbackPrice = "$4.99",
                 Consumable = false, Perk = "ultra", Art = "keyart" },
             new ProductDef { Id = Season.PremiumProduct, Name = "Season Pass: Premium", Blurb = "Unlocks the premium reward on every level of this season, including the companions.", FallbackPrice = "$4.99",
-                Perk = "season", Art = "keyart" },
+                Perk = "season", Art = "pirates" },
             new ProductDef { Id = "lasttide.captain", Name = "Captain's Chest", Blurb = "3,500 doubloons, a pirate cutlass and an iron harpoon.", FallbackPrice = "$19.99",
                 Coins = 3500, Energy = 200, Art = "offer_builder", Items = new[] { Content.I("cutlass", 1), Content.I("harpoon", 1) } },
         };
