@@ -131,6 +131,7 @@ namespace LastTide.Game
                 if (_dead > 6f) Destroy(gameObject);
                 return;
             }
+            if (Hud.Instance != null && Hud.Instance.Blocking) return;      // the world waits while a story or card is up
             var player = Player.Instance;
             var pos = transform.position;
             Vector3 goal = _wander;
