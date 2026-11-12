@@ -227,10 +227,14 @@ namespace LastTide.Game
             var rt = (RectTransform)b.transform;
             rt.anchorMin = rt.anchorMax = new Vector2(0, 0);
             rt.anchoredPosition = pos; rt.sizeDelta = new Vector2(size + 6, size);
-            UIKit.ItemIcon(rt, r.id, size * 0.78f);
-            if (r.n > 1) { var n = UIKit.Outlined(UIKit.Label("N", rt, r.n.ToString(), 26, Color.white, TextAnchor.LowerRight), 1.5f); n.rectTransform.Fill(6); }
+            // The FREE / PREMIUM band across the top; the picture sits under it, the count in the corner (raised clear of
+            // TAKE when there is one).
+            const float band = 28;
+            var pic = UIKit.Rect("Pic", rt); pic.Fill(); pic.offsetMax = new Vector2(0, -band);
+            UIKit.ItemIcon(pic, r.id, (size - band) * 0.86f);
+            if (r.n > 1) { var n = UIKit.Outlined(UIKit.Label("N", rt, r.n.ToString(), 26, Color.white, TextAnchor.LowerRight), 1.5f); n.rectTransform.Fill(6); if (ready) n.rectTransform.offsetMin = new Vector2(6, 18); }
             var tag = UIKit.Img("Tag", rt, null, premium ? new Color(0.62f, 0.46f, 0.08f) : new Color(0.25f, 0.6f, 0.25f)).rectTransform;
-            tag.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 0), new Vector2(0, -26), new Vector2(size + 6, 26));
+            tag.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 0), new Vector2(0, -band), new Vector2(size + 6, band));
             var tagT = UIKit.Label("T", tag, premium ? "PREMIUM" : "FREE", 18, Color.white, TextAnchor.MiddleCenter, false); tagT.rectTransform.Fill();
             if (locked) { var l = UIKit.Img("Lock", rt, UIKit.Symbol("lock"), new Color(1f, 0.85f, 0.4f)); l.rectTransform.Place(new Vector2(0, 0), new Vector2(0, 0), new Vector2(4, 4), new Vector2(30, 30)); } // bottom left: the count has the right
             if (taken)
