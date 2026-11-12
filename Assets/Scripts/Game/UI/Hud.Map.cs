@@ -338,9 +338,14 @@ namespace LastTide.Game
             return (s / 60).ToString("00") + ":" + (s % 60).ToString("00");
         }
 
+        float _mapOpenedAt = -10;
+
         void UpdateMap()
         {
             bool open = MapOpen;
+            if (open && !_mapUi.gameObject.activeSelf) _mapOpenedAt = Time.unscaledTime;
+            // While the map camera settles after opening, pins under the HUD are hidden at once rather than fading out.
+            bool opening = Time.unscaledTime - _mapOpenedAt < 0.4f;
             if (_mapUi.gameObject.activeSelf != open) { _mapUi.gameObject.SetActive(open); _islandUi.gameObject.SetActive(!open); _stickBase.gameObject.SetActive(!open); }
             if (!open) return;
             var s = G.Session;
@@ -373,7 +378,8 @@ namespace LastTide.Game
                 // Fade a pin that has slid behind the HUD (pan to bring it out) instead of drawing it under the panels.
                 var cg = pin.GetComponent<CanvasGroup>();
                 if (cg == null) cg = pin.gameObject.AddComponent<CanvasGroup>();
-                cg.alpha = Mathf.MoveTowards(cg.alpha, UnderMapHud(pin) ? 0f : 1f, Time.unscaledDeltaTime * 6);
+                float want = UnderMapHud(pin) ? 0f : 1f;
+                cg.alpha = opening ? want : Mathf.MoveTowards(cg.alpha, want, Time.unscaledDeltaTime * 6);
             }
             // The castaway: on the island they're at, or along the way.
             Vector3 me;
