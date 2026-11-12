@@ -80,11 +80,18 @@ namespace LastTide.Game
             }
 
             // The steps and their rewards, rows sized so a long chapter still fits above the buttons.
-            float y = 0, rowH = Mathf.Min(120, 820f / Mathf.Max(1, end - start)), tile = Mathf.Min(92, rowH - 10);
+            // Column heads first: which rewards are free and which are the Ultra pass's.
+            const float head = 46, freeX = -590, ultraX = -440;
+            float y = head, rowH = Mathf.Min(120, (820f - head) / Mathf.Max(1, end - start)), tile = Mathf.Min(92, rowH - 10);
             // A phone's wide canvas has room to spare: give it to the step names (rewards stay on the right) so the
             // larger type keeps each step on one line.
             float rowW = 1060 + (UIKit.Phone ? Mathf.Max(0, _pathBody.rect.width - 1700) : 0);
             _tile = tile;
+            foreach (var (label, at, col) in new[] { ("FREE", freeX, new Color(0.55f, 0.9f, 0.45f)), ("ULTRA", ultraX, new Color(1f, 0.8f, 0.3f)) })
+            {
+                var h = UIKit.Label("Head", _pathBody, label, 26, col, TextAnchor.LowerLeft, false);
+                h.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(640 + rowW + at + 4, -2), new Vector2(200, head - 8));
+            }
             for (int i = start; i < end; i++)
             {
                 var q = Quests.All[i];
@@ -93,10 +100,10 @@ namespace LastTide.Game
                 row.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(640, -y), new Vector2(rowW, rowH - 8));
                 var t = UIKit.Label("T", row, (i - start + 1) + ". " + q.Text.ToUpper(), 26, done ? new Color(0.55f, 0.9f, 0.45f) : now ? Color.white : new Color(1, 1, 1, 0.45f), TextAnchor.MiddleLeft, false);
                 t.rectTransform.Fill(); t.rectTransform.offsetMin = new Vector2(20, 0); t.rectTransform.offsetMax = new Vector2(-600, 0);
-                float x = -590;
-                foreach (var r in q.Reward) { RewardTile(row, r, x, false, s.Claimed(q)); x += tile + 8; }
-                x = Mathf.Max(x, -400);
-                foreach (var r in q.Premium) { RewardTile(row, r, x, !s.Ultra, s.ClaimedUltra(q)); x += tile + 8; }
+                float x = freeX;
+                foreach (var r in q.Reward) { RewardTile(row, r, x, false, s.Claimed(q)); x += ChipWidth + 8; }
+                x = ultraX;
+                foreach (var r in q.Premium) { RewardTile(row, r, x, !s.Ultra, s.ClaimedUltra(q)); x += ChipWidth + 8; }
                 bool waiting = done && (!s.Claimed(q) || (s.Ultra && !s.ClaimedUltra(q)));
                 if (waiting)
                 {
@@ -127,13 +134,18 @@ namespace LastTide.Game
             }
         }
 
+        /// <summary>A reward chip: the item's picture with its count beside it (not over it, where a phone's larger type hid the picture).</summary>
+        float ChipWidth { get { return _tile + 58; } }
+
         void RewardTile(RectTransform row, ItemCount r, float x, bool locked, bool taken)
         {
             var tile = UIKit.Img("Reward", row, null, locked ? new Color(0.45f, 0.38f, 0.15f) : new Color(0.18f, 0.2f, 0.18f)).rectTransform;
-            tile.Place(new Vector2(1, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(_tile, _tile));
-            UIKit.ItemIcon(tile, r.id, _tile * 0.8f);
-            var n = UIKit.Outlined(UIKit.Label("N", tile, r.n.ToString(), 24, Color.white, TextAnchor.LowerRight), 1.5f);
-            n.rectTransform.Fill(4);
+            tile.Place(new Vector2(1, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(ChipWidth, _tile));
+            var pic = UIKit.Rect("Pic", tile);
+            pic.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(_tile, _tile));
+            UIKit.ItemIcon(pic, r.id, _tile * 0.84f);
+            var n = UIKit.Label("N", tile, "x" + r.n, 26, locked ? new Color(1f, 0.9f, 0.6f) : Color.white, TextAnchor.MiddleLeft);
+            n.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(_tile + 2, 0), new Vector2(54, _tile));
             if (locked) { var l = UIKit.Img("Lock", tile, UIKit.Symbol("lock"), new Color(1f, 0.85f, 0.4f)); l.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(2, -2), new Vector2(_tile * 0.4f, _tile * 0.4f)); } // top left, clear of the count
             if (taken) { var c = UIKit.Img("Taken", tile, null, new Color(0, 0, 0, 0.55f)); c.rectTransform.Fill(); var k = UIKit.Img("Tick", tile, UIKit.Symbol("check"), new Color(0.55f, 0.9f, 0.45f)); k.rectTransform.Fill(22); }
         }
