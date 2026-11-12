@@ -174,7 +174,13 @@ namespace LastTide.Core
             lostBag = null;
             lostBags.RemoveAll(b => b == null || b.slots == null || !b.slots.Exists(s => !s.Empty));
             if (waiting == null) waiting = new List<ItemCount>();
-            waiting.RemoveAll(w => string.IsNullOrEmpty(w.id) || w.n <= 0);
+            waiting.RemoveAll(w => string.IsNullOrEmpty(w.id) || w.n <= 0 || Content.Item(w.id) == null);
+            // Items this version doesn't know (a test grant, something since renamed) would sit in a slot as a blank tile.
+            foreach (var list in new[] { backpack, chest, gear })
+                foreach (var s in list) if (!s.Empty && Content.Item(s.id) == null) s.Clear();
+            foreach (var p in pieces) foreach (var s in p.slots) if (!s.Empty && Content.Item(s.id) == null) s.Clear();
+            foreach (var b in lostBags) foreach (var s in b.slots) if (!s.Empty && Content.Item(s.id) == null) s.Clear();
+            lostBags.RemoveAll(b => !b.slots.Exists(s => !s.Empty));
             foreach (var b in builds) if (b.delivered == null) b.delivered = new List<ItemCount>();
             if (equipped >= backpack.Count) equipped = -1;
         }

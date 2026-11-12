@@ -200,5 +200,39 @@ namespace LastTide.Tests
                 Assert.IsTrue(r.Station == "hand" || Content.Builds.ContainsKey(r.Station) || Content.Pieces.Values.Any(p => p.Station == r.Station), r.Id);
             foreach (var q in Quests.All) foreach (var c in q.Premium.Concat(q.Reward)) Assert.IsTrue(c.id == "doubloon" || Content.Item(c.id) != null, q.Id);
         }
+
+        [Test]
+        public void EveryRewardIsAKnownItem()
+        {
+            // Giving an unknown id now does nothing, so a typo in a reward would quietly give the player nothing.
+            void Check(System.Collections.Generic.IEnumerable<ItemCount> items, string where)
+            {
+                foreach (var c in items) if (c.id != null)
+                    Assert.IsTrue(c.id == "doubloon" || c.id.StartsWith("pet_") || Content.Item(c.id) != null, where + ": " + c.id);
+            }
+            foreach (var p in Catalog.Products) Check(p.Items, p.Id);
+            foreach (var o in World.Offers) Check(o.Items, o.Id);
+            foreach (var s in World.Signals) { Check(s.Need, s.Id); Check(s.Reward, s.Id); }
+            foreach (var e in Season.Events) foreach (var r in e.Rewards) Check(r, e.Id);
+            Check(Season.Free, "season free"); Check(Season.Premium, "season premium");
+            Check(Season.CrateLoot, "crate"); Check(Season.ChestLoot, "gold chest");
+            for (int lv = 2; lv <= 40; lv++) Check(Session.LevelReward(lv), "level " + lv);
+        }
+
+        [Test]
+        public void UnknownItemsNeverReachTheBackpack()
+        {
+            var g = Fresh();
+            int before = g.State.backpack.Count(s => !s.Empty);
+            g.Give("not_an_item", 3);
+            Assert.AreEqual(before, g.State.backpack.Count(s => !s.Empty), "nothing goes in");
+            // and an old save holding one loads without it
+            g.State.backpack.First(s => s.Empty).id = "not_an_item";
+            g.State.backpack.First(s => s.id == "not_an_item").n = 2;
+            g.State.chest[0].id = "gone_too"; g.State.chest[0].n = 1;
+            g.State.Repair();
+            Assert.IsFalse(g.State.backpack.Any(s => s.id == "not_an_item"));
+            Assert.IsTrue(g.State.chest[0].Empty);
+        }
     }
 }

@@ -240,6 +240,7 @@ namespace LastTide.Core
         {
             if (id == "doubloon") { State.coins += n; TripGained(id, n); Gained?.Invoke(id, n); Changed?.Invoke(); return n; }
             if (id.StartsWith("pet_")) { UnlockPet(id.Substring(4)); Changed?.Invoke(); return n; }
+            if (Content.Item(id) == null) return n;   // not a thing in this game: nothing goes in (it would show as a blank tile)
             int got = Inventory.Add(State.backpack, id, n);
             if (got > 0) { TripGained(id, got); Gained?.Invoke(id, got); }
             if (got > 0 && Content.Item(id) != null && Content.Item(id).Kind == ItemKind.Weapon && State.equipped < 0) AutoEquip();
@@ -505,6 +506,7 @@ namespace LastTide.Core
             }
             // Every fall leaves its own bag: one dropped earlier stays where it is.
             if (bag.slots.Count > 0) State.lostBags.Add(bag);
+            LastFallLeftBag = bag.slots.Count > 0;
             if (State.equipped >= Content.PocketSlots) State.equipped = -1;
             State.health = 60;
             State.hunger = Math.Max(State.hunger, 50);
@@ -512,6 +514,9 @@ namespace LastTide.Core
             Died?.Invoke();
             Changed?.Invoke();
         }
+
+        /// <summary>Did the latest fall leave a bag behind (false when everything was in the pockets)?</summary>
+        public bool LastFallLeftBag { get; private set; }
 
         /// <summary>The bag dropped last (null when none lies anywhere).</summary>
         public LostBag NewestBag { get { return State.lostBags.Count > 0 ? State.lostBags[State.lostBags.Count - 1] : null; } }

@@ -648,9 +648,13 @@ namespace LastTide.Game
         void PassOut()
         {
             _passOut = 3.2f;
-            _passText.text = "You passed out...\n<size=34>Your backpack lies where you fell.</size>";
+            _passText.text = "You passed out...\n<size=34>" + (G.Session.LastFallLeftBag
+                ? "Your backpack lies where you fell. Your pockets came with you."
+                : "Everything you carried was in your pockets: nothing was left behind.") + "</size>";
             _passText.supportRichText = true;
             CloseAll();
+            if (_confirm != null) { Destroy(_confirm.gameObject); _confirm = null; }  // a question asked a moment ago no longer applies
+            _black.transform.SetAsLastSibling();                                       // over every panel and card
         }
 
         void UpdateOverlays()
