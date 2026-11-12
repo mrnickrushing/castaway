@@ -19,7 +19,11 @@ namespace LastTide.Game
         Canvas _canvas;
         RectTransform _root, _worldLayer;
         public Vector2 Stick { get; private set; }
-        public bool Blocking { get { return _passOut > 0 || StoryPlaying || Cinema.Playing || LoadingScreen.Active; } }
+        /// <summary>
+        /// The world waits: story, a movie, passing out, loading, and the full-screen cards you read and tap away (back
+        /// home, a reward, a plan found). Meters don't drain and enemies hold still meanwhile.
+        /// </summary>
+        public bool Blocking { get { return _passOut > 0 || StoryPlaying || Cinema.Playing || LoadingScreen.Active || _trip != null || _plan != null || (_rewardCard != null && _rewardCard.gameObject.activeSelf); } }
 
         public static Hud Create()
         {
