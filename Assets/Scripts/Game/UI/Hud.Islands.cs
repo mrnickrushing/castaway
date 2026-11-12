@@ -30,13 +30,14 @@ namespace LastTide.Game
             {
                 var l = UIKit.Label("Line", box, text, size, col, a, bold);
                 l.supportRichText = true;
+                h = FitHeight(l, W - 120, h);
                 l.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, y), new Vector2(W - 120, h));
                 y -= h;
                 return l;
             }
             Line("FOUND ON " + (loc != null ? loc.Name.ToUpper() : ""), 26, new Color(1, 1, 1, 0.5f), 36, true);
             Line(isl.PlanTitle, 50, UIKit.Sand, 66, true);
-            Line(isl.PlanStory, 30, new Color(1, 1, 1, 0.85f), 130);
+            Line(isl.PlanStory, 30, new Color(1, 1, 1, 0.85f), 44);
             y -= 6;
 
             // What it teaches: the improvement's picture, then what it does and what it takes.
@@ -44,9 +45,12 @@ namespace LastTide.Game
             var pic = UIKit.Img("Pic", box, null, new Color(0.12f, 0.15f, 0.15f, 1)).rectTransform;
             pic.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(-(W - 120) / 2 + icon / 2, y), new Vector2(icon, icon));
             UIKit.ItemIcon(pic, isl.Perk, icon * 0.85f, false);
-            var learned = UIKit.Label("Learned", box, "<color=#8FE3A8>LEARNED</color>  " + Content.NameOf(isl.Perk) + "\n<size=28><color=#FFFFFFB0>" + char.ToUpper(isl.Effect[0]) + isl.Effect.Substring(1) + ". Build it at the workbench.</color></size>", 36, Color.white, TextAnchor.UpperLeft, true);
+            var learned = UIKit.Label("Learned", box, "<color=#8FE3A8>LEARNED</color>  " + Content.NameOf(isl.Perk), 36, Color.white, TextAnchor.UpperLeft, true);
             learned.supportRichText = true;
-            learned.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(icon / 2 + 20, y - 4), new Vector2(W - 120 - icon - 40, 90));
+            learned.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(icon / 2 + 20, y - 4), new Vector2(W - 120 - icon - 40, 48));
+            // Its own label so it grows on phones like every other line (a <size> tag inside one wouldn't).
+            var effect = UIKit.Label("Effect", box, char.ToUpper(isl.Effect[0]) + isl.Effect.Substring(1) + ". Build it at the workbench.", 28, new Color(1, 1, 1, 0.7f), TextAnchor.UpperLeft, false);
+            effect.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(icon / 2 + 20, y - 52), new Vector2(W - 120 - icon - 40, 42));
             var cost = Content.Recipes[isl.Perk].Inputs;
             var row = UIKit.Rect("Cost", box).Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(icon / 2 + 20, y - 96), new Vector2(W - 120 - icon - 40, 60));
             float x = 0;
