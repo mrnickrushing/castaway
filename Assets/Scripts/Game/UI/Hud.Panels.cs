@@ -454,10 +454,11 @@ namespace LastTide.Game
                 if (d.Durability > 0) lines.Add("Condition " + (d.Durability - sl.wear) + "/" + d.Durability);
                 if (d.Food > 0) lines.Add("Food +" + d.Food);
                 if (d.Drink > 0) lines.Add("Water +" + d.Drink);
-                if (d.Heal != 0) lines.Add("Health " + (d.Heal > 0 ? "+" : "") + d.Heal);
+                if (d.Heal != 0) lines.Add(d.Heal > 0 ? "Health +" + d.Heal : "<color=#FF8A70>Health " + d.Heal + "</color>");   // raw food hurts: say so in red
                 if (d.Worth > 0) lines.Add("Worth " + d.Worth + " doubloons");
             }
             var stats = UIKit.Label("Stats", _invSide, string.Join("    ", lines), 30, UIKit.Amber, TextAnchor.UpperCenter, false);
+            stats.supportRichText = true;
             stats.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -330), new Vector2(560, 50));
             var blurb = UIKit.Label("Blurb", _invSide, d?.Blurb ?? "", 28, new Color(1, 1, 1, 0.75f), TextAnchor.UpperCenter, false);
             blurb.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -390), new Vector2(560, 160));

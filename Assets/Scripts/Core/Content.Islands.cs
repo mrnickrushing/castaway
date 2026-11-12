@@ -66,7 +66,7 @@ namespace LastTide.Core
             Island("lighthouse", "lamp_oil", "Lamp Oil", "Whale oil from the lighthouse stores, enough to keep a lamp burning all night.",
                 "oildrum", "Oil Cask", ToolUse.None, new[] { I("lamp_oil", 1) }, new[] { I("scrap", 1) },
                 "The Keeper's Last Entry", "The keeper's sea chest by the tower, and his logbook's last entry: as long as the lamp burned, nothing came up from the dark to the door. He ran out of oil in the winter.",
-                "perk_lamp", "Signal Lamp", "A lamp that burns all night: animals and raiders notice you hardly further at night than by day.", "night barely makes enemies keener",
+                "perk_lamp", "Signal Lamp", "A lamp that burns all night: in the dark, animals and raiders notice you barely sooner than by day.", "night barely makes enemies keener",
                 I("lamp_oil", 3), I("scrap", 6), I("cloth", 2));
             Island("cave", "sea_salt", "Sea Salt", "Coarse salt scraped from the walls of the Smuggler's Cave, where the tide leaves it to dry.",
                 "saltcrust", "Salt Crust", ToolUse.None, new[] { I("sea_salt", 1) }, new[] { I("stone", 1) },
