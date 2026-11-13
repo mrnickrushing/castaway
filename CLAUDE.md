@@ -157,6 +157,12 @@ setting only.
   vignette when two or more are after the castaway within 25 m, and the held weapon's condition bar under its button.
 - Fight reach is measured along the ground (`Enemy.Nearest`, enemy attack, Biscuit's bite): 3D distance stalled fights
   on slopes. The drowned smugglers (5 dens, back in 40 s) and the cave/camp barrels (rum) feed the late story steps.
+- First-run tutorial (`UI/Hud.Tutorial.cs`, step in `GameState.tutorial`): after the intro, in the castaway's own voice
+  (portrait cut from the key art by `Tools/art/coach_art.py`, which also draws the Font Awesome hand): walk, the green
+  ring, the guide card, BAG, the campfire's ring, the meters, CRAFT, the first fight, then an "I CAN DO THIS" card.
+  `Shaders/Spotlight.shader` dims round a hole (rounded over a button, round over a ring in the world); NEXT steps hold
+  the world (`Hud.Blocking`), the rest let it run and advance when the thing is done; SKIP ends it; saves past the hunt
+  never see it; the PlayBot skips it (`Hud.SkipTutorial`). Steps waiting on the guide hide meanwhile.
 - Story cards use `Resources/UI/Story/<key>.jpg` (16:9, from `ai_media.py story`), else the small map painting.
 - Realistic people (Sketchfab, CC BY; `Tools/art/sketchfab.py` keeps uid/author/role and writes `CREDITS.md`; the
   in-game credits are in `UI/Hud.Help.cs`): `Tools/blender/cast_import.py` renames each rig to the Unreal mannequin's

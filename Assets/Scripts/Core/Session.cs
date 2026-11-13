@@ -109,6 +109,8 @@ namespace LastTide.Core
                 if (Content.IsPerk(r.Output)) { ApplyPerk(r.Output); Tally("craft", 1); State.jobs.RemoveAt(i); Changed?.Invoke(); CheckQuests(); continue; }
                 int got = Inventory.Add(State.backpack, r.Output, j.count);
                 if (got > 0) { Gained?.Invoke(r.Output, got); Tally("craft", got); if (r.Station == "campfire") SetFlag("cooked"); }
+                // A weapon you just made goes in your hand, as one picked up does.
+                if (got > 0 && Content.Item(r.Output).Kind == ItemKind.Weapon && State.equipped < 0) AutoEquip();
                 j.count -= got;
                 if (j.count <= 0) { State.jobs.RemoveAt(i); Changed?.Invoke(); CheckQuests(); }
             }

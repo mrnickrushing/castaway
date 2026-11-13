@@ -176,6 +176,7 @@ namespace LastTide.Game
                 "props \"Old Rowboat\" by toomanydemons, \"Lighthouse\" by stnabeal, \"Raft\" by _SeF_, \"Iron Ore\" by vxdesigns, \"Fishing Net\" by dark_alice, \"Wooden Planks\" by shtran, \"Burlap Sack\" by clockworkcreations, \"Military Radio\" by ivan.rybalkin, \"Furnace\" by kosmotron, \"Vintage Ship Portholes\" by Mad_Lobster_Workshop, \"Coiled Rope 2\" by TepidGames, \"Medieval Pickaxe\" by apariciosilva3D, \"Spiked Club\" by youssefdarwish01, \"Harpoon\" by Sofi_EX and \"Medieval Spear\" by iedalton; " +
                 "gulls \"Low-Poly Seagull\" by simonaskLDE. " +
                 "Crab and snake: scans by ffishAsia-and-floraZia, CC0. Dog bark: \"Ladrido de un perro\" by Edo.pt2 (Wikimedia Commons), CC0. " +
+                "Pointing hand: Font Awesome Free (fontawesome.com), CC BY 4.0. " +
                 "Story art, movies, icons, boar and palms made for this game. Fonts: Barlow (SIL Open Font License).",
                 26, new Color(1, 1, 1, 0.6f), TextAnchor.UpperLeft, false);
             // The page scrolls: the credits take the room they need at full size.

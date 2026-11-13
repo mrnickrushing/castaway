@@ -23,7 +23,7 @@ namespace LastTide.Game
         /// The world waits: story, a movie, passing out, loading, and the full-screen cards you read and tap away (back
         /// home, a reward, a plan found). Meters don't drain and enemies hold still meanwhile.
         /// </summary>
-        public bool Blocking { get { return _passOut > 0 || StoryPlaying || Cinema.Playing || LoadingScreen.Active || _trip != null || _plan != null || (_rewardCard != null && _rewardCard.gameObject.activeSelf); } }
+        public bool Blocking { get { return _passOut > 0 || TutorialHolding || StoryPlaying || Cinema.Playing || LoadingScreen.Active || _trip != null || _plan != null || (_rewardCard != null && _rewardCard.gameObject.activeSelf); } }
 
         public static Hud Create()
         {
@@ -73,6 +73,7 @@ namespace LastTide.Game
             BuildHelp();
             BuildOverlays();
             BuildStory();
+            BuildTutorial();
 
             var s = G.Session;
             s.Toast += Toast;
@@ -376,7 +377,7 @@ namespace LastTide.Game
         {
             Vector2 pos = Vector2.zero;
             bool down = false, began = false;
-            if (MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _seasonOpen || _rewardCard.gameObject.activeSelf || _trip != null || _plan != null || _building || (InvOpen && _station != "radio")) { _finger = -2; Stick = Vector2.zero; return; }
+            if (TutorialHolding || MapOpen || _radioOpen || _offersOpen || _shopOpen || _helpOpen || StoryPlaying || _confirm != null || _bpOpen || _pathOpen || _seasonOpen || _rewardCard.gameObject.activeSelf || _trip != null || _plan != null || _building || (InvOpen && _station != "radio")) { _finger = -2; Stick = Vector2.zero; return; }
             if (Input.touchCount > 0)
             {
                 for (int i = 0; i < Input.touchCount; i++)
@@ -455,6 +456,7 @@ namespace LastTide.Game
             UpdateRadio();
             UpdateSay();
             UpdateStory();
+            UpdateTutorial();
             UpdateBuild();
             UpdateActions();
             UpdateMinimap();
