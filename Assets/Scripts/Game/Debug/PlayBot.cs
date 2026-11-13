@@ -30,7 +30,8 @@ namespace LastTide.Game
         {
             if (Instance == null) Instance = new GameObject("PlayBot").AddComponent<PlayBot>();
             Time.timeScale = speed;
-            if (Hud.Instance != null) Hud.Instance.SkipTutorial();   // the bot plays the guide, not the first-run tips
+            if (Hud.Instance != null) Hud.Instance.SkipTutorial();
+            Hud.RateOff = true;                                       // nor the rating card   // the bot plays the guide, not the first-run tips
             Log("bot started at step " + G.Session.CurrentQuest.Id + ", level " + G.Session.State.level);
         }
 

@@ -208,6 +208,9 @@ setting only.
   local reminders (`Reminders`, `Session.ReminderPlan`; permission asked on the first voyage), Settings rows for all
   of it plus Name and Delete account (erases iCloud + local, signs out). `Editor/IosCapabilities.cs` writes
   `LastTide.entitlements` with literal ids; the bundle id's capabilities come from `Tools/appstore/capabilities.py`.
+- Rating (`UI/Hud.Rate.cs`): once, at a happy moment (LEVEL UP! claimed or the BACK AT card closed, level 4+, settled),
+  "Enjoying Last Tide?" RATE IT (Apple's own sheet, `Device.RequestStoreReview`) / NO THANKS; either answer stops it for
+  good on that device (PlayerPrefs `lt_rate_asked`). Settings has a Rate row to the App Store review page.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

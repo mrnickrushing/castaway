@@ -228,6 +228,7 @@ namespace LastTide.Game
             foreach (var lv in got) items.AddRange(Session.LevelReward(lv));
             items.Add(new ItemCount("energy", 20 * got.Count));
             ShowRewards(got.Count == 1 ? "LEVEL " + got[0] : "LEVELS " + got[0] + "-" + got[got.Count - 1], items);
+            RateSoon();
         }
 
         static Sprite _fade;
@@ -457,6 +458,7 @@ namespace LastTide.Game
             UpdateSay();
             UpdateStory();
             UpdateTutorial();
+            UpdateRate();
             UpdateBuild();
             UpdateActions();
             UpdateMinimap();
