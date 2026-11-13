@@ -159,6 +159,7 @@ namespace LastTide.Game
             Setting(ref y, "Reminders (raft landed, energy full)", s.State.noReminders ? "OFF" : "ON", () => { s.State.noReminders = !s.State.noReminders; if (!s.State.noReminders) Reminders.AskOnce(); RefreshHelp(); });
             Setting(ref y, "Restore purchases", "RESTORE", RestorePurchases);
             Setting(ref y, "Shop", "OPEN", () => { _helpOpen = false; OpenShop(); });
+            Setting(ref y, "Enjoying Last Tide? Rate it on the App Store", "RATE", OpenStoreReview);
             Setting(ref y, "Privacy policy and support", "OPEN", () => Application.OpenURL(Site));
             Setting(ref y, "Start a new game (erases this one)", "START OVER", () => Confirm("Start over?", "Your island, camp and backpack will be gone for good. Purchases stay with your Apple account and can be restored.", "START OVER", () =>
             {

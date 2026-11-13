@@ -144,6 +144,7 @@ namespace LastTide.Game
             G.Session.TripSeen();
             GameRoot.Instance.Save();
             Sfx.Play("click");
+            RateSoon();
         }
     }
 }
