@@ -11,9 +11,12 @@ It sets, on the app info and the version being prepared for submission:
   - categories, the content rights declaration, the age rating answers;
   - en-US subtitle and privacy policy URL; description, keywords, promotional text, support and marketing URLs;
   - copyright; a free price and availability in every territory, if the app has none yet;
-  - the screenshot sets (APP_IPHONE_67, APP_IPAD_PRO_3GEN_129), replaced only when the pictures differ.
+  - the screenshot sets (APP_IPHONE_67, APP_IPAD_PRO_3GEN_129), replaced only when the pictures differ;
+  - the App Review contact (LASTTIDE_REVIEW_* variables) and notes (listing.json "review"), the newest processed build of the version's number
+    (export compliance answered: no non-exempt encryption), and the TestFlight beta information ("beta").
 Every section runs even if another fails; the exit code says whether all of them worked. Safe to run again.
-Left for the website: App Privacy answers, the build, the in-app purchases to submit with it, review contact, Submit.
+It ends with a CHECK of what is still open. Left for the website: App Privacy answers (no API), adding the in-app
+purchases to the version (first ones only go in from the version page), Submit for Review.
 """
 import hashlib
 import json
@@ -246,6 +249,93 @@ def _():
             upload(s["id"], f, d)
         print("  %s: uploaded %d" % (kind, len(files)))
 
+
+# The contact App Review (and TestFlight) may call: personal, so never in this public repo. Codemagic variables.
+REVIEW_ENV = ("LASTTIDE_REVIEW_FIRST_NAME", "LASTTIDE_REVIEW_LAST_NAME", "LASTTIDE_REVIEW_PHONE", "LASTTIDE_REVIEW_EMAIL")
+
+
+def contact():
+    gone = [k for k in REVIEW_ENV if not os.environ.get(k)]
+    if gone:
+        raise SystemExit("set " + ", ".join(gone) + " (Codemagic variables)")
+    first, last, phone, email = (os.environ[k] for k in REVIEW_ENV)
+    return {"contactFirstName": first, "contactLastName": last, "contactPhone": phone, "contactEmail": email,
+            "demoAccountRequired": False}
+
+
+@section("app review contact and notes")
+def _():
+    attrs = contact()
+    attrs["notes"] = "\n".join((L.get("review") or {}).get("notes") or [])
+    have = call("GET", "/v1/appStoreVersions/%s/appStoreReviewDetail" % VERSION["id"], ok404=True)
+    if have and have.get("data"):
+        rid = have["data"]["id"]
+        call("PATCH", "/v1/appStoreReviewDetails/" + rid, {"data": {"type": "appStoreReviewDetails", "id": rid, "attributes": attrs}})
+    else:
+        call("POST", "/v1/appStoreReviewDetails", {"data": {"type": "appStoreReviewDetails", "attributes": attrs, "relationships": {
+            "appStoreVersion": {"data": {"type": "appStoreVersions", "id": VERSION["id"]}}}}})
+    print("  %s %s, notes %d chars" % (attrs["contactFirstName"], attrs["contactLastName"], len(attrs["notes"])))
+
+
+BUILD = []
+
+
+@section("build")
+def _():
+    vs = VERSION["attributes"]["versionString"]
+    builds = call("GET", "/v1/builds?filter[app]=%s&filter[preReleaseVersion.version]=%s&filter[processingState]=VALID"
+                         "&filter[expired]=false&sort=-uploadedDate&limit=1" % (APP, vs))["data"]
+    if not builds:
+        raise SystemExit("no processed build of version %s yet" % vs)
+    b = builds[0]
+    if b["attributes"].get("usesNonExemptEncryption") is None:
+        call("PATCH", "/v1/builds/" + b["id"], {"data": {"type": "builds", "id": b["id"], "attributes": {"usesNonExemptEncryption": False}}})
+    call("PATCH", "/v1/appStoreVersions/%s/relationships/build" % VERSION["id"], {"data": {"type": "builds", "id": b["id"]}})
+    BUILD.append(b["attributes"]["version"])
+    print("  build %s (uploaded %s)" % (b["attributes"]["version"], b["attributes"].get("uploadedDate")))
+
+
+@section("TestFlight beta information")
+def _():
+    beta = L.get("beta") or {}
+    attrs = {"feedbackEmail": contact()["contactEmail"], "description": beta.get("description"),
+             "privacyPolicyUrl": L["privacyPolicyUrl"], "marketingUrl": L["marketingUrl"]}
+    locs = pages("/v1/apps/%s/betaAppLocalizations" % APP)
+    loc = next((x for x in locs if x["attributes"]["locale"] == L["locale"]), None)
+    if loc:
+        call("PATCH", "/v1/betaAppLocalizations/" + loc["id"], {"data": {"type": "betaAppLocalizations", "id": loc["id"], "attributes": attrs}})
+    else:
+        attrs["locale"] = L["locale"]
+        call("POST", "/v1/betaAppLocalizations", {"data": {"type": "betaAppLocalizations", "attributes": attrs,
+                                                            "relationships": {"app": {"data": {"type": "apps", "id": APP}}}}})
+    det = call("GET", "/v1/apps/%s/betaAppReviewDetail" % APP)["data"]
+    call("PATCH", "/v1/betaAppReviewDetails/" + det["id"], {"data": {"type": "betaAppReviewDetails", "id": det["id"],
+                                                                      "attributes": dict(contact(), notes=attrs["description"])}})
+    print("  feedback email and beta review contact set")
+
+
+print("== CHECK")
+open_items = []
+try:
+    v = call("GET", "/v1/appStoreVersions/%s?include=build" % VERSION["id"])
+    if not v["data"]["relationships"]["build"]["data"]:
+        open_items.append("no build on the version")
+    iaps = pages("/v1/apps/%s/inAppPurchasesV2?limit=200" % APP)
+    states = {}
+    for i in iaps:
+        states.setdefault(i["attributes"]["state"], []).append(i["attributes"]["productId"])
+    print("  in-app purchases: " + "; ".join("%s %d" % (k, len(x)) for k, x in sorted(states.items())))
+    bad = [p for k, x in states.items() if k not in ("READY_TO_SUBMIT", "WAITING_FOR_REVIEW", "IN_REVIEW", "APPROVED") for p in x]
+    if bad:
+        open_items.append("in-app purchases not ready: " + ", ".join(bad))
+    for kind, files in L["screenshots"].items():
+        print("  screenshots %s: %d" % (kind, len(files)))
+except SystemExit as e:
+    open_items.append("check failed: %s" % e)
+open_items += ["website: App Privacy answers (docs/STORE.md)", "website: tick the in-app purchases on the version page",
+               "website: Submit for Review (only when told)"]
+for o in open_items:
+    print("  OPEN:", o)
 
 print("LISTING", "done" if not failed else "FAILED: " + ", ".join(failed))
 sys.exit(1 if failed else 0)

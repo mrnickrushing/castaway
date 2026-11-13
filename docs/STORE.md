@@ -33,6 +33,10 @@ To go live:
    `lasttide-listing`, LASTTIDE_REF picks the castaway branch) writes them to the version being prepared, sets the
    app free in every territory if it has no price yet, and replaces screenshots only when they changed. The paid
    Season premium track gives gold chests with random contents, so the age rating answers yes to loot boxes.
+   It also sets the App Review contact and notes, attaches the newest processed build of the version's number
+   (export compliance: no non-exempt encryption) and the TestFlight beta information, and ends with a CHECK of what
+   is still open. The contact is personal and this repo is public: it comes from the Codemagic variables
+   LASTTIDE_REVIEW_FIRST_NAME / _LAST_NAME / _PHONE / _EMAIL (group `lasttide_review` in the train app).
    Done on the website: App Privacy (purchase history and user ID, linked to the player, app functionality, no
    tracking; plus, for the anonymous play statistics (our own Cloudflare Worker), Identifiers > Device ID and Usage Data > Product
    Interaction, purpose Analytics, not linked to the player, not used for tracking), the build, the eight in-app purchases on the version page, review contact, then Submit for Review.
