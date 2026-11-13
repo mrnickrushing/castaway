@@ -71,10 +71,28 @@
   },
   "review": {
     "notes": [
-      "No account is needed to play. Sign in with Apple is optional (Settings > Account) and only names the castaway and links purchases.",
-      "In-app purchases: Settings (gear, top right) > Shop > OPEN works from the first minute. Later the doubloon '+' in the top bar and the map's SHOP open the same shop. Restore Purchases is in Settings and at the bottom of the shop.",
-      "The Season Pass premium track (lasttide.season) is on the season screen, which opens once the camp is settled (level 3, about 10 minutes of play). Supply crates and gold chests show their odds: season screen > CRATE & CHEST ODDS, or WHAT'S INSIDE? in the backpack.",
-      "Walk into a green ring to gather, build or craft there; the quest card at the top left always says what to do next."
+      "1. SCREEN RECORDING: attached to this App Review Information section (recorded on an iPhone running the latest iOS, starting from launch). It shows the opening, the typical play loop, Sign in with Apple and Delete account, and buying from the in-app shop and the Season Pass.",
+      "",
+      "2. PURPOSE AND AUDIENCE: Last Tide is a single-player survival and crafting game for players aged 12 and up who enjoy island survival, base building and light combat. Shipwrecked with a dog called Biscuit, you gather, craft, build a camp, sail to eight islands, rescue survivors and defeat the pirate Red Jack. It offers a complete story-driven adventure with offline play; nothing has to be bought to finish it.",
+      "",
+      "3. HOW TO USE IT: No login, credentials or sample files are needed; the game starts on launch. Walk with the stick (left), and walk into a green ring to gather, build or craft there; the quest card at the top left always says what to do next. The map (after the first raft) sails to the other islands.",
+      "- Account (optional): Settings (gear, top right) > \"Keep your purchases with your Apple ID\" > Sign in with Apple. It only links purchases to the player's Apple ID.",
+      "- Delete account: Settings > \"Delete your account and data\" > DELETE. It signs out of Sign in with Apple, unlinks purchases, erases the save on the device and in iCloud, and resets the anonymous statistics id.",
+      "- In-app purchases: Settings > Shop > OPEN works from the first minute; later the doubloon '+' in the top bar and the map's SHOP open the same shop. Restore Purchases is in Settings and at the bottom of the shop.",
+      "- Season Pass premium track (lasttide.season): on the season screen, which opens once the camp is settled (level 3, about 10 minutes). Supply crates and gold chests show their odds: season screen > CRATE & CHEST ODDS, or WHAT'S INSIDE? in the backpack.",
+      "- There is no user-generated content, chat or social feature: nothing a player types is shown to other players.",
+      "",
+      "4. EXTERNAL SERVICES:",
+      "- Apple StoreKit (in-app purchases), with RevenueCat (purchase validation and entitlements).",
+      "- Sign in with Apple (optional account).",
+      "- iCloud key-value storage (the player's own save; no server of ours stores saves).",
+      "- Local notifications (optional reminders, scheduled on the device).",
+      "- A Cloudflare Worker of ours that receives anonymous gameplay statistics (random device-hashed id, no IP addresses, no personal data; can be turned off in Settings).",
+      "No ads, no ad networks, no tracking, no AI services, no third-party analytics SDKs.",
+      "",
+      "5. REGIONS: The app works the same in every region where it is offered. Prices follow Apple's local price tiers; there are no regional differences in features or content.",
+      "",
+      "6. REGULATED INDUSTRY / THIRD-PARTY MATERIAL: Not a regulated industry. All names, story and setting are our own. Third-party 3D models, textures and one sound effect are free assets under CC0 or CC BY licences (Poly Haven, ambientCG, Kenney, Quaternius, Sketchfab creators, Wikimedia Commons), credited in the game (Settings, Credits at the bottom) and in the repository's CREDITS.md; all other art, music and sound were made for this game. No licensed or protected third-party characters, brands or content."
     ]
   },
   "beta": {
