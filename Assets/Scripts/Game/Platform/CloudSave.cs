@@ -16,7 +16,7 @@ namespace LastTide.Game
     /// </summary>
     public static class CloudSave
     {
-        const string SaveKey = "lasttide.save", MetaKey = "lasttide.meta", SeenPref = "cloud.seen", PushedPref = "cloud.pushed";
+        const string SaveKey = "lasttide.save", MetaKey = "lasttide.meta", SeenPref = "cloud.seen", PushedPref = "cloud.pushed", StartOverPref = "cloud.startover";
         const float Every = 60f;
         static float _next;
 
@@ -94,6 +94,27 @@ namespace LastTide.Game
                 PlayerPrefs.Save();
             }
             catch (Exception e) { Debug.LogWarning("iCloud save failed: " + e.Message); }
+        }
+
+        /// <summary>
+        /// START OVER: the next launch begins a new island instead of continuing the one in iCloud (with nothing saved
+        /// on the phone it would adopt it again), and that new island replaces the iCloud copy.
+        /// </summary>
+        public static void StartOver()
+        {
+            PlayerPrefs.SetInt(StartOverPref, 1);
+            var meta = Meta();
+            if (meta != null) Seen = meta.SavedAt;   // ours may overwrite it
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>True once after <see cref="StartOver"/>.</summary>
+        public static bool TakeStartOver()
+        {
+            if (PlayerPrefs.GetInt(StartOverPref, 0) == 0) return false;
+            PlayerPrefs.DeleteKey(StartOverPref);
+            PlayerPrefs.Save();
+            return true;
         }
 
         /// <summary>Removes the save from iCloud (Delete account).</summary>
