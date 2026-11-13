@@ -103,7 +103,8 @@ namespace LastTide.Game
             // The island in iCloud: a new phone (nothing saved here) continues from it at once; a newer one from
             // another device is offered once the island is up (see CloudRules).
             var meta = CloudSave.Meta();
-            var step = CloudRules.Decide(state != null, meta, CloudSave.Me, CloudSave.Seen);
+            bool startOver = CloudSave.TakeStartOver();   // START OVER: a new island, not the iCloud one again
+            var step = startOver ? CloudStep.Upload : CloudRules.Decide(state != null, meta, CloudSave.Me, CloudSave.Seen);
             if (step != CloudStep.Upload)
             {
                 var cloud = CloudSave.Fetch();
@@ -115,6 +116,7 @@ namespace LastTide.Game
             G.Session = new Session(state);
             G.Session.PetChanged += OnPetChanged;
             G.Session.UpdateEnergy();
+            if (startOver && SaveSystem.Save(state)) CloudSave.Push(state, true);
 
             _loading = LoadingScreen.Show("Washing ashore...");
         }
@@ -141,6 +143,8 @@ namespace LastTide.Game
             }
             else player.Place(new Vector3(state.px, 0, state.pz), state.facing);
             CameraRig.Create(player.transform);
+            // Saved standing in the raft's ring (the map was open when the app closed): start just up the beach.
+            if (state.travel == null) Guard("raft", StepOffRaft);
             // Each step is guarded: one that throws on a device (a shader missing from the build, say) is logged and
             // the rest still run, so the loading screen always gets out of the way instead of hanging here.
             Guard("pet", () => { if (G.Session.HasPet) SpawnPet(player.transform.position - player.transform.forward * 2); });
@@ -245,7 +249,25 @@ namespace LastTide.Game
             RenderSettings.fog = !on;
             if (on) MapView.Instance.Show(G.Session.State.travel != null ? LastTide.Core.World.Location(G.Session.State.travel.to) : G.Session.Here);
             else MapView.Instance.Hide();
+            if (!on) StepOffRaft();
             Save();
+        }
+
+        /// <summary>
+        /// Back from the map (or launched) standing in the raft's ring: step up the beach out of it, so the ring
+        /// doesn't open the map again at once (it opens again when they walk back in).
+        /// </summary>
+        void StepOffRaft()
+        {
+            var p = Player.Instance;
+            if (p == null) return;
+            var raft = ExitSpot.Around(p.transform.position);
+            if (raft == null) return;
+            var to = raft.Ashore();
+            var d = to - raft.Pos;
+            p.Place(to, Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg);
+            G.Session.State.px = to.x; G.Session.State.pz = to.z;
+            if (Pet.Instance != null) Pet.Instance.Place(to + new Vector3(1.5f, 0, -1.5f));
         }
 
         /// <summary>Steps ashore at the end of a journey: builds that island and puts the castaway on its landing.</summary>

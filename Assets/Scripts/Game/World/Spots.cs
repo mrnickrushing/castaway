@@ -702,6 +702,35 @@ namespace LastTide.Game
         }
 
         public override void Leave() { _t = 0; }
+
+        /// <summary>The raft whose ring <paramref name="at"/> is in, or null.</summary>
+        public static ExitSpot Around(Vector3 at)
+        {
+            foreach (var sp in All)
+            {
+                var e = sp as ExitSpot;
+                if (e == null) continue;
+                var d = e.Pos - at; d.y = 0;
+                if (d.magnitude < e.Radius + 0.5f) return e;
+            }
+            return null;
+        }
+
+        /// <summary>A spot just up the beach from the raft, clear of its ring.</summary>
+        public Vector3 Ashore()
+        {
+            foreach (var goal in new[] { Island.Start, Island.Camp })
+            {
+                var d = goal - Pos; d.y = 0;
+                if (d.magnitude < 0.5f) continue;
+                for (float r = Radius + 1.2f; r < Radius + 6; r += 0.5f)
+                {
+                    var q = Pos + d.normalized * r;
+                    if (Island.CanStep(q.x, q.z) && (Obstacles.Resolve(q, 0.4f) - q).sqrMagnitude < 1e-4f) return q;
+                }
+            }
+            return Island.Start;
+        }
     }
 
     /// <summary>A survivor the radio led the castaway to: hand over what they asked for to rescue them.</summary>

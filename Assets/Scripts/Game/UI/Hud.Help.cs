@@ -163,6 +163,7 @@ namespace LastTide.Game
             Setting(ref y, "Start a new game (erases this one)", "START OVER", () => Confirm("Start over?", "Your island, camp and backpack will be gone for good. Purchases stay with your Apple account and can be restored.", "START OVER", () =>
             {
                 SaveSystem.Delete();
+                CloudSave.StartOver();
                 GameRoot.Instance.Restart();
             }));
             Setting(ref y, "Delete your account and data", "DELETE", ConfirmDeleteAccount);
