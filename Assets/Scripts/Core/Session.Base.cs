@@ -284,7 +284,7 @@ namespace LastTide.Core
             int lv = Level(r.Station);
             if (lv == 0) return r.Station == "furnace" ? "Build a furnace first" : "Build the " + Content.Builds[r.Station].Name.ToLower() + " first";
             if (lv < r.MinLevel) return "Needs " + StationName(r.Station) + " level " + r.MinLevel;
-            if (Job(r.Station) != null) return "The " + StationName(r.Station).ToLower() + " is busy";
+            if (Job(r.Station) != null) return r.Station == "hand" ? "Your hands are busy: wait for this one" : "The " + StationName(r.Station).ToLower() + " is busy";
             return Short(r.Inputs, qty);
         }
 

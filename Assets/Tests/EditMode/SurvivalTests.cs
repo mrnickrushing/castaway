@@ -153,6 +153,18 @@ namespace LastTide.Tests
         }
 
         [Test]
+        public void ACraftedWeaponIsEquipped()
+        {
+            var g = Fresh();
+            g.Harvest("h", "hatchet_pickup");
+            Assert.AreEqual("hatchet", g.WeaponId, "with no weapon, the hatchet does");
+            g.Give("wood", 5); g.Give("stone", 2); g.Give("fiber", 4);
+            Assert.IsTrue(g.Craft("spear"));
+            g.Tick(10);
+            Assert.AreEqual("spear", g.WeaponId, "the spear is in hand as soon as it's made");
+        }
+
+        [Test]
         public void TheGuideWalksThroughTheFirstCamp()
         {
             var g = Fresh();

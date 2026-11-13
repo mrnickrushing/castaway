@@ -12,6 +12,8 @@
 - **Wikimedia Commons**: "Ladrido de un perro" by Edo.pt2 (https://commons.wikimedia.org/wiki/File:Ladrido_perro.ogg), CC0: Biscuit's bark.
 - The castaway, boar and palm models, item icons and location paintings were made for this game (Higgsfield).
 - Fonts: Barlow by Jeremy Tribby (SIL Open Font License).
+- **Font Awesome Free** 6 by Fonticons, Inc. (https://fontawesome.com/license/free), CC BY 4.0: the tutorial's pointing
+  hand ("hand-pointer"), recoloured with an outline and shadow by `Tools/art/coach_art.py`.
 
 Re-download and convert the free models with `python3 Tools/art/free_assets.py fetch` then `install`.
 

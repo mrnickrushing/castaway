@@ -102,6 +102,7 @@ namespace LastTide.Core
         public LostBag lostBag;             // saves before lostBags kept a single bag: moved into lostBags on load
         public List<ItemCount> waiting = new List<ItemCount>(); // paid-for items that didn't fit: they drop in when there's room
         public int quest;                   // index into Quests.All
+        public int tutorial;                // the first-run tutorial's step (Hud.Tutorial; past the end = done)
         public int kills, deaths, days;
         public List<string> flags = new List<string>();
         public bool muted;
