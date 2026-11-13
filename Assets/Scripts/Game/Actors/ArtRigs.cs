@@ -20,7 +20,7 @@ namespace LastTide.Game
     public sealed class SurvivorArt : MonoBehaviour, IRig
     {
         HumanMotion _human;
-        Transform _model, _hips, _spine, _armL, _foreL, _handL, _armR, _foreR, _handR, _legL, _shinL, _footL, _legR, _shinR, _footR, _head;
+        Transform _model, _hips, _spine, _spineLow, _neck, _armL, _foreL, _handL, _armR, _foreR, _handR, _legL, _shinL, _footL, _legR, _shinR, _footR, _head;
         Animation _anim;
         GameObject _held;
         string _heldId;
@@ -45,6 +45,8 @@ namespace LastTide.Game
                     c._hips = an.GetBoneTransform(HumanBodyBones.Hips);
                     c._spine = an.GetBoneTransform(HumanBodyBones.Chest) ?? an.GetBoneTransform(HumanBodyBones.Spine);
                     c._head = an.GetBoneTransform(HumanBodyBones.Head);
+                    c._neck = an.GetBoneTransform(HumanBodyBones.Neck);
+                    c._spineLow = an.GetBoneTransform(HumanBodyBones.Spine);
                     c._armL = an.GetBoneTransform(HumanBodyBones.LeftUpperArm); c._foreL = an.GetBoneTransform(HumanBodyBones.LeftLowerArm); c._handL = an.GetBoneTransform(HumanBodyBones.LeftHand);
                     c._armR = an.GetBoneTransform(HumanBodyBones.RightUpperArm); c._foreR = an.GetBoneTransform(HumanBodyBones.RightLowerArm); c._handR = an.GetBoneTransform(HumanBodyBones.RightHand);
                     c._legL = an.GetBoneTransform(HumanBodyBones.LeftUpperLeg); c._shinL = an.GetBoneTransform(HumanBodyBones.LeftLowerLeg); c._footL = an.GetBoneTransform(HumanBodyBones.LeftFoot);
@@ -159,14 +161,17 @@ namespace LastTide.Game
                 if (p[k] < mid) spreadLo = Mathf.Max(spreadLo, d.magnitude); else spreadHi = Mathf.Max(spreadHi, d.magnitude);
             }
             var axis = Vector3.zero; axis[k] = spreadHi >= spreadLo ? 1 : -1;
-            // A spear's point is slimmer than its butt binding, so the wider-end rule picks the wrong end for those.
-            if (id == "spear" || id == "harpoon") axis = -axis;
+            // A spear's point is slimmer than its butt binding, and the cutlass's knuckle guard is wider than its blade,
+            // so the wider-end rule picks the wrong end for those (he held the cutlass by its tip).
+            if (id == "spear" || id == "harpoon" || id == "cutlass") axis = -axis;
             // Where the head leans (the bit, the edge): the mean offset of the head half from the handle's line.
             var lean = Vector3.zero; int n = 0;
             foreach (var p in pts)
                 if ((p[k] - mid) * axis[k] > (hi[k] - lo[k]) * 0.2f) { var d = p - c; d[k] = 0; lean += d; n++; }
             if (n > 0) lean /= n;
             if (lean.magnitude < ext[k] * 0.01f) { lean = Vector3.zero; lean[(k + 1) % 3] = 1; }   // symmetric (a spear): any side
+            // The axe scan's heavy poll outweighs its thin bit, so the mean points the bit the wrong way (it stood up).
+            if (scan == "wooden_axe") lean = -lean;
             var turn = Quaternion.Inverse(Quaternion.LookRotation(lean.normalized, axis));
             model.transform.rotation = turn * model.transform.rotation;
             model.transform.position = turn * (model.transform.position - c);
@@ -216,13 +221,33 @@ namespace LastTide.Game
                 Aim(_armR, _foreR, new Vector3(0.25f, -0.6f, 0.7f));
                 Aim(_armL, _foreL, new Vector3(-0.25f, -0.6f, 0.7f));
             }
+            // Head up. The shared clips nod this rig's neck 60-90° forward (retargeted from a skeleton whose neck
+            // sits differently), so he walked and stood staring at his chest, hunched. Stand the neck up, leaning
+            // a little forward, more when crouched over work or sneaking. On the move the clips also bend his back
+            // 20-30° over: straighten it to a walker's lean (a runner's a little more).
+            if (_human != null)
+            {
+                if (_spineLow != null && !Sneak && _act == Act.None)
+                {
+                    var body = transform.parent;
+                    var d = _neck.position - _spineLow.position;
+                    float now = Mathf.Atan2(Vector3.Dot(d, body.forward), Vector3.Dot(d, body.up)) * Mathf.Rad2Deg;
+                    float want = Mathf.Lerp(4, 13, Mathf.InverseLerp(1.5f, 5.4f, _move * Player.Speed));
+                    float w = Mathf.Clamp01(_move * 5);
+                    if (now > want) _spineLow.rotation = Quaternion.AngleAxis((want - now) * w, body.right) * _spineLow.rotation;
+                }
+                bool low = Sneak || _act == Act.Gather || _act == Act.Drink || _act == Act.Build;
+                Aim(_neck, _head, new Vector3(0, 1, low ? 0.55f : 0.18f));
+            }
             float p = _phase;
+            _uncock = 0.35f;   // at rest the tool hangs forward and a little down from the fist
             switch (_act)
             {
                 case Act.Chop:
                 {
                     float t = Mathf.Repeat(p, 1f);
                     float up = t < 0.6f ? Mathf.SmoothStep(0, 1, t / 0.6f) : 1 - Mathf.SmoothStep(0, 1, (t - 0.6f) / 0.25f);
+                    _uncock = 1 - up;
                     Twist(_spine, Mathf.Lerp(30, -25, up), 8);
                     Aim(_armR, _foreR, Vector3.Lerp(new Vector3(-0.2f, -0.3f, 1f), new Vector3(0.6f, 0.9f, -0.3f), up));
                     Aim(_foreR, _handR, Vector3.Lerp(new Vector3(-0.4f, -0.2f, 1f), new Vector3(0.2f, 1f, -0.5f), up));
@@ -234,6 +259,7 @@ namespace LastTide.Game
                 {
                     float t = Mathf.Repeat(p, 1f);
                     float up = t < 0.55f ? Mathf.SmoothStep(0, 1, t / 0.55f) : 1 - Mathf.SmoothStep(0, 1, (t - 0.55f) / 0.2f);
+                    _uncock = 1 - up;
                     Twist(_spine, 0, Mathf.Lerp(28, -6, up));
                     var a = Vector3.Lerp(new Vector3(0, -0.5f, 1f), new Vector3(0, 1f, -0.25f), up);
                     Aim(_armR, _foreR, a + Vector3.right * 0.12f); Aim(_foreR, _handR, a);
@@ -278,6 +304,7 @@ namespace LastTide.Game
                 // Overhead strike with the right arm.
                 float up = _swing < 0.4f ? _swing / 0.4f : _swing < 0.6f ? 1 - (_swing - 0.4f) / 0.2f : 0;
                 float down = _swing >= 0.4f && _swing < 0.75f ? Mathf.Sin((_swing - 0.4f) / 0.35f * Mathf.PI) : 0;
+                _uncock = 1 - up;
                 Twist(_spine, 20 * up - 15 * down, 18 * down);
                 var a = Vector3.Lerp(new Vector3(0.1f, -0.2f, 1f), new Vector3(0.5f, 1f, -0.3f), up);
                 Aim(_armR, _foreR, a); Aim(_foreR, _handR, a + Vector3.up * 0.3f * up);
@@ -312,17 +339,25 @@ namespace LastTide.Game
             bone.rotation = Quaternion.FromToRotation(cur, want) * bone.rotation;
         }
 
-        /// <summary>The tool sits in the right fist, its handle across the forearm and its head forward.</summary>
+        /// <summary>
+        /// The tool sits in the right fist. With the wrist cocked (raised to strike) the handle runs square to the
+        /// forearm, back over the shoulder; as the blow lands the wrist straightens and the handle swings out along the
+        /// forearm, so the axe's bit or the pick's point meets the tree or rock instead of standing up in the fists.
+        /// </summary>
         void PlaceHeld()
         {
             if (_held == null || _handR == null) return;
             var fore = (_handR.position - _foreR.position).normalized;
             var right = transform.parent.right;
-            var shaft = Vector3.Cross(fore, right);
-            if (shaft.sqrMagnitude < 1e-4f) shaft = transform.parent.forward;
-            shaft.Normalize();
-            // Tools are built with the handle along +Y from the grip and the head toward +Z.
-            var rot = Quaternion.LookRotation(fore, shaft);
+            var square = Vector3.Cross(fore, right);
+            if (square.sqrMagnitude < 1e-4f) square = transform.parent.forward;
+            square.Normalize();
+            float a = Mathf.Lerp(0, 78, _uncock) * Mathf.Deg2Rad;
+            var shaft = (square * Mathf.Cos(a) + fore * Mathf.Sin(a)).normalized;
+            var bit = Vector3.Cross(right, shaft);
+            if (bit.sqrMagnitude < 1e-4f) bit = fore;
+            // Tools are built with the handle along +Y from the grip and the head (bit, edge) toward +Z.
+            var rot = Quaternion.LookRotation(bit.normalized, shaft);
             // On the move with nothing to do, carry it upright beside the body, leaning back a little: held square to
             // the forearm, the jog's arm swing swept a cutlass through the legs at every stride.
             bool carry = _move > 0.08f && _act == Act.None && _swing < 0;
@@ -339,7 +374,7 @@ namespace LastTide.Game
             _held.transform.position = _handR.position + fore * 0.04f - (rot * Vector3.up) * 0.14f;
         }
 
-        float _carry;
+        float _carry, _uncock;
     }
 
     /// <summary>The AI-made boar (Resources/Models/Animals/boar) with its Walk clip; strikes and falls by tilting the model.</summary>
