@@ -37,9 +37,11 @@ To go live:
    (export compliance: no non-exempt encryption) and the TestFlight beta information, and ends with a CHECK of what
    is still open. The contact is personal and this repo is public: it comes from the Codemagic variables
    LASTTIDE_REVIEW_FIRST_NAME / _LAST_NAME / _PHONE / _EMAIL (group `lasttide_review` in the train app).
-   Done on the website: App Privacy (purchase history and user ID, linked to the player, app functionality, no
-   tracking; plus, for the anonymous play statistics (our own Cloudflare Worker), Identifiers > Device ID and Usage Data > Product
-   Interaction, purpose Analytics, not linked to the player, not used for tracking), the build, the eight in-app purchases on the version page, review contact, then Submit for Review.
+   App Privacy, published 2026-11-12: purchase history and user ID, linked to the player, app functionality, no
+   tracking; for the anonymous play statistics (our own Cloudflare Worker) Identifiers > Device ID, Usage Data >
+   Product Interaction and Diagnostics > Performance Data (the frame-rate samples), Analytics, not linked, no
+   tracking. Update it if what the game sends changes. Left on the website: tick the eight in-app purchases on the
+   version page, then Submit for Review.
 
 Grants are idempotent per App Store transaction; a purchase interrupted by a crash is delivered on the next launch
 (`Session.ReconcilePurchases`). One-time products come back with Restore Purchases.

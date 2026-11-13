@@ -15,8 +15,8 @@ It sets, on the app info and the version being prepared for submission:
   - the App Review contact (LASTTIDE_REVIEW_* variables) and notes (listing.json "review"), the newest processed build of the version's number
     (export compliance answered: no non-exempt encryption), and the TestFlight beta information ("beta").
 Every section runs even if another fails; the exit code says whether all of them worked. Safe to run again.
-It ends with a CHECK of what is still open. Left for the website: App Privacy answers (no API), adding the in-app
-purchases to the version (first ones only go in from the version page), Submit for Review.
+It ends with a CHECK of what is still open. App Privacy (no API) was answered on the website 2026-11-12. Left for
+the website: adding the in-app purchases to the version (first ones only go in from the version page), Submit for Review.
 """
 import hashlib
 import json
@@ -255,17 +255,16 @@ REVIEW_ENV = ("LASTTIDE_REVIEW_FIRST_NAME", "LASTTIDE_REVIEW_LAST_NAME", "LASTTI
 
 
 def contact():
-    gone = [k for k in REVIEW_ENV if not os.environ.get(k)]
-    if gone:
-        raise SystemExit("set " + ", ".join(gone) + " (Codemagic variables)")
+    """The contact attributes that are set (all four, or none while the variables are missing)."""
+    if any(not os.environ.get(k) for k in REVIEW_ENV):
+        return {}
     first, last, phone, email = (os.environ[k] for k in REVIEW_ENV)
-    return {"contactFirstName": first, "contactLastName": last, "contactPhone": phone, "contactEmail": email,
-            "demoAccountRequired": False}
+    return {"contactFirstName": first, "contactLastName": last, "contactPhone": phone, "contactEmail": email}
 
 
 @section("app review contact and notes")
 def _():
-    attrs = contact()
+    attrs = dict(contact(), demoAccountRequired=False)
     attrs["notes"] = "\n".join((L.get("review") or {}).get("notes") or [])
     have = call("GET", "/v1/appStoreVersions/%s/appStoreReviewDetail" % VERSION["id"], ok404=True)
     if have and have.get("data"):
@@ -274,7 +273,8 @@ def _():
     else:
         call("POST", "/v1/appStoreReviewDetails", {"data": {"type": "appStoreReviewDetails", "attributes": attrs, "relationships": {
             "appStoreVersion": {"data": {"type": "appStoreVersions", "id": VERSION["id"]}}}}})
-    print("  %s %s, notes %d chars" % (attrs["contactFirstName"], attrs["contactLastName"], len(attrs["notes"])))
+    print("  contact %s, no sign-in needed, notes %d chars" % ("set" if contact() else "MISSING (set " + ", ".join(REVIEW_ENV) + ")",
+                                                               len(attrs["notes"])))
 
 
 BUILD = []
@@ -298,8 +298,9 @@ def _():
 @section("TestFlight beta information")
 def _():
     beta = L.get("beta") or {}
-    attrs = {"feedbackEmail": contact()["contactEmail"], "description": beta.get("description"),
-             "privacyPolicyUrl": L["privacyPolicyUrl"], "marketingUrl": L["marketingUrl"]}
+    attrs = {"description": beta.get("description"), "privacyPolicyUrl": L["privacyPolicyUrl"], "marketingUrl": L["marketingUrl"]}
+    if contact():
+        attrs["feedbackEmail"] = contact()["contactEmail"]
     locs = pages("/v1/apps/%s/betaAppLocalizations" % APP)
     loc = next((x for x in locs if x["attributes"]["locale"] == L["locale"]), None)
     if loc:
@@ -310,8 +311,8 @@ def _():
                                                             "relationships": {"app": {"data": {"type": "apps", "id": APP}}}}})
     det = call("GET", "/v1/apps/%s/betaAppReviewDetail" % APP)["data"]
     call("PATCH", "/v1/betaAppReviewDetails/" + det["id"], {"data": {"type": "betaAppReviewDetails", "id": det["id"],
-                                                                      "attributes": dict(contact(), notes=attrs["description"])}})
-    print("  feedback email and beta review contact set")
+                                                                      "attributes": dict(contact(), demoAccountRequired=False, notes=attrs["description"])}})
+    print("  beta description set; feedback email and contact " + ("set" if contact() else "MISSING"))
 
 
 print("== CHECK")
@@ -332,7 +333,9 @@ try:
         print("  screenshots %s: %d" % (kind, len(files)))
 except SystemExit as e:
     open_items.append("check failed: %s" % e)
-open_items += ["website: App Privacy answers (docs/STORE.md)", "website: tick the in-app purchases on the version page",
+if not contact():
+    open_items.append("App Review contact: set " + ", ".join(REVIEW_ENV))
+open_items += ["website: tick the in-app purchases on the version page",
                "website: Submit for Review (only when told)"]
 for o in open_items:
     print("  OPEN:", o)
