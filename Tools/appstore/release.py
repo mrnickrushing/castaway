@@ -67,6 +67,20 @@ if b["attributes"].get("usesNonExemptEncryption") is None:
 call("PATCH", "/v1/appStoreVersions/%s/relationships/build" % VID, {"data": {"type": "builds", "id": b["id"]}})
 print("build %s attached (uploaded %s)" % (b["attributes"]["version"], b["attributes"].get("uploadedDate")))
 
+# 3a. Game Center on the version (RELEASE_GAMECENTER=1): a build with the Game Center entitlement can't be reviewed
+# without it.
+if os.environ.get("RELEASE_GAMECENTER") == "1":
+    have = call("GET", "/v1/appStoreVersions/%s/gameCenterAppVersion" % VID, ok404=True)
+    if have and have.get("data"):
+        gc = have["data"]
+        if gc["attributes"].get("enabled") is False:
+            call("PATCH", "/v1/gameCenterAppVersions/" + gc["id"], {"data": {"type": "gameCenterAppVersions", "id": gc["id"], "attributes": {"enabled": True}}})
+        print("Game Center is on for the version")
+    else:
+        call("POST", "/v1/gameCenterAppVersions", {"data": {"type": "gameCenterAppVersions", "relationships": {
+            "appStoreVersion": {"data": {"type": "appStoreVersions", "id": VID}}}}})
+        print("Game Center turned on for the version")
+
 # 3b. The App Review contact, when given (a first version has none yet). Passed in at run time, never stored.
 if os.environ.get("RELEASE_REVIEW_EMAIL"):
     attrs = {"contactFirstName": os.environ.get("RELEASE_REVIEW_FIRST"), "contactLastName": os.environ.get("RELEASE_REVIEW_LAST"),
