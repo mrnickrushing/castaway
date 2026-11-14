@@ -3,7 +3,7 @@
 Works for any app the App Store Connect key can see; run by the Codemagic workflow `asc-release` in the train app.
 
   RELEASE_BUNDLE_ID=com.rushingtech.lasttide RELEASE_VERSION=1.0.1 RELEASE_NOTES="What's new text" \
-  [RELEASE_SUBMIT=1] python3 Tools/appstore/release.py
+  [RELEASE_BUILD=5] [RELEASE_SUBMIT=1] python3 Tools/appstore/release.py
 
 Steps, each safe to run again:
   1. the version: uses the one being prepared, or creates RELEASE_VERSION (released automatically once approved);
@@ -54,8 +54,9 @@ def submit_iaps():
 # 1. The version.
 versions = pages("/v1/apps/%s/appStoreVersions?filter[platform]=IOS&limit=20" % APP)
 print("versions:", [(v["attributes"]["versionString"], v["attributes"].get("appVersionState")) for v in versions])
-version = next((v for v in versions if v["attributes"].get("appVersionState") in EDITABLE), None)
-waiting = next((v for v in versions if v["attributes"].get("appVersionState") in ("WAITING_FOR_REVIEW", "IN_REVIEW", "READY_FOR_REVIEW")), None)
+# READY_FOR_REVIEW is a version sitting in a draft submission that hasn't been sent yet: it is still ours to finish.
+version = next((v for v in versions if v["attributes"].get("appVersionState") in EDITABLE + ("READY_FOR_REVIEW",)), None)
+waiting = next((v for v in versions if v["attributes"].get("appVersionState") in ("WAITING_FOR_REVIEW", "IN_REVIEW")), None)
 if waiting is not None and version is None:
     print("Version %s is already with App Review (%s)." % (waiting["attributes"]["versionString"], waiting["attributes"]["appVersionState"]))
     if os.environ.get("RELEASE_IAPS") == "1" and SUBMIT:
@@ -87,8 +88,18 @@ if not builds:
 b = builds[0]
 if b["attributes"].get("usesNonExemptEncryption") is None:
     call("PATCH", "/v1/builds/" + b["id"], {"data": {"type": "builds", "id": b["id"], "attributes": {"usesNonExemptEncryption": False}}})
-call("PATCH", "/v1/appStoreVersions/%s/relationships/build" % VID, {"data": {"type": "builds", "id": b["id"]}})
-print("build %s attached (uploaded %s)" % (b["attributes"]["version"], b["attributes"].get("uploadedDate")))
+WANT_BUILD = os.environ.get("RELEASE_BUILD")
+if WANT_BUILD and b["attributes"]["version"] != WANT_BUILD:
+    raise SystemExit("The newest processed build is %s, not the %s asked for: wait for Apple to finish processing and run again." % (b["attributes"]["version"], WANT_BUILD))
+try:
+    call("PATCH", "/v1/appStoreVersions/%s/relationships/build" % VID, {"data": {"type": "builds", "id": b["id"]}})
+    print("build %s attached (uploaded %s)" % (b["attributes"]["version"], b["attributes"].get("uploadedDate")))
+except SystemExit as e:
+    cur = call("GET", "/v1/appStoreVersions/%s/build" % VID, ok404=True)
+    have = cur and cur.get("data") and cur["data"]["attributes"]["version"]
+    if have != b["attributes"]["version"]:
+        raise SystemExit("Build %s could not be attached (the version has %s):\n%s" % (b["attributes"]["version"], have, e))
+    print("build %s was already attached" % have)
 
 # 3a. Game Center on the version (RELEASE_GAMECENTER=1): a build with the Game Center entitlement can't be reviewed
 # without it.
