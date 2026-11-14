@@ -18,7 +18,7 @@ namespace LastTide.EditorTools
         public const string BundleId = "com.rushingtech.lasttide";
         public const string ProductName = "Last Tide";
         /// <summary>CFBundleShortVersionString; must match the App Store Connect version.</summary>
-        public const string AppVersion = "1.0";
+        public const string AppVersion = "1.0.1";
         const string DoneKey = "LastTide.ProjectSetup.v1";
 
         static ProjectSetup()
