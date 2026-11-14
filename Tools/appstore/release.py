@@ -118,12 +118,45 @@ subs = call("GET", "/v1/reviewSubmissions?filter[app]=%s&filter[platform]=IOS&fi
 sub = subs[0] if subs else call("POST", "/v1/reviewSubmissions", {"data": {
     "type": "reviewSubmissions", "attributes": {"platform": "IOS"},
     "relationships": {"app": {"data": {"type": "apps", "id": APP}}}}})["data"]
-items = pages("/v1/reviewSubmissions/%s/items" % sub["id"])
-if not items:
-    call("POST", "/v1/reviewSubmissionItems", {"data": {"type": "reviewSubmissionItems", "relationships": {
-        "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sub["id"]}},
-        "appStoreVersion": {"data": {"type": "appStoreVersions", "id": VID}}}}})
-    print("version added to the review submission")
+def add_item(rel, kind, rid, what):
+    """Adds one thing to the review submission; one that is there already (or can't go in) is reported, not fatal."""
+    try:
+        call("POST", "/v1/reviewSubmissionItems", {"data": {"type": "reviewSubmissionItems", "relationships": {
+            "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sub["id"]}},
+            rel: {"data": {"type": kind, "id": rid}}}}})
+        print("  added", what)
+        return True
+    except SystemExit as e:
+        text = str(e)
+        print("  not added: %s (%s)" % (what, "already in a submission" if "ALREADY" in text.upper() else text[:700].replace("\n", " ")))
+        return False
+
+
+have_items = pages("/v1/reviewSubmissions/%s/items?include=appStoreVersion" % sub["id"])
+if not any((i.get("relationships", {}).get("appStoreVersion", {}) or {}).get("data") for i in have_items):
+    try:
+        call("POST", "/v1/reviewSubmissionItems", {"data": {"type": "reviewSubmissionItems", "relationships": {
+            "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sub["id"]}},
+            "appStoreVersion": {"data": {"type": "appStoreVersions", "id": VID}}}}})
+        print("version added to the review submission")
+    except SystemExit as e:
+        raise SystemExit("The version could not be added to the review submission:\n%s" % e)
+# Game Center leaderboards and achievements go to review with the version (RELEASE_GAMECENTER=1).
+if os.environ.get("RELEASE_GAMECENTER") == "1":
+    detail = call("GET", "/v1/apps/%s/gameCenterDetail" % APP, ok404=True)
+    if detail and detail.get("data"):
+        for kind in ("Leaderboard", "Achievement"):
+            n = 0
+            for it in pages("/v1/gameCenterDetails/%s/gameCenter%ssV2?limit=200" % (detail["data"]["id"], kind)):
+                versions = pages("/v2/gameCenter%ss/%s/versions?limit=50" % (kind, it["id"]))
+                if not versions:
+                    continue
+                v = max(versions, key=lambda x: x["attributes"].get("version") or 0)
+                if (v["attributes"].get("state") or "") in ("LIVE", "WAITING_FOR_REVIEW", "IN_REVIEW"):
+                    continue
+                n += add_item("gameCenter%sVersion" % kind, "gameCenter%sVersions" % kind, v["id"], "%s %s" % (kind.lower(), it["attributes"]["vendorIdentifier"]))
+            print("%ss added: %d" % (kind, n))
+print("submission items:", len(pages("/v1/reviewSubmissions/%s/items" % sub["id"])))
 call("PATCH", "/v1/reviewSubmissions/" + sub["id"], {"data": {"type": "reviewSubmissions", "id": sub["id"], "attributes": {"submitted": True}}})
 state = call("GET", "/v1/appStoreVersions/" + VID)["data"]["attributes"].get("appVersionState")
 print("SUBMITTED: version %s is now %s" % (WANT, state))
