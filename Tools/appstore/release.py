@@ -30,6 +30,12 @@ if not apps:
 APP = apps[0]["id"]
 print("APPLE_ID", APP, apps[0]["attributes"]["name"])
 
+# Where the in-app purchases stand (printed every run: a first version must take its purchases with it).
+states = {}
+for i in pages("/v1/apps/%s/inAppPurchasesV2?limit=200" % APP):
+    states.setdefault(i["attributes"]["state"], []).append(i["attributes"]["productId"])
+print("in-app purchases:", "; ".join("%s: %s" % (k, ", ".join(sorted(v))) for k, v in sorted(states.items())) or "none")
+
 # 1. The version.
 versions = pages("/v1/apps/%s/appStoreVersions?filter[platform]=IOS&limit=20" % APP)
 print("versions:", [(v["attributes"]["versionString"], v["attributes"].get("appVersionState")) for v in versions])
