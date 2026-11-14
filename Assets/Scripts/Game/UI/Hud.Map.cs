@@ -88,7 +88,7 @@ namespace LastTide.Game
             var plus = UIKit.Button("Plus", top, "+", new Color(1, 1, 1, 0.12f), OpenShop, 46);
             _later.Add(plus.gameObject);
             // Tap the energy bar to refill it with doubloons.
-            var refill = UIKit.Button("Refill", top, null, new Color(0, 0, 0, 0), () => Confirm("Refill energy?", "Fill your energy to " + World.EnergyMax + " now for " + Session.RefillEnergyCost + " doubloons.\nYou have " + G.Session.State.coins + ".", "REFILL", () => { if (G.Session.RefillEnergy()) Sfx.Play("coin"); }));
+            var refill = UIKit.Button("Refill", top, null, new Color(0, 0, 0, 0), () => ConfirmOrWatch("Refill energy?", "Fill your energy to " + World.EnergyMax + " now for " + Session.RefillEnergyCost + " doubloons.\nYou have " + G.Session.State.coins + ".", "REFILL", () => { if (G.Session.RefillEnergy()) Sfx.Play("coin"); }, AdReward.Energy, "WATCH FOR +" + Session.AdEnergy + " ENERGY"));
             ((RectTransform)refill.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 0), new Vector2(450, 100));
             ((RectTransform)plus.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(230, -116), new Vector2(64, 56));
 
@@ -144,7 +144,7 @@ namespace LastTide.Game
             var rushBtn = UIKit.Button("Rush", _mapUi, "RUSH", new Color(0.8f, 0.62f, 0.12f), () =>
             {
                 var s = G.Session;
-                Confirm("Arrive now?", "Skip the rest of the journey for " + s.RushTravelCost + " doubloons.\nYou have " + s.State.coins + ".", "ARRIVE NOW", () => { if (s.RushTravel()) Sfx.Play("coin"); });
+                ConfirmOrWatch("Arrive now?", "Skip the rest of the journey for " + s.RushTravelCost + " doubloons.\nYou have " + s.State.coins + ".", "ARRIVE NOW", () => { if (s.RushTravel()) Sfx.Play("coin"); }, AdReward.Travel, "WATCH TO ARRIVE NOW");
             }, 28);
             _rush = (RectTransform)rushBtn.transform;
             _rush.Place(new Vector2(1, 0), new Vector2(0.5f, 0.5f), new Vector2(-150, 250), new Vector2(230, 60));

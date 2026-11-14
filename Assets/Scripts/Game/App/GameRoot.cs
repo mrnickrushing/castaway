@@ -370,6 +370,8 @@ namespace LastTide.Game
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
             if ((!Hud.Instance || !Hud.Instance.Blocking) && !OnMap) G.Session.Tick(dt);
             else G.Session.UpdateEnergy();
+            if (G.Session.Settled) Ads.Start();      // no advert SDK in the first minutes of a new game
+            Ads.Tick();
             _autosave -= Time.unscaledDeltaTime;
             if (_autosave <= 0) { _autosave = 15f; Save(); }
 #if UNITY_EDITOR
@@ -389,8 +391,8 @@ namespace LastTide.Game
             Player.Instance.Place(p, 0);
             Save();
             if (G.Session.NewestBag != null)
-                Hud.Instance.Confirm("Recover your backpack?", "Your backpack lies where you fell (the pockets stayed with you). Get it back right now for " + Session.RecoverBagCost + " doubloons, or walk back for it.", "RECOVER " + Session.RecoverBagCost,
-                    () => { if (G.Session.RecoverBag()) Sfx.Play("coin"); });
+                Hud.Instance.ConfirmOrWatch("Recover your backpack?", "Your backpack lies where you fell (the pockets stayed with you). Get it back right now for " + Session.RecoverBagCost + " doubloons, or walk back for it.", "RECOVER " + Session.RecoverBagCost,
+                    () => { if (G.Session.RecoverBag()) Sfx.Play("coin"); }, AdReward.Bag, "WATCH TO RECOVER IT");
         }
 
         /// <summary>Starts again from a fresh save: tears the game down and boots it anew next frame.</summary>
