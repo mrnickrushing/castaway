@@ -14,9 +14,11 @@ namespace LastTide.Game
     /// </summary>
     public static class Ads
     {
-        // The rewarded unit from the AdMob account. Until it exists this is Google's public test unit, which only
-        // ever serves test adverts.
-        const string RewardedUnit = "ca-app-pub-3940256099942544/1712485313";
+        // The rewarded unit from the AdMob account, and Google's public test unit, which only ever serves test
+        // adverts: debug and TestFlight builds use that one, so nobody testing taps a real advert (Google closes
+        // accounts for that).
+        const string LiveUnit = "ca-app-pub-2509790196257770/4749389986", TestUnit = "ca-app-pub-3940256099942544/1712485313";
+        static string RewardedUnit { get { return Telemetry.TestBuild ? TestUnit : LiveUnit; } }
 
         static bool _started, _loading;
         static float _retryAt;

@@ -215,8 +215,8 @@ setting only.
   Swift package by the dependency manager): rewarded only, never shown unasked. `Hud.ConfirmOrWatch` adds a green FREE
   button under three doubloon purchases (refill energy: +50; recover the backpack; finish a voyage with under ten
   minutes to go), five a day (`AdsPerDay`), requests non-personalised (`npa`), SDK started only once `Settled`. The
-  App ID is in `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`; `Ads.RewardedUnit` is Google's test
-  unit until the real one is put in. In the Editor an advert counts as watched at once.
+  App ID is in `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`; debug and TestFlight builds use Google's test
+  unit (`Telemetry.TestBuild`), App Store builds `Ads.LiveUnit`. In the Editor an advert counts as watched at once.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor
