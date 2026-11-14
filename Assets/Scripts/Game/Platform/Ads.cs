@@ -47,6 +47,7 @@ namespace LastTide.Game
 #if UNITY_IOS && !UNITY_EDITOR
             MobileAds.RaiseAdEventsOnUnityMainThread = true;
             MobileAds.SetiOSAppPauseOnBackground(true);
+            MobileAds.SetRequestConfiguration(new RequestConfiguration { MaxAdContentRating = MaxAdContentRating.PG });      // nothing stronger than the game itself
             MobileAds.Initialize(_ => Load());
 #endif
         }
