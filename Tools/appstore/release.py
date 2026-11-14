@@ -67,6 +67,35 @@ if b["attributes"].get("usesNonExemptEncryption") is None:
 call("PATCH", "/v1/appStoreVersions/%s/relationships/build" % VID, {"data": {"type": "builds", "id": b["id"]}})
 print("build %s attached (uploaded %s)" % (b["attributes"]["version"], b["attributes"].get("uploadedDate")))
 
+# 3b. The App Review contact, when given (a first version has none yet). Passed in at run time, never stored.
+if os.environ.get("RELEASE_REVIEW_EMAIL"):
+    attrs = {"contactFirstName": os.environ.get("RELEASE_REVIEW_FIRST"), "contactLastName": os.environ.get("RELEASE_REVIEW_LAST"),
+             "contactPhone": os.environ.get("RELEASE_REVIEW_PHONE"), "contactEmail": os.environ["RELEASE_REVIEW_EMAIL"],
+             "demoAccountRequired": False}
+    if os.environ.get("RELEASE_REVIEW_NOTES"):
+        attrs["notes"] = os.environ["RELEASE_REVIEW_NOTES"].replace("\\n", "\n")
+    have = call("GET", "/v1/appStoreVersions/%s/appStoreReviewDetail" % VID, ok404=True)
+    if have and have.get("data"):
+        call("PATCH", "/v1/appStoreReviewDetails/" + have["data"]["id"], {"data": {"type": "appStoreReviewDetails", "id": have["data"]["id"], "attributes": attrs}})
+    else:
+        call("POST", "/v1/appStoreReviewDetails", {"data": {"type": "appStoreReviewDetails", "attributes": attrs,
+             "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": VID}}}}})
+    print("review contact set")
+
+# 3c. In-app purchases still waiting to be submitted go in with the version (RELEASE_IAPS=1). A refusal is reported,
+# not fatal: Apple wants an app's very first purchases added on the version's page of the website.
+if os.environ.get("RELEASE_IAPS") == "1" and SUBMIT:
+    for i in pages("/v1/apps/%s/inAppPurchasesV2?limit=200" % APP):
+        if i["attributes"]["state"] != "READY_TO_SUBMIT":
+            print("  purchase %s: %s" % (i["attributes"]["productId"], i["attributes"]["state"]))
+            continue
+        try:
+            call("POST", "/v1/inAppPurchaseSubmissions", {"data": {"type": "inAppPurchaseSubmissions", "relationships": {
+                "inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": i["id"]}}}}})
+            print("  purchase %s: submitted" % i["attributes"]["productId"])
+        except SystemExit as e:
+            print("  purchase %s: NOT submitted\n    %s" % (i["attributes"]["productId"], str(e)[:600].replace("\n", "\n    ")))
+
 # 4. App Review, only when asked.
 if not SUBMIT:
     print("READY: version %s has its build and notes. Not submitted (RELEASE_SUBMIT is not 1)." % WANT)
