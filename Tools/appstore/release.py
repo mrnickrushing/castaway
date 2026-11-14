@@ -36,13 +36,30 @@ for i in pages("/v1/apps/%s/inAppPurchasesV2?limit=200" % APP):
     states.setdefault(i["attributes"]["state"], []).append(i["attributes"]["productId"])
 print("in-app purchases:", "; ".join("%s: %s" % (k, ", ".join(sorted(v))) for k, v in sorted(states.items())) or "none")
 
+def submit_iaps():
+    """In-app purchases still waiting to be submitted (RELEASE_IAPS=1). A refusal is reported, not fatal: Apple wants
+    an app's very first purchases added on the version's page of the website."""
+    for i in pages("/v1/apps/%s/inAppPurchasesV2?limit=200" % APP):
+        if i["attributes"]["state"] != "READY_TO_SUBMIT":
+            print("  purchase %s: %s" % (i["attributes"]["productId"], i["attributes"]["state"]))
+            continue
+        try:
+            call("POST", "/v1/inAppPurchaseSubmissions", {"data": {"type": "inAppPurchaseSubmissions", "relationships": {
+                "inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": i["id"]}}}}})
+            print("  purchase %s: submitted" % i["attributes"]["productId"])
+        except SystemExit as e:
+            print("  purchase %s: NOT submitted\n    %s" % (i["attributes"]["productId"], str(e)[:1600].replace("\n", "\n    ")))
+
+
 # 1. The version.
 versions = pages("/v1/apps/%s/appStoreVersions?filter[platform]=IOS&limit=20" % APP)
 print("versions:", [(v["attributes"]["versionString"], v["attributes"].get("appVersionState")) for v in versions])
 version = next((v for v in versions if v["attributes"].get("appVersionState") in EDITABLE), None)
 waiting = next((v for v in versions if v["attributes"].get("appVersionState") in ("WAITING_FOR_REVIEW", "IN_REVIEW", "READY_FOR_REVIEW")), None)
 if waiting is not None and version is None:
-    print("Version %s is already with App Review (%s): nothing to do." % (waiting["attributes"]["versionString"], waiting["attributes"]["appVersionState"]))
+    print("Version %s is already with App Review (%s)." % (waiting["attributes"]["versionString"], waiting["attributes"]["appVersionState"]))
+    if os.environ.get("RELEASE_IAPS") == "1" and SUBMIT:
+        submit_iaps()       # a purchase that missed the version's submission can follow it
     sys.exit(0)
 if version is None:
     version = call("POST", "/v1/appStoreVersions", {"data": {
@@ -102,19 +119,8 @@ if os.environ.get("RELEASE_REVIEW_EMAIL"):
              "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": VID}}}}})
     print("review contact set")
 
-# 3c. In-app purchases still waiting to be submitted go in with the version (RELEASE_IAPS=1). A refusal is reported,
-# not fatal: Apple wants an app's very first purchases added on the version's page of the website.
 if os.environ.get("RELEASE_IAPS") == "1" and SUBMIT:
-    for i in pages("/v1/apps/%s/inAppPurchasesV2?limit=200" % APP):
-        if i["attributes"]["state"] != "READY_TO_SUBMIT":
-            print("  purchase %s: %s" % (i["attributes"]["productId"], i["attributes"]["state"]))
-            continue
-        try:
-            call("POST", "/v1/inAppPurchaseSubmissions", {"data": {"type": "inAppPurchaseSubmissions", "relationships": {
-                "inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": i["id"]}}}}})
-            print("  purchase %s: submitted" % i["attributes"]["productId"])
-        except SystemExit as e:
-            print("  purchase %s: NOT submitted\n    %s" % (i["attributes"]["productId"], str(e)[:600].replace("\n", "\n    ")))
+    submit_iaps()
 
 # 4. App Review, only when asked.
 if not SUBMIT:
