@@ -211,6 +211,12 @@ setting only.
 - Rating (`UI/Hud.Rate.cs`): once, at a happy moment (LEVEL UP! claimed or the BACK AT card closed, level 4+, settled),
   "Enjoying Last Tide?" RATE IT (Apple's own sheet, `Device.RequestStoreReview`) / NO THANKS; either answer stops it for
   good on that device (PlayerPrefs `lt_rate_asked`). Settings has a Rate row to the App Store review page.
+- Adverts (`Core/Session.Ads.cs` rules, `Game/Platform/Ads.cs`, Google AdMob through `com.google.ads.mobile`, added as a
+  Swift package by the dependency manager): rewarded only, never shown unasked. `Hud.ConfirmOrWatch` adds a green FREE
+  button under three doubloon purchases (refill energy: +50; recover the backpack; finish a voyage with under ten
+  minutes to go), five a day (`AdsPerDay`), requests non-personalised (`npa`), SDK started only once `Settled`. The
+  App ID is in `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`; `Ads.RewardedUnit` is Google's test
+  unit until the real one is put in. In the Editor an advert counts as watched at once.
 - Shaders in `Resources/Shaders` (`LastTide/VertexLit`, `Terrain`, `Water`, `Ring`, `Ghost`, `Additive`).
 
 ## Verify every change in the real Editor

@@ -133,6 +133,23 @@ namespace LastTide.Game
             ((RectTransform)ok.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(noLabel != null ? 190 : 0, 34), new Vector2(330, 84));
         }
 
+        /// <summary>
+        /// A doubloon purchase that an advert can pay for instead: the usual two buttons, and under them a free one
+        /// while there are adverts left today and one is loaded. Nobody is ever shown an advert they didn't ask for.
+        /// </summary>
+        public void ConfirmOrWatch(string title, string body, string yes, System.Action onYes, AdReward reward, string adLabel)
+        {
+            var s = G.Session;
+            bool ad = s.AdOffered(reward) && Ads.Ready;
+            Confirm(title, body + (ad ? "\n\n<size=26><color=#B9C4C8>Or watch a short advert (" + s.AdsLeft + " left today).</color></size>" : ""), yes, onYes);
+            if (!ad) return;
+            var box = (RectTransform)_confirm.Find("Box");
+            box.sizeDelta += new Vector2(0, 100);
+            foreach (RectTransform c in box) if (c.name == "No" || c.name == "Yes") c.anchoredPosition += new Vector2(0, 100);
+            var watch = UIKit.Button("Ad", box, "FREE:  " + adLabel, new Color(0.16f, 0.5f, 0.3f), () => { Destroy(_confirm.gameObject); Ads.Watch(reward); }, 32);
+            ((RectTransform)watch.transform).Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 34), new Vector2(710, 84));
+        }
+
         /// <summary>What a supply crate or gold chest can hold, and how likely each thing is.</summary>
         public void ShowOdds(params string[] ids)
         {

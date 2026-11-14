@@ -110,6 +110,7 @@ namespace LastTide.Core
         public int xp, level = 1, coins, pirates;
         public float energy = World.EnergyMax;
         public double energyStamp;          // real unix seconds when energy was last topped up
+        public int adDay, adCount;          // rewarded adverts watched on a day (Session.Ads)
         public string location = World.HomeId;
         public TravelState travel;
         public TripLog trip, lastTrip;      // the trip under way, and the finished one the HUD hasn't shown yet
